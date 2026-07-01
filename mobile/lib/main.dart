@@ -17,8 +17,7 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await initializeDateFormatting('tr_TR');
   await WidgetSyncService.initialize();
-  final liveActivityService = LiveActivityService();
-  await liveActivityService.initialize();
+  await LiveActivityService.instance.initialize();
   runApp(const ProviderScope(child: MimioApp()));
 }
 

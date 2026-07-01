@@ -7,7 +7,7 @@ import 'package:mimio/core/platform/live_activity_service.dart';
 import 'package:mimio/core/platform/widget_sync_service.dart';
 import 'package:mimio/core/repositories/repositories.dart';
 
-final liveActivityServiceProvider = Provider<LiveActivityService>((ref) => LiveActivityService());
+final liveActivityServiceProvider = Provider<LiveActivityService>((ref) => LiveActivityService.instance);
 
 final authStateProvider =
     AsyncNotifierProvider<AuthNotifier, AuthResponse?>(AuthNotifier.new);
@@ -67,6 +67,10 @@ class FocusSessionNotifier extends AsyncNotifier<FocusSessionModel?> {
     ref.onDispose(() => _pollTimer?.cancel());
 
     final session = await ref.read(taskRepositoryProvider).getFocusSession();
+
+    if (session != null && session.isActive) {
+      await ref.read(liveActivityServiceProvider).syncFocusSession(session);
+    }
 
     _pollTimer?.cancel();
     if (session != null && session.isActive) {

@@ -5,9 +5,10 @@ import 'package:mimio/core/config/platform_config.dart';
 import 'package:mimio/core/models/models.dart';
 
 class LiveActivityService {
-  LiveActivityService() : _plugin = LiveActivities();
+  LiveActivityService._();
+  static final LiveActivityService instance = LiveActivityService._();
 
-  final LiveActivities _plugin;
+  final LiveActivities _plugin = LiveActivities();
   String? _activityId;
   bool _initialized = false;
 

@@ -85,7 +85,7 @@ class WidgetSyncService {
       );
 
       await HomeWidget.updateWidget(
-        name: PlatformConfig.iosWidgetName,
+        iOSName: PlatformConfig.iosWidgetName,
         androidName: PlatformConfig.androidWidgetClass,
       );
     } on PlatformException catch (e) {

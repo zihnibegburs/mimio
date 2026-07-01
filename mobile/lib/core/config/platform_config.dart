@@ -10,7 +10,9 @@ class PlatformConfig {
   static String get apiBaseUrl {
     const envBase = String.fromEnvironment('API_BASE_URL');
     if (envBase.isNotEmpty) return envBase;
-    if (devApiBaseUrl != null && devApiBaseUrl!.isNotEmpty) {
+    if (!kReleaseMode &&
+        devApiBaseUrl != null &&
+        devApiBaseUrl!.isNotEmpty) {
       return devApiBaseUrl!;
     }
 

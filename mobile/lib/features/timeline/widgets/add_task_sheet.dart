@@ -82,7 +82,7 @@ class _AddTaskSheetState extends ConsumerState<AddTaskSheet> {
       }
     }
     final msg = e.toString();
-    if (msg.contains('Ollama')) return 'Ollama çalışmıyor. Terminalde: ollama serve';
+    if (msg.contains('Groq')) return 'AI servisi kullanılamıyor. Groq API anahtarını kontrol edin.';
     return msg.replaceFirst('Exception: ', '');
   }
 

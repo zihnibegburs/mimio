@@ -73,7 +73,7 @@ class _AiPlanScreenState extends ConsumerState<AiPlanScreen> {
       }
     }
     final msg = e.toString();
-    if (msg.contains('Ollama')) return 'Ollama çalışmıyor. Terminalde: ollama serve';
+    if (msg.contains('Groq')) return 'AI servisi kullanılamıyor. Groq API anahtarını kontrol edin.';
     if (msg.contains('connection') || msg.contains('SocketException')) {
       return 'Sunucuya bağlanılamadı. Backend çalışıyor mu?';
     }
@@ -258,7 +258,7 @@ class _AiPlanScreenState extends ConsumerState<AiPlanScreen> {
             ],
             const SizedBox(height: 12),
             const Text(
-              'Powered by Ollama · Yerel AI',
+              'Powered by Groq AI',
               textAlign: TextAlign.center,
               style: TextStyle(fontSize: 11, color: MimioColors.textSecondary),
             ),

@@ -1,5 +1,6 @@
-import WidgetKit
+import ActivityKit
 import SwiftUI
+import WidgetKit
 
 private let appGroupId = "group.com.mimio.mimio"
 
@@ -66,7 +67,9 @@ struct MimioWidgetView: View {
 struct MimioWidgetBundle: WidgetBundle {
     var body: some Widget {
         MimioWidget()
-        MimioLiveActivityWidget()
+        if #available(iOS 16.1, *) {
+            MimioLiveActivityWidget()
+        }
     }
 }
 
@@ -99,6 +102,7 @@ extension LiveActivitiesAppAttributes {
     }
 }
 
+@available(iOS 16.1, *)
 struct MimioLiveActivityWidget: Widget {
     var body: some WidgetConfiguration {
         ActivityConfiguration(for: LiveActivitiesAppAttributes.self) { context in
