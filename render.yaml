@@ -31,14 +31,11 @@ services:
         fromDatabase:
           name: mimio-db
           property: password
-      - key: REDIS_URL
-        fromService:
-          type: keyvalue
-          name: mimio-redis
-          property: connectionString
       - key: MIMIO_JWT_SECRET
         generateValue: true
       - key: GROQ_API_KEY
+        sync: false
+      - key: REDIS_URL
         sync: false
 
   - type: web
@@ -56,12 +53,6 @@ services:
           type: web
           name: mimio-api
           property: host
-
-  - type: keyvalue
-    name: mimio-redis
-    plan: starter
-    maxmemoryPolicy: allkeys-lru
-    ipAllowList: []
 
 databases:
   - name: mimio-db

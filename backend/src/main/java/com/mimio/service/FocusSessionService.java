@@ -6,22 +6,32 @@ import com.mimio.domain.entity.Task;
 import com.mimio.domain.enums.TaskStatus;
 import com.mimio.dto.focus.FocusSessionResponse;
 import com.mimio.exception.ResourceNotFoundException;
-import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 
+@Slf4j
 @Service
-@RequiredArgsConstructor
 public class FocusSessionService {
 
     private static final String FOCUS_KEY_PREFIX = "mimio:focus:";
     private static final ObjectMapper REDIS_MAPPER = new ObjectMapper();
 
     private final StringRedisTemplate redisTemplate;
+    private final ConcurrentHashMap<UUID, String> memorySessions = new ConcurrentHashMap<>();
+
+    public FocusSessionService(@Autowired(required = false) StringRedisTemplate redisTemplate) {
+        this.redisTemplate = redisTemplate;
+        if (redisTemplate == null) {
+            log.warn("REDIS_URL not set — focus sessions use in-memory storage (single instance only).");
+        }
+    }
 
     public void startSession(Task task) {
         FocusSessionData data = new FocusSessionData(
@@ -51,7 +61,11 @@ public class FocusSessionService {
     }
 
     public void clearSession(UUID userId) {
-        redisTemplate.delete(FOCUS_KEY_PREFIX + userId);
+        if (redisTemplate != null) {
+            redisTemplate.delete(FOCUS_KEY_PREFIX + userId);
+        } else {
+            memorySessions.remove(userId);
+        }
     }
 
     public Optional<FocusSessionResponse> getSession(UUID userId, Task task) {
@@ -106,14 +120,21 @@ public class FocusSessionService {
 
     private void saveSession(UUID userId, FocusSessionData data) {
         try {
-            redisTemplate.opsForValue().set(FOCUS_KEY_PREFIX + userId, REDIS_MAPPER.writeValueAsString(data));
+            String json = REDIS_MAPPER.writeValueAsString(data);
+            if (redisTemplate != null) {
+                redisTemplate.opsForValue().set(FOCUS_KEY_PREFIX + userId, json);
+            } else {
+                memorySessions.put(userId, json);
+            }
         } catch (JsonProcessingException e) {
             throw new ResourceNotFoundException("Failed to save focus session");
         }
     }
 
     private Optional<FocusSessionData> getSessionData(UUID userId) {
-        String json = redisTemplate.opsForValue().get(FOCUS_KEY_PREFIX + userId);
+        String json = redisTemplate != null
+                ? redisTemplate.opsForValue().get(FOCUS_KEY_PREFIX + userId)
+                : memorySessions.get(userId);
         if (json == null) return Optional.empty();
         try {
             return Optional.of(REDIS_MAPPER.readValue(json, FocusSessionData.class));
