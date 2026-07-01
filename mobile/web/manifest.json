@@ -1,0 +1,35 @@
+{
+    "name": "Mimio — Görsel Planlayıcı",
+    "short_name": "Mimio",
+    "start_url": ".",
+    "display": "standalone",
+    "background_color": "#F8F7FF",
+    "theme_color": "#6C63FF",
+    "description": "Görsel günlük planlayıcı — ADHD ve nörodivergent kullanıcılar için.",
+    "orientation": "any",
+    "prefer_related_applications": false,
+    "icons": [
+        {
+            "src": "icons/Icon-192.png",
+            "sizes": "192x192",
+            "type": "image/png"
+        },
+        {
+            "src": "icons/Icon-512.png",
+            "sizes": "512x512",
+            "type": "image/png"
+        },
+        {
+            "src": "icons/Icon-maskable-192.png",
+            "sizes": "192x192",
+            "type": "image/png",
+            "purpose": "maskable"
+        },
+        {
+            "src": "icons/Icon-maskable-512.png",
+            "sizes": "512x512",
+            "type": "image/png",
+            "purpose": "maskable"
+        }
+    ]
+}

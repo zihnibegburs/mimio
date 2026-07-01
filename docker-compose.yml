@@ -1,0 +1,43 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: mimio-postgres
+    environment:
+      POSTGRES_DB: mimio
+      POSTGRES_USER: mimio
+      POSTGRES_PASSWORD: mimio_secret
+    ports:
+      - "5432:5432"
+    volumes:
+      - mimio_pg_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U mimio -d mimio"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: mimio-redis
+    ports:
+      - "6380:6379"
+    volumes:
+      - mimio_redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  ollama:
+    image: ollama/ollama:latest
+    container_name: mimio-ollama
+    ports:
+      - "11434:11434"
+    volumes:
+      - mimio_ollama_data:/root/.ollama
+
+volumes:
+  mimio_pg_data:
+  mimio_redis_data:
+  mimio_ollama_data:
