@@ -7,11 +7,11 @@ import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.web.client.RestTemplate;
 
 @Configuration
-@EnableConfigurationProperties(OllamaProperties.class)
-public class OllamaConfig {
+@EnableConfigurationProperties(GroqProperties.class)
+public class GroqConfig {
 
     @Bean
-    public RestTemplate ollamaRestTemplate(OllamaProperties properties) {
+    public RestTemplate groqRestTemplate(GroqProperties properties) {
         SimpleClientHttpRequestFactory factory = new SimpleClientHttpRequestFactory();
         factory.setConnectTimeout(properties.timeoutSeconds() * 1000);
         factory.setReadTimeout(properties.timeoutSeconds() * 1000);

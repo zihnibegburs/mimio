@@ -6,6 +6,7 @@ Thumbs.db
 .env
 .env.*
 !.env.example
+backend/src/main/resources/application-local.yml
 
 # Backend (Gradle / Spring Boot)
 backend/build/
@@ -15,6 +16,7 @@ backend/out/
 
 # Mobile (Flutter)
 mobile/build/
+mobile/.flutter-sdk/
 mobile/.dart_tool/
 mobile/.flutter-plugins
 mobile/.flutter-plugins-dependencies

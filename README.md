@@ -42,16 +42,16 @@ open ios/Runner.xcworkspace
 | Android | Ana ekran widget + bildirim Live Activity |
 | iOS | Widget + Live Activity / Dynamic Island (Xcode setup) |
 
-## AI (Ollama — Phase 6)
+## AI (Groq — Phase 6)
 
 ```bash
-# Ollama kur (macOS: brew install ollama)
-ollama serve
-ollama pull llama3.2:3b
+# API anahtarını ayarla (birini seç)
+export GROQ_API_KEY=your-groq-api-key
 
-# veya Docker ile
-docker compose up -d ollama
-docker exec mimio-ollama ollama pull llama3.2:3b
+# veya yerel dosya kullan (git'e gitmez)
+cp backend/src/main/resources/application-local.yml.example \
+   backend/src/main/resources/application-local.yml
+# application-local.yml içine Groq API anahtarını yaz
 ```
 
 | Method | Endpoint | Açıklama |

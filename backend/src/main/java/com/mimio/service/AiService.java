@@ -2,7 +2,7 @@ package com.mimio.service;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.mimio.config.OllamaProperties;
+import com.mimio.config.GroqProperties;
 import com.mimio.dto.ai.*;
 import com.mimio.exception.BadRequestException;
 import com.mimio.exception.ResourceNotFoundException;
@@ -12,11 +12,13 @@ import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
 
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -29,8 +31,8 @@ public class AiService {
             "#6C63FF", "#FF6B9D", "#4ECDC4", "#FFE66D", "#FF8B5A", "#2ECC71"
     );
 
-    private final RestTemplate ollamaRestTemplate;
-    private final OllamaProperties ollamaProperties;
+    private final RestTemplate groqRestTemplate;
+    private final GroqProperties groqProperties;
     private final ObjectMapper objectMapper;
 
     public AiBreakdownResponse breakdown(String task) {
@@ -43,7 +45,7 @@ public class AiService {
                 Görev: %s
                 """.formatted(task.trim());
 
-        JsonNode root = callOllama(prompt);
+        JsonNode root = callGroq(prompt);
         List<AiStepDto> steps = parseSteps(root.path("steps"));
         int total = steps.stream().mapToInt(AiStepDto::durationMinutes).sum();
 
@@ -64,7 +66,7 @@ public class AiService {
                 %s
                 """.formatted(planDate, input.trim());
 
-        JsonNode root = callOllama(prompt);
+        JsonNode root = callGroq(prompt);
         String summary = root.path("summary").asText("Günlük plan");
         List<AiPlannedTaskDto> tasks = parsePlannedTasks(root.path("tasks"));
         int total = tasks.stream().mapToInt(AiPlannedTaskDto::durationMinutes).sum();
@@ -72,41 +74,49 @@ public class AiService {
         return new AiPlanResponse(planDate, summary, tasks, total);
     }
 
-    private JsonNode callOllama(String userPrompt) {
-        String url = ollamaProperties.baseUrl() + "/api/chat";
+    private JsonNode callGroq(String userPrompt) {
+        if (!StringUtils.hasText(groqProperties.apiKey())) {
+            throw new BadRequestException(
+                    "Groq API anahtarı tanımlı değil. GROQ_API_KEY ortam değişkenini ayarlayın."
+            );
+        }
 
-        Map<String, Object> body = Map.of(
-                "model", ollamaProperties.model(),
-                "stream", false,
-                "format", "json",
-                "messages", List.of(
-                        Map.of("role", "system", "content", "Sen yardımcı bir planlama asistanısın. Her zaman geçerli JSON döndür."),
-                        Map.of("role", "user", "content", userPrompt)
-                )
-        );
+        String url = groqProperties.baseUrl() + "/chat/completions";
+
+        Map<String, Object> body = new HashMap<>();
+        body.put("model", groqProperties.model());
+        body.put("temperature", 0.3);
+        body.put("response_format", Map.of("type", "json_object"));
+        body.put("messages", List.of(
+                Map.of("role", "system", "content", "Sen yardımcı bir planlama asistanısın. Her zaman geçerli JSON döndür."),
+                Map.of("role", "user", "content", userPrompt)
+        ));
 
         try {
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.APPLICATION_JSON);
+            headers.setBearerAuth(groqProperties.apiKey());
             HttpEntity<Map<String, Object>> entity = new HttpEntity<>(body, headers);
 
-            String response = ollamaRestTemplate.postForObject(url, entity, String.class);
+            String response = groqRestTemplate.postForObject(url, entity, String.class);
             if (response == null) {
-                throw new BadRequestException("Ollama boş yanıt döndü");
+                throw new BadRequestException("Groq boş yanıt döndü");
             }
 
             JsonNode responseNode = objectMapper.readTree(response);
-            String content = responseNode.path("message").path("content").asText();
-            log.debug("Ollama response: {}", content);
+            String content = responseNode.path("choices").path(0).path("message").path("content").asText();
+            log.debug("Groq response: {}", content);
 
             return objectMapper.readTree(extractJson(content));
         } catch (RestClientException e) {
-            log.error("Ollama connection failed: {}", e.getMessage());
+            log.error("Groq request failed: {}", e.getMessage());
             throw new BadRequestException(
-                    "Ollama'ya bağlanılamadı. Ollama çalışıyor mu? (ollama serve) Model: " + ollamaProperties.model()
+                    "Groq API'ye bağlanılamadı. API anahtarını ve modeli kontrol edin: " + groqProperties.model()
             );
+        } catch (BadRequestException e) {
+            throw e;
         } catch (Exception e) {
-            log.error("Ollama parse error: {}", e.getMessage());
+            log.error("Groq parse error: {}", e.getMessage());
             throw new BadRequestException("AI yanıtı işlenemedi: " + e.getMessage());
         }
     }

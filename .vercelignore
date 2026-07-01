@@ -1,0 +1,9 @@
+backend/
+docs/
+mobile/ios/
+mobile/android/
+mobile/macos/
+mobile/linux/
+mobile/windows/
+mobile/.dart_tool/
+mobile/.flutter-sdk/

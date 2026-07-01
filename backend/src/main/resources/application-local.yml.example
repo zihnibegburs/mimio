@@ -1,0 +1,3 @@
+mimio:
+  groq:
+    api-key: your-groq-api-key-here

@@ -1,6 +1,8 @@
 spring:
   application:
     name: mimio-backend
+  config:
+    import: optional:classpath:application-local.yml
 
   datasource:
     url: jdbc:postgresql://localhost:5432/mimio
@@ -31,16 +33,17 @@ spring:
       write-dates-as-timestamps: false
 
 server:
-  port: 8080
+  port: ${PORT:8080}
 
 mimio:
   jwt:
     secret: mimio-dev-secret-key-change-in-production-min-256-bits-long!!
     expiration-ms: 86400000
-  ollama:
-    base-url: http://localhost:11434
-    model: llama3.2:3b
-    timeout-seconds: 120
+  groq:
+    api-key: ${GROQ_API_KEY:}
+    base-url: https://api.groq.com/openai/v1
+    model: llama-3.3-70b-versatile
+    timeout-seconds: 60
 
 logging:
   level:
