@@ -1,3 +1,4 @@
+import 'package:mimio/core/platform/siri_sync_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class TokenStorage {
@@ -6,6 +7,7 @@ class TokenStorage {
   Future<void> saveToken(String token) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(_key, token);
+    await SiriSyncService.syncCredentials(token: token);
   }
 
   Future<String?> getToken() async {
@@ -16,5 +18,6 @@ class TokenStorage {
   Future<void> clearToken() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove(_key);
+    await SiriSyncService.syncCredentials();
   }
 }
