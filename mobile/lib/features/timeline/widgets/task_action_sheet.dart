@@ -1,0 +1,238 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:mimio/core/l10n/app_strings.dart';
+import 'package:mimio/core/models/models.dart';
+import 'package:mimio/core/theme/mimio_theme.dart';
+import 'package:mimio/features/timeline/widgets/edit_task_sheet.dart';
+import 'package:mimio/features/timeline/widgets/subtask_breakdown_sheet.dart';
+
+void showTaskActionSheet({
+  required BuildContext context,
+  required WidgetRef ref,
+  required TaskModel task,
+  required DateTime selectedDate,
+  required Future<void> Function() onStart,
+  required Future<void> Function() onPause,
+  required Future<void> Function() onComplete,
+  required Future<void> Function() onDelete,
+  VoidCallback? onFocus,
+}) {
+  final s = ref.read(stringsProvider);
+  final isSubtask = task.parentTaskId != null;
+  final canBreakdown = !isSubtask && !task.hasSubtasks && !task.isCompleted;
+
+  showModalBottomSheet(
+    context: context,
+    backgroundColor: Colors.transparent,
+    builder: (ctx) => Container(
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      child: SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const SizedBox(height: 12),
+            Container(
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: const Color(0xFFE0E0E0),
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(24, 20, 24, 8),
+              child: Row(
+                children: [
+                  Container(
+                    width: 4,
+                    height: 32,
+                    decoration: BoxDecoration(
+                      color: MimioColors.fromHex(task.color),
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          s.taskOptions,
+                          style: const TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                            color: MimioColors.textSecondary,
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          task.title,
+                          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const Divider(height: 1),
+            if (!task.isCompleted && !task.isActive && task.status != TaskStatus.paused)
+              _ActionTile(
+                icon: Icons.play_arrow_rounded,
+                label: s.startTask,
+                color: MimioColors.fromHex(task.color),
+                onTap: () async {
+                  Navigator.pop(ctx);
+                  await onStart();
+                },
+              ),
+            if (task.isActive || task.status == TaskStatus.paused) ...[
+              if (onFocus != null)
+                _ActionTile(
+                  icon: Icons.timer_rounded,
+                  label: s.goToFocus,
+                  color: MimioColors.primary,
+                  onTap: () {
+                    Navigator.pop(ctx);
+                    onFocus();
+                  },
+                ),
+              if (task.isActive)
+                _ActionTile(
+                  icon: Icons.pause_rounded,
+                  label: s.pause,
+                  color: MimioColors.warning,
+                  onTap: () async {
+                    Navigator.pop(ctx);
+                    await onPause();
+                  },
+                ),
+              if (task.status == TaskStatus.paused)
+                _ActionTile(
+                  icon: Icons.play_arrow_rounded,
+                  label: s.resume,
+                  color: MimioColors.fromHex(task.color),
+                  onTap: () async {
+                    Navigator.pop(ctx);
+                    await onStart();
+                  },
+                ),
+            ],
+            if (!task.isCompleted)
+              _ActionTile(
+                icon: Icons.check_rounded,
+                label: s.complete,
+                color: MimioColors.success,
+                onTap: () async {
+                  Navigator.pop(ctx);
+                  await onComplete();
+                },
+              ),
+            _ActionTile(
+              icon: Icons.edit_outlined,
+              label: s.edit,
+              onTap: () {
+                Navigator.pop(ctx);
+                showModalBottomSheet(
+                  context: context,
+                  isScrollControlled: true,
+                  backgroundColor: Colors.transparent,
+                  builder: (_) => EditTaskSheet(
+                    task: task,
+                    selectedDate: selectedDate,
+                    showAiBreakdown: false,
+                  ),
+                );
+              },
+            ),
+            if (canBreakdown)
+              _ActionTile(
+                icon: Icons.auto_awesome_rounded,
+                label: s.splitSubtasks,
+                color: MimioColors.primary,
+                onTap: () {
+                  Navigator.pop(ctx);
+                  showModalBottomSheet(
+                    context: context,
+                    isScrollControlled: true,
+                    backgroundColor: Colors.transparent,
+                    builder: (_) => SubtaskBreakdownSheet(
+                      task: task,
+                      selectedDate: selectedDate,
+                    ),
+                  );
+                },
+              ),
+            _ActionTile(
+              icon: Icons.delete_outline_rounded,
+              label: s.delete,
+              color: Colors.red.shade400,
+              destructive: true,
+              onTap: () async {
+                Navigator.pop(ctx);
+                final confirmed = await showDialog<bool>(
+                  context: context,
+                  builder: (dialogCtx) => AlertDialog(
+                    title: Text(s.deleteTask),
+                    content: Text('“${task.title}” — ${s.deleteConfirm}'),
+                    actions: [
+                      TextButton(
+                        onPressed: () => Navigator.pop(dialogCtx, false),
+                        child: Text(s.cancel),
+                      ),
+                      TextButton(
+                        onPressed: () => Navigator.pop(dialogCtx, true),
+                        style: TextButton.styleFrom(foregroundColor: Colors.red),
+                        child: Text(s.delete),
+                      ),
+                    ],
+                  ),
+                );
+                if (confirmed == true) await onDelete();
+              },
+            ),
+            const SizedBox(height: 8),
+          ],
+        ),
+      ),
+    ),
+  );
+}
+
+class _ActionTile extends StatelessWidget {
+  const _ActionTile({
+    required this.icon,
+    required this.label,
+    required this.onTap,
+    this.color,
+    this.destructive = false,
+  });
+
+  final IconData icon;
+  final String label;
+  final VoidCallback onTap;
+  final Color? color;
+  final bool destructive;
+
+  @override
+  Widget build(BuildContext context) {
+    final iconColor = color ?? MimioColors.textPrimary;
+
+    return ListTile(
+      leading: Icon(icon, color: iconColor),
+      title: Text(
+        label,
+        style: TextStyle(
+          fontWeight: FontWeight.w600,
+          color: destructive ? Colors.red.shade400 : MimioColors.textPrimary,
+        ),
+      ),
+      onTap: onTap,
+    );
+  }
+}

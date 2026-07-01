@@ -5,6 +5,7 @@ import com.mimio.domain.repository.UserRepository;
 import com.mimio.dto.auth.AuthResponse;
 import com.mimio.dto.auth.LoginRequest;
 import com.mimio.dto.auth.RegisterRequest;
+import com.mimio.dto.auth.UpdateProfileRequest;
 import com.mimio.exception.BadRequestException;
 import com.mimio.security.JwtService;
 import lombok.RequiredArgsConstructor;
@@ -48,6 +49,18 @@ public class AuthService {
     }
 
     public AuthResponse getMe(User user) {
+        return buildAuthResponse(user);
+    }
+
+    @Transactional
+    public AuthResponse updateProfile(User user, UpdateProfileRequest request) {
+        if (request.displayName() != null) {
+            user.setDisplayName(request.displayName().trim());
+        }
+        if (request.avatarColor() != null) {
+            user.setAvatarColor(request.avatarColor());
+        }
+        userRepository.save(user);
         return buildAuthResponse(user);
     }
 

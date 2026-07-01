@@ -51,6 +51,19 @@ class AuthRepository {
   }
 
   Future<void> logout() => _storage.clearToken();
+
+  Future<AuthResponse> updateProfile({
+    String? displayName,
+    String? avatarColor,
+  }) async {
+    final response = await _dio.patch('/auth/me', data: {
+      if (displayName != null) 'displayName': displayName,
+      if (avatarColor != null) 'avatarColor': avatarColor,
+    });
+    final updated = AuthResponse.fromJson(response.data as Map<String, dynamic>);
+    final token = await _storage.getToken();
+    return updated.copyWith(token: token ?? updated.token);
+  }
 }
 
 final authRepositoryProvider = Provider<AuthRepository>((ref) {
@@ -103,6 +116,40 @@ class TaskRepository {
       'title': title,
       'color': color,
       'scheduledAt': scheduledAt.toUtc().toIso8601String(),
+      'subtasks': subtasks
+          .map((s) => {
+                'title': s.title,
+                'durationMinutes': s.durationMinutes,
+                'color': s.color,
+              })
+          .toList(),
+    });
+    return TaskModel.fromJson(response.data as Map<String, dynamic>);
+  }
+
+  Future<TaskModel> updateTask({
+    required String id,
+    String? title,
+    String? description,
+    String? color,
+    int? durationMinutes,
+    DateTime? scheduledAt,
+  }) async {
+    final response = await _dio.put('/tasks/$id', data: {
+      if (title != null) 'title': title,
+      if (description != null) 'description': description,
+      if (color != null) 'color': color,
+      if (durationMinutes != null) 'durationMinutes': durationMinutes,
+      if (scheduledAt != null) 'scheduledAt': scheduledAt.toUtc().toIso8601String(),
+    });
+    return TaskModel.fromJson(response.data as Map<String, dynamic>);
+  }
+
+  Future<TaskModel> addSubtasksToTask({
+    required String parentId,
+    required List<({String title, int durationMinutes, String color})> subtasks,
+  }) async {
+    final response = await _dio.post('/tasks/$parentId/subtasks', data: {
       'subtasks': subtasks
           .map((s) => {
                 'title': s.title,

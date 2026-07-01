@@ -1,8 +1,8 @@
-/// Tam API URL — ngrok veya uzaktan erişim için (öncelikli).
-/// Ör: 'https://abc123.ngrok-free.app/api/v1'
-/// Kullanmıyorsanız `null` bırakın.
+/// Tam API URL — yerel backend veya ngrok için.
+/// Production: https://mimio-api.onrender.com/api/v1
+/// Yerel geliştirme için `null` bırakıp `devLanHost` kullanın.
 const String? devApiBaseUrl =
-    'https://recoupable-unilludedly-messiah.ngrok-free.dev/api/v1';
+    'https://mimio-api.onrender.com/api/v1';
 
 /// Mac'inizin yerel ağ IP'si — aynı Wi‑Fi'de fiziksel telefon için.
 /// ngrok kullanırken `null` bırakın.

@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'package:mimio/core/models/ai_models.dart';
 import 'package:mimio/core/repositories/ai_repository.dart';
 import 'package:mimio/core/theme/mimio_theme.dart';
+import 'package:mimio/core/widgets/speech_text_field.dart';
 import 'package:mimio/features/providers.dart';
 import 'package:mimio/features/timeline/home_tab.dart';
 
@@ -170,7 +171,7 @@ class _AiPlanScreenState extends ConsumerState<AiPlanScreen> {
             ),
             const SizedBox(height: 20),
             Text(
-              mode == AiMode.plan ? 'Aklındakileri yaz' : 'Büyük görevi yaz',
+              mode == AiMode.plan ? 'Aklındakileri yaz veya sesle söyle' : 'Büyük görevi yaz veya sesle söyle',
               style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
             ),
             const SizedBox(height: 8),
@@ -181,7 +182,7 @@ class _AiPlanScreenState extends ConsumerState<AiPlanScreen> {
               style: const TextStyle(color: MimioColors.textSecondary, fontSize: 13),
             ),
             const SizedBox(height: 16),
-            TextField(
+            SpeechTextField(
               controller: _controller,
               maxLines: 5,
               decoration: InputDecoration(

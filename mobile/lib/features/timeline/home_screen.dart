@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
+import 'package:mimio/core/l10n/app_strings.dart';
 import 'package:mimio/core/models/models.dart';
 import 'package:mimio/core/theme/mimio_theme.dart';
 import 'package:mimio/features/focus/focus_tab_view.dart';
@@ -11,6 +12,7 @@ import 'package:mimio/features/providers.dart';
 import 'package:mimio/features/timeline/home_tab.dart';
 import 'package:mimio/features/timeline/widgets/add_task_sheet.dart';
 import 'package:mimio/features/timeline/widgets/day_progress_card.dart';
+import 'package:mimio/features/timeline/widgets/task_action_sheet.dart';
 import 'package:mimio/features/timeline/widgets/task_card.dart';
 import 'package:mimio/features/timeline/widgets/timeline_hour_grid.dart';
 import 'package:mimio/features/timeline/widgets/week_strip.dart';
@@ -36,7 +38,7 @@ class HomeScreen extends ConsumerWidget {
             children: [
               Text('Merhaba, ${auth?.displayName ?? ''} 👋'),
               Text(
-                _tabSubtitle(tab, selectedDate),
+                _tabSubtitle(tab, selectedDate, ref),
                 style: const TextStyle(
                   fontSize: 13,
                   color: MimioColors.textSecondary,
@@ -67,16 +69,21 @@ class HomeScreen extends ConsumerWidget {
                   );
                 },
               ),
-            PopupMenuButton(
-              icon: const Icon(Icons.more_vert_rounded),
-              itemBuilder: (_) => [
-                const PopupMenuItem(value: 'logout', child: Text('Çıkış Yap')),
-              ],
-              onSelected: (value) async {
-                if (value == 'logout') {
-                  await ref.read(authStateProvider.notifier).logout();
-                }
-              },
+            Padding(
+              padding: const EdgeInsets.only(right: 8),
+              child: GestureDetector(
+                onTap: () => context.push('/profile'),
+                child: CircleAvatar(
+                  radius: 18,
+                  backgroundColor: auth != null
+                      ? MimioColors.fromHex(auth.avatarColor)
+                      : MimioColors.primary,
+                  child: Text(
+                    (auth?.displayName.isNotEmpty ?? false) ? auth!.displayName[0].toUpperCase() : '?',
+                    style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w800, color: Colors.white),
+                  ),
+                ),
+              ),
             ),
           ],
         ),
@@ -123,11 +130,15 @@ class HomeScreen extends ConsumerWidget {
     );
   }
 
-  String _tabSubtitle(HomeTab tab, DateTime selectedDate) => switch (tab) {
-        HomeTab.today => DateFormat('d MMMM yyyy, EEEE', 'tr_TR').format(selectedDate),
-        HomeTab.week => 'Haftalık plan özeti',
-        HomeTab.focus => 'Odak zamanlayıcı',
-      };
+  String _tabSubtitle(HomeTab tab, DateTime selectedDate, WidgetRef ref) {
+    final lang = ref.watch(appLanguageProvider).valueOrNull ?? 'tr';
+    final locale = lang == 'en' ? 'en_US' : 'tr_TR';
+    return switch (tab) {
+      HomeTab.today => DateFormat('d MMMM yyyy, EEEE', locale).format(selectedDate),
+      HomeTab.week => lang == 'en' ? 'Weekly plan summary' : 'Haftalık plan özeti',
+      HomeTab.focus => lang == 'en' ? 'Focus timer' : 'Odak zamanlayıcı',
+    };
+  }
 
   void _showAddTask(BuildContext context, WidgetRef ref, DateTime date) {
     showModalBottomSheet(
@@ -204,12 +215,8 @@ class _TodayTab extends ConsumerWidget {
                             final task = timeline.tasks[index];
                             return TaskCard(
                               task: task,
-                              onStart: () => _startTask(context, ref, task.id),
-                              onPause: () => ref.read(timelineProvider.notifier).pauseTask(task.id),
-                              onComplete: () => _completeTask(ref, task.id),
-                              onSubtaskStart: (sub) => _startTask(context, ref, sub.id),
-                              onSubtaskPause: (sub) => ref.read(timelineProvider.notifier).pauseTask(sub.id),
-                              onSubtaskComplete: (sub) => _completeTask(ref, sub.id),
+                              onTap: () => _showTaskActions(context, ref, task, selectedDate),
+                              onSubtaskTap: (sub) => _showTaskActions(context, ref, sub, selectedDate),
                             );
                           },
                           childCount: timeline.tasks.length,
@@ -238,10 +245,24 @@ class _TodayTab extends ConsumerWidget {
   }
 
   void _handleTaskTap(BuildContext context, WidgetRef ref, TaskModel task) {
-    if (task.isCompleted) return;
-    if (task.isActive || task.status == TaskStatus.paused) {
-      context.push('/focus');
-    }
+    final date = ref.read(selectedDateProvider);
+    _showTaskActions(context, ref, task, date);
+  }
+
+  void _showTaskActions(BuildContext context, WidgetRef ref, TaskModel task, DateTime date) {
+    showTaskActionSheet(
+      context: context,
+      ref: ref,
+      task: task,
+      selectedDate: date,
+      onStart: () => _startTask(context, ref, task.id),
+      onPause: () => ref.read(timelineProvider.notifier).pauseTask(task.id),
+      onComplete: () => _completeTask(ref, task.id),
+      onDelete: () => ref.read(timelineProvider.notifier).deleteTask(task.id),
+      onFocus: (task.isActive || task.status == TaskStatus.paused)
+          ? () => context.push('/focus')
+          : null,
+    );
   }
 
   void _showAddTask(BuildContext context, WidgetRef ref, DateTime date) {

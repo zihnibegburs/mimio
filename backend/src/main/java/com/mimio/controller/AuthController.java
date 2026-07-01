@@ -3,6 +3,7 @@ package com.mimio.controller;
 import com.mimio.dto.auth.AuthResponse;
 import com.mimio.dto.auth.LoginRequest;
 import com.mimio.dto.auth.RegisterRequest;
+import com.mimio.dto.auth.UpdateProfileRequest;
 import com.mimio.security.CurrentUserService;
 import com.mimio.service.AuthService;
 import jakarta.validation.Valid;
@@ -32,5 +33,10 @@ public class AuthController {
     @GetMapping("/me")
     public AuthResponse me() {
         return authService.getMe(currentUserService.getCurrentUser());
+    }
+
+    @PatchMapping("/me")
+    public AuthResponse updateProfile(@Valid @RequestBody UpdateProfileRequest request) {
+        return authService.updateProfile(currentUserService.getCurrentUser(), request);
     }
 }

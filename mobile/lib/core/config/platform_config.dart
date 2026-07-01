@@ -6,6 +6,8 @@ class PlatformConfig {
   static const appGroupId = 'group.com.mimio.mimio';
   static const iosWidgetName = 'MimioWidget';
   static const androidWidgetClass = 'com.mimio.mimio.MimioWidgetProvider';
+  static const productionApiBaseUrl =
+      'https://mimio-api.onrender.com/api/v1';
 
   static String get apiBaseUrl {
     const envBase = String.fromEnvironment('API_BASE_URL');
@@ -15,6 +17,7 @@ class PlatformConfig {
         devApiBaseUrl!.isNotEmpty) {
       return devApiBaseUrl!;
     }
+    if (kReleaseMode) return productionApiBaseUrl;
 
     const envHost = String.fromEnvironment('API_HOST');
     final lanHost = envHost.isNotEmpty ? envHost : devLanHost;

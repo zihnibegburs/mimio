@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/date_symbol_data_local.dart';
+import 'package:mimio/core/l10n/app_strings.dart';
 import 'package:mimio/core/platform/live_activity_service.dart';
 import 'package:mimio/core/platform/widget_sync_service.dart';
 import 'package:mimio/core/theme/mimio_theme.dart';
@@ -10,12 +11,14 @@ import 'package:mimio/features/auth/register_screen.dart';
 import 'package:mimio/features/providers.dart';
 import 'package:mimio/features/ai/ai_plan_screen.dart';
 import 'package:mimio/features/focus/focus_screen.dart';
+import 'package:mimio/features/profile/profile_screen.dart';
 import 'package:mimio/features/timeline/home_screen.dart';
 import 'package:mimio/features/web/web_shell.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await initializeDateFormatting('tr_TR');
+  await initializeDateFormatting('en_US');
   await WidgetSyncService.initialize();
   await LiveActivityService.instance.initialize();
   runApp(const ProviderScope(child: MimioApp()));
@@ -27,10 +30,12 @@ class MimioApp extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final router = ref.watch(routerProvider);
+    final lang = ref.watch(appLanguageProvider).valueOrNull ?? 'tr';
 
     return MaterialApp.router(
       title: 'Mimio',
       theme: MimioTheme.light,
+      locale: Locale(lang),
       routerConfig: router,
       debugShowCheckedModeBanner: false,
     );
@@ -59,6 +64,7 @@ final routerProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(path: '/focus', builder: (_, __) => const FocusScreen()),
       GoRoute(path: '/ai', builder: (_, __) => const AiPlanScreen()),
+      GoRoute(path: '/profile', builder: (_, __) => const ProfileScreen()),
     ],
   );
 });

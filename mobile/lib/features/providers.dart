@@ -43,6 +43,20 @@ class AuthNotifier extends AsyncNotifier<AuthResponse?> {
     await ref.read(authRepositoryProvider).logout();
     state = const AsyncData(null);
   }
+
+  Future<void> updateProfile({
+    String? displayName,
+    String? avatarColor,
+  }) async {
+    final current = state.valueOrNull;
+    if (current == null) return;
+
+    final updated = await ref.read(authRepositoryProvider).updateProfile(
+          displayName: displayName,
+          avatarColor: avatarColor,
+        );
+    state = AsyncData(updated);
+  }
 }
 
 final selectedDateProvider = StateProvider<DateTime>((ref) {
@@ -152,6 +166,36 @@ class TimelineNotifier extends AsyncNotifier<TimelineModel> {
           title: title,
           scheduledAt: scheduledAt,
           color: color,
+          subtasks: subtasks,
+        );
+    await refresh();
+  }
+
+  Future<void> updateTask({
+    required String id,
+    String? title,
+    String? description,
+    String? color,
+    int? durationMinutes,
+    DateTime? scheduledAt,
+  }) async {
+    await ref.read(taskRepositoryProvider).updateTask(
+          id: id,
+          title: title,
+          description: description,
+          color: color,
+          durationMinutes: durationMinutes,
+          scheduledAt: scheduledAt,
+        );
+    await refresh();
+  }
+
+  Future<void> addSubtasksToTask({
+    required String parentId,
+    required List<({String title, int durationMinutes, String color})> subtasks,
+  }) async {
+    await ref.read(taskRepositoryProvider).addSubtasksToTask(
+          parentId: parentId,
           subtasks: subtasks,
         );
     await refresh();

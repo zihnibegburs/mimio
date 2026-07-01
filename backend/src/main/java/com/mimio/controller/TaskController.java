@@ -54,6 +54,15 @@ public class TaskController {
         return taskService.updateTask(currentUserService.getCurrentUser(), id, request);
     }
 
+    @PostMapping("/tasks/{id}/subtasks")
+    @ResponseStatus(HttpStatus.CREATED)
+    public TaskResponse addSubtasks(
+            @PathVariable UUID id,
+            @Valid @RequestBody AddSubtasksRequest request
+    ) {
+        return taskService.addSubtasksToTask(currentUserService.getCurrentUser(), id, request);
+    }
+
     @DeleteMapping("/tasks/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void deleteTask(@PathVariable UUID id) {

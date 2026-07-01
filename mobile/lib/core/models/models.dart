@@ -22,6 +22,21 @@ class AuthResponse {
         displayName: json['displayName'] as String,
         avatarColor: json['avatarColor'] as String,
       );
+
+  AuthResponse copyWith({
+    String? token,
+    String? userId,
+    String? email,
+    String? displayName,
+    String? avatarColor,
+  }) =>
+      AuthResponse(
+        token: token ?? this.token,
+        userId: userId ?? this.userId,
+        email: email ?? this.email,
+        displayName: displayName ?? this.displayName,
+        avatarColor: avatarColor ?? this.avatarColor,
+      );
 }
 
 class TaskModel {

@@ -141,6 +141,49 @@ public class TaskService {
     }
 
     @Transactional
+    public TaskResponse addSubtasksToTask(User user, UUID taskId, AddSubtasksRequest request) {
+        Task parent = findTaskOrThrow(user, taskId);
+        if (parent.getParentTask() != null) {
+            throw new BadRequestException("Cannot add subtasks to a subtask");
+        }
+
+        List<Task> existing = taskRepository.findByUserAndParentTaskIdOrderBySortOrderAsc(user, taskId);
+        if (!existing.isEmpty()) {
+            throw new BadRequestException("Task already has subtasks");
+        }
+
+        int totalDuration = request.subtasks().stream()
+                .mapToInt(SubtaskRequest::durationMinutes)
+                .sum();
+        parent.setDurationMinutes(totalDuration);
+        parent = taskRepository.save(parent);
+
+        Instant current = parent.getScheduledAt();
+        List<Task> subtasks = new ArrayList<>();
+        int order = 0;
+        String color = parent.getColor();
+        String icon = parent.getIcon();
+        for (SubtaskRequest sub : request.subtasks()) {
+            Task child = Task.builder()
+                    .user(user)
+                    .title(sub.title().trim())
+                    .color(sub.color() != null ? sub.color() : color)
+                    .icon(icon)
+                    .durationMinutes(sub.durationMinutes())
+                    .scheduledAt(current)
+                    .parentTask(parent)
+                    .sortOrder(order++)
+                    .build();
+            subtasks.add(taskRepository.save(child));
+            if (current != null) {
+                current = current.plus(sub.durationMinutes(), ChronoUnit.MINUTES);
+            }
+        }
+
+        return TaskResponse.from(parent, subtasks);
+    }
+
+    @Transactional
     public void deleteTask(User user, UUID taskId) {
         Task task = findTaskOrThrow(user, taskId);
         if (task.getStatus() == TaskStatus.IN_PROGRESS || task.getStatus() == TaskStatus.PAUSED) {

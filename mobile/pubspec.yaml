@@ -19,6 +19,7 @@ dependencies:
   confetti: ^0.8.0
   home_widget: ^0.7.0
   live_activities: ^2.3.0
+  speech_to_text: ^7.4.0
 
 dev_dependencies:
   flutter_test:
