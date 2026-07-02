@@ -114,6 +114,7 @@ class _AiPlanScreenState extends ConsumerState<AiPlanScreen> {
           subtasks: _breakdown!.steps
               .map((s) => (title: s.title, durationMinutes: s.durationMinutes, color: s.color))
               .toList(),
+          autoStart: false,
         );
 
     if (mounted) {

@@ -183,6 +183,11 @@ class TaskRepository {
     return TaskModel.fromJson(response.data as Map<String, dynamic>);
   }
 
+  Future<TaskModel> uncompleteTask(String id) async {
+    final response = await _dio.post('/tasks/$id/uncomplete');
+    return TaskModel.fromJson(response.data as Map<String, dynamic>);
+  }
+
   Future<void> deleteTask(String id) async {
     await _dio.delete('/tasks/$id');
   }

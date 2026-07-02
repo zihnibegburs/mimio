@@ -84,6 +84,11 @@ public class TaskController {
         return taskService.completeTask(currentUserService.getCurrentUser(), id);
     }
 
+    @PostMapping("/tasks/{id}/uncomplete")
+    public TaskResponse uncompleteTask(@PathVariable UUID id) {
+        return taskService.uncompleteTask(currentUserService.getCurrentUser(), id);
+    }
+
     @PostMapping("/inbox/{id}/schedule")
     public TaskResponse scheduleFromInbox(
             @PathVariable UUID id,

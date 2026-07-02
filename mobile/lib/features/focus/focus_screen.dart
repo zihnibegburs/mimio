@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:mimio/core/l10n/app_strings.dart';
 import 'package:mimio/core/theme/mimio_theme.dart';
 import 'package:mimio/features/focus/widgets/focus_timer_widget.dart';
+import 'package:mimio/features/focus/widgets/celebration_dialog.dart';
 import 'package:mimio/features/providers.dart';
 
 class FocusScreen extends ConsumerWidget {
@@ -105,9 +106,37 @@ class FocusScreen extends ConsumerWidget {
                       child: ElevatedButton.icon(
                         onPressed: () async {
                           final s = ref.read(stringsProvider);
+                          final taskId = session.taskId;
                           try {
-                            final completed = await ref.read(timelineProvider.notifier).completeTask(session.taskId);
-                            showTaskCelebration(ref, completed);
+                            final completed = await ref.read(timelineProvider.notifier).completeTask(taskId);
+                            if (!context.mounted) return;
+                            if (completed.hasReward) {
+                              await showTaskCelebration(ref, completed, context);
+                            }
+                            if (!context.mounted) return;
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text(s.taskCompletedUndo),
+                                duration: const Duration(seconds: 5),
+                                action: SnackBarAction(
+                                  label: s.undo,
+                                  onPressed: () async {
+                                    try {
+                                      await ref.read(timelineProvider.notifier).uncompleteTask(taskId);
+                                    } catch (e) {
+                                      if (context.mounted) {
+                                        ScaffoldMessenger.of(context).showSnackBar(
+                                          SnackBar(
+                                            content: Text(s.friendlyTaskActionError(e)),
+                                            backgroundColor: Colors.red.shade400,
+                                          ),
+                                        );
+                                      }
+                                    }
+                                  },
+                                ),
+                              ),
+                            );
                             if (context.mounted) context.pop();
                           } catch (e) {
                             if (context.mounted) {

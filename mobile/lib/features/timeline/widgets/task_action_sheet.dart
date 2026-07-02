@@ -16,6 +16,7 @@ void showTaskActionSheet({
   required Future<void> Function() onPause,
   required Future<void> Function() onComplete,
   required Future<void> Function() onDelete,
+  Future<void> Function()? onUncomplete,
   VoidCallback? onFocus,
 }) {
   final s = ref.read(stringsProvider);
@@ -136,6 +137,16 @@ void showTaskActionSheet({
                 onTap: () async {
                   Navigator.pop(ctx);
                   await onComplete();
+                },
+              ),
+            if (task.isCompleted && onUncomplete != null)
+              _ActionTile(
+                icon: Icons.undo_rounded,
+                label: s.undoComplete,
+                color: MimioColors.warning,
+                onTap: () async {
+                  Navigator.pop(ctx);
+                  await onUncomplete();
                 },
               ),
             _ActionTile(

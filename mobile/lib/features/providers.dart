@@ -74,8 +74,6 @@ enum TimelineViewMode { list, grid }
 
 final timelineViewModeProvider = StateProvider<TimelineViewMode>((ref) => TimelineViewMode.list);
 
-final celebrationEventProvider = StateProvider<CelebrationEvent?>((ref) => null);
-
 class CelebrationEvent {
   const CelebrationEvent({required this.taskTitle, this.reward});
 
@@ -83,13 +81,6 @@ class CelebrationEvent {
   final String? reward;
 
   bool get hasReward => reward != null && reward!.isNotEmpty;
-}
-
-void showTaskCelebration(WidgetRef ref, TaskModel task) {
-  ref.read(celebrationEventProvider.notifier).state = CelebrationEvent(
-    taskTitle: task.title,
-    reward: task.reward,
-  );
 }
 
 TaskModel? findTaskInTimeline(TimelineModel timeline, String id) {
@@ -235,7 +226,7 @@ class TimelineNotifier extends AsyncNotifier<TimelineModel> {
     DateTime? scheduledAt,
     RecurrenceSelection recurrence = const RecurrenceSelection(),
     String? reward,
-    bool autoStart = true,
+    bool autoStart = false,
   }) async {
     final task = await ref.read(taskRepositoryProvider).createTask(
           title: title,
@@ -256,7 +247,7 @@ class TimelineNotifier extends AsyncNotifier<TimelineModel> {
     required DateTime scheduledAt,
     String color = '#6C63FF',
     required List<({String title, int durationMinutes, String color})> subtasks,
-    bool autoStart = true,
+    bool autoStart = false,
   }) async {
     final task = await ref.read(taskRepositoryProvider).createTaskWithSubtasks(
           title: title,
@@ -340,6 +331,12 @@ class TimelineNotifier extends AsyncNotifier<TimelineModel> {
     final completed = await ref.read(taskRepositoryProvider).completeTask(id);
     await _refreshAfterAction();
     return completed;
+  }
+
+  Future<TaskModel> uncompleteTask(String id) async {
+    final task = await ref.read(taskRepositoryProvider).uncompleteTask(id);
+    await refresh(showLoading: false);
+    return task;
   }
 
   Future<void> deleteTask(String id) async {

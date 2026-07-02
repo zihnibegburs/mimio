@@ -219,7 +219,8 @@ private struct MimioLockScreenLiveActivityView: View {
                 Text(data.taskTitle)
                     .font(.headline)
                     .lineLimit(2)
-                MimioTimerLabel(data: data, font: .title3.bold().foregroundStyle(data.accentColor))
+                MimioTimerLabel(data: data, font: .title3.bold())
+                    .foregroundStyle(data.accentColor)
             }
 
             Spacer(minLength: 0)

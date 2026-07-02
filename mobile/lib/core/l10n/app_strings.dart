@@ -77,6 +77,12 @@ class S {
   String get pause => l10n(lang, _m(en: 'Pause', tr: 'Duraklat', es: 'Pausar', fr: 'Pause', de: 'Pause'));
   String get resume => l10n(lang, _m(en: 'Resume', tr: 'Devam et', es: 'Reanudar', fr: 'Reprendre', de: 'Fortsetzen'));
   String get complete => l10n(lang, _m(en: 'Complete', tr: 'Tamamla', es: 'Completar', fr: 'Terminer', de: 'Abschließen'));
+  String get undoComplete =>
+      l10n(lang, _m(en: 'Undo complete', tr: 'Tamamlamayı geri al', es: 'Deshacer completado', fr: 'Annuler la complétion', de: 'Abschluss rückgängig'));
+  String get taskCompletedUndo =>
+      l10n(lang, _m(en: 'Task completed', tr: 'Görev tamamlandı', es: 'Tarea completada', fr: 'Tâche terminée', de: 'Aufgabe abgeschlossen'));
+  String get undo =>
+      l10n(lang, _m(en: 'Undo', tr: 'Geri al', es: 'Deshacer', fr: 'Annuler', de: 'Rückgängig'));
   String get deleteTask =>
       l10n(lang, _m(en: 'Delete task', tr: 'Görevi sil', es: 'Eliminar tarea', fr: 'Supprimer la tâche', de: 'Aufgabe löschen'));
   String get deleteConfirm =>

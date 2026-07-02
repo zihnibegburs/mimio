@@ -6,6 +6,7 @@ import 'package:mimio/core/l10n/app_strings.dart';
 import 'package:mimio/core/models/models.dart';
 import 'package:mimio/core/theme/mimio_theme.dart';
 import 'package:mimio/features/focus/focus_tab_view.dart';
+import 'package:mimio/features/focus/widgets/celebration_dialog.dart';
 import 'package:mimio/features/focus/widgets/active_task_banner.dart';
 import 'package:mimio/features/providers.dart';
 import 'package:mimio/features/timeline/home_tab.dart';
@@ -217,6 +218,7 @@ class _TodayTab extends ConsumerWidget {
                               onStart: () => _startTask(context, ref, task.id),
                               onPause: () => _togglePause(ref, task.id),
                               onComplete: () => _completeTask(context, ref, task),
+                              onDelete: () => _deleteTask(context, ref, task),
                               onSubtaskTap: (sub) => _showTaskActions(context, ref, sub, selectedDate),
                               onSubtaskStart: (sub) => _startTask(context, ref, sub.id),
                               onSubtaskPause: (sub) => _togglePause(ref, sub.id),
@@ -268,7 +270,86 @@ class _TodayTab extends ConsumerWidget {
     final s = ref.read(stringsProvider);
     try {
       final completed = await ref.read(timelineProvider.notifier).completeTask(task.id);
-      showTaskCelebration(ref, completed);
+      if (!context.mounted) return;
+      if (completed.hasReward) {
+        await showTaskCelebration(ref, completed, context);
+      }
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(s.taskCompletedUndo),
+          duration: const Duration(seconds: 5),
+          action: SnackBarAction(
+            label: s.undo,
+            onPressed: () async {
+              try {
+                await ref.read(timelineProvider.notifier).uncompleteTask(task.id);
+              } catch (e) {
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(s.friendlyTaskActionError(e)),
+                      backgroundColor: Colors.red.shade400,
+                    ),
+                  );
+                }
+              }
+            },
+          ),
+        ),
+      );
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(s.friendlyTaskActionError(e)),
+            backgroundColor: Colors.red.shade400,
+          ),
+        );
+      }
+    }
+  }
+
+  Future<void> _uncompleteTask(BuildContext context, WidgetRef ref, TaskModel task) async {
+    final s = ref.read(stringsProvider);
+    try {
+      await ref.read(timelineProvider.notifier).uncompleteTask(task.id);
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(s.friendlyTaskActionError(e)),
+            backgroundColor: Colors.red.shade400,
+          ),
+        );
+      }
+    }
+  }
+
+  Future<void> _deleteTask(BuildContext context, WidgetRef ref, TaskModel task) async {
+    final s = ref.read(stringsProvider);
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogCtx) => AlertDialog(
+        title: Text(s.deleteTask),
+        content: Text('“${task.title}” — ${s.deleteConfirm}'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogCtx, false),
+            child: Text(s.cancel),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(dialogCtx, true),
+            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            child: Text(s.delete),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true) return;
+
+    try {
+      await ref.read(timelineProvider.notifier).deleteTask(task.id);
     } catch (e) {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -296,6 +377,7 @@ class _TodayTab extends ConsumerWidget {
       onStart: () => _startTask(context, ref, task.id),
       onPause: () => _togglePause(ref, task.id),
       onComplete: () => _completeTask(context, ref, task),
+      onUncomplete: () => _uncompleteTask(context, ref, task),
       onDelete: () => ref.read(timelineProvider.notifier).deleteTask(task.id),
       onFocus: session?.taskId == task.id ? () => context.push('/focus') : null,
     );

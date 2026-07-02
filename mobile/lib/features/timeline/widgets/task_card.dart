@@ -16,6 +16,7 @@ class TaskCard extends ConsumerWidget {
     this.onStart,
     this.onPause,
     this.onComplete,
+    this.onDelete,
     this.onSubtaskTap,
     this.onSubtaskStart,
     this.onSubtaskPause,
@@ -27,6 +28,7 @@ class TaskCard extends ConsumerWidget {
   final VoidCallback? onStart;
   final VoidCallback? onPause;
   final VoidCallback? onComplete;
+  final Future<void> Function()? onDelete;
   final SubtaskAction? onSubtaskTap;
   final SubtaskAction? onSubtaskStart;
   final SubtaskAction? onSubtaskPause;
@@ -46,179 +48,185 @@ class TaskCard extends ConsumerWidget {
 
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        border: isActive || isPaused
-            ? Border.all(color: color, width: 2)
-            : Border.all(color: const Color(0xFFE8E8F0)),
-        boxShadow: [
-          if (isActive || isPaused)
-            BoxShadow(color: color.withValues(alpha: 0.2), blurRadius: 12, offset: const Offset(0, 4)),
-        ],
-      ),
-      child: IntrinsicHeight(
-        child: Row(
-          children: [
-            Container(
-              width: 6,
-              decoration: BoxDecoration(
-                color: color,
-                borderRadius: const BorderRadius.horizontal(left: Radius.circular(20)),
-              ),
-            ),
-            Expanded(
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Material(
-                      color: Colors.transparent,
-                      child: InkWell(
-                        onTap: onTap,
-                        borderRadius: BorderRadius.circular(12),
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(vertical: 2),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Row(
+      child: _SwipeToDelete(
+        onDelete: onDelete,
+        deleteLabel: s.delete,
+        child: Container(
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(20),
+            border: isActive || isPaused
+                ? Border.all(color: color, width: 2)
+                : Border.all(color: const Color(0xFFE8E8F0)),
+            boxShadow: [
+              if (isActive || isPaused)
+                BoxShadow(color: color.withValues(alpha: 0.2), blurRadius: 12, offset: const Offset(0, 4)),
+            ],
+          ),
+          child: IntrinsicHeight(
+            child: Row(
+              children: [
+                Container(
+                  width: 6,
+                  decoration: BoxDecoration(
+                    color: color,
+                    borderRadius: const BorderRadius.horizontal(left: Radius.circular(20)),
+                  ),
+                ),
+                Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Material(
+                          color: Colors.transparent,
+                          child: InkWell(
+                            onTap: onTap,
+                            borderRadius: BorderRadius.circular(12),
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(vertical: 2),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                                    decoration: BoxDecoration(
-                                      color: color.withValues(alpha: 0.15),
-                                      borderRadius: BorderRadius.circular(8),
-                                    ),
-                                    child: Text(
-                                      '$startTime – $endTime',
-                                      style: TextStyle(
-                                        fontSize: 12,
-                                        fontWeight: FontWeight.w600,
-                                        color: color,
-                                      ),
-                                    ),
-                                  ),
-                                  const SizedBox(width: 8),
-                                  Text(
-                                    s.minutesShort(task.durationMinutes),
-                                    style: const TextStyle(
-                                      fontSize: 12,
-                                      color: MimioColors.textSecondary,
-                                    ),
-                                  ),
-                                  if (task.hasSubtasks) ...[
-                                    const SizedBox(width: 8),
-                                    Container(
-                                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                                      decoration: BoxDecoration(
-                                        color: MimioColors.primary.withValues(alpha: 0.1),
-                                        borderRadius: BorderRadius.circular(6),
-                                      ),
-                                      child: Text(
-                                        s.stepsProgress(task.completedSubtaskCount, task.subtasks.length),
-                                        style: const TextStyle(
-                                          fontSize: 11,
-                                          fontWeight: FontWeight.w600,
-                                          color: MimioColors.primary,
+                                  Row(
+                                    children: [
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                        decoration: BoxDecoration(
+                                          color: color.withValues(alpha: 0.15),
+                                          borderRadius: BorderRadius.circular(8),
+                                        ),
+                                        child: Text(
+                                          '$startTime – $endTime',
+                                          style: TextStyle(
+                                            fontSize: 12,
+                                            fontWeight: FontWeight.w600,
+                                            color: color,
+                                          ),
                                         ),
                                       ),
-                                    ),
-                                  ],
-                                  const Spacer(),
-                                  if (task.isCompleted)
-                                    Icon(Icons.check_circle_rounded, color: MimioColors.success, size: 20),
-                                  if (onTap != null)
-                                    Icon(Icons.more_horiz_rounded, size: 18, color: MimioColors.textSecondary.withValues(alpha: 0.6)),
-                                ],
-                              ),
-                              const SizedBox(height: 8),
-                              Text(
-                                task.title,
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w700,
-                                  color: task.isCompleted ? MimioColors.textSecondary : MimioColors.textPrimary,
-                                  decoration: task.isCompleted ? TextDecoration.lineThrough : null,
-                                ),
-                              ),
-                              if (task.hasReward && !task.isCompleted) ...[
-                                const SizedBox(height: 6),
-                                Row(
-                                  children: [
-                                    Icon(
-                                      Icons.card_giftcard_rounded,
-                                      size: 14,
-                                      color: const Color(0xFFE6A800).withValues(alpha: 0.9),
-                                    ),
-                                    const SizedBox(width: 4),
-                                    Expanded(
-                                      child: Text(
-                                        task.reward!,
-                                        maxLines: 1,
-                                        overflow: TextOverflow.ellipsis,
+                                      const SizedBox(width: 8),
+                                      Text(
+                                        s.minutesShort(task.durationMinutes),
                                         style: const TextStyle(
                                           fontSize: 12,
-                                          fontWeight: FontWeight.w600,
-                                          color: Color(0xFFB8860B),
+                                          color: MimioColors.textSecondary,
                                         ),
                                       ),
+                                      if (task.hasSubtasks) ...[
+                                        const SizedBox(width: 8),
+                                        Container(
+                                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                          decoration: BoxDecoration(
+                                            color: MimioColors.primary.withValues(alpha: 0.1),
+                                            borderRadius: BorderRadius.circular(6),
+                                          ),
+                                          child: Text(
+                                            s.stepsProgress(task.completedSubtaskCount, task.subtasks.length),
+                                            style: const TextStyle(
+                                              fontSize: 11,
+                                              fontWeight: FontWeight.w600,
+                                              color: MimioColors.primary,
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                      const Spacer(),
+                                      if (task.isCompleted)
+                                        Icon(Icons.check_circle_rounded, color: MimioColors.success, size: 20),
+                                      if (onTap != null)
+                                        Icon(Icons.more_horiz_rounded, size: 18, color: MimioColors.textSecondary.withValues(alpha: 0.6)),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 8),
+                                  Text(
+                                    task.title,
+                                    style: TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.w700,
+                                      color: task.isCompleted ? MimioColors.textSecondary : MimioColors.textPrimary,
+                                      decoration: task.isCompleted ? TextDecoration.lineThrough : null,
+                                    ),
+                                  ),
+                                  if (task.hasReward && !task.isCompleted) ...[
+                                    const SizedBox(height: 6),
+                                    Row(
+                                      children: [
+                                        Icon(
+                                          Icons.card_giftcard_rounded,
+                                          size: 14,
+                                          color: const Color(0xFFE6A800).withValues(alpha: 0.9),
+                                        ),
+                                        const SizedBox(width: 4),
+                                        Expanded(
+                                          child: Text(
+                                            task.reward!,
+                                            maxLines: 1,
+                                            overflow: TextOverflow.ellipsis,
+                                            style: const TextStyle(
+                                              fontSize: 12,
+                                              fontWeight: FontWeight.w600,
+                                              color: Color(0xFFB8860B),
+                                            ),
+                                          ),
+                                        ),
+                                      ],
                                     ),
                                   ],
-                                ),
-                              ],
-                            ],
+                                ],
+                              ),
+                            ),
                           ),
                         ),
-                      ),
-                    ),
-                    if (task.hasSubtasks) ...[
-                      const SizedBox(height: 12),
-                      ...task.subtasks.map((sub) => _SubtaskRow(
-                            subtask: sub,
-                            parentColor: color,
-                            s: s,
-                            focusSession: session,
-                            onTap: onSubtaskTap != null ? () => onSubtaskTap!(sub) : null,
-                            onStart: onSubtaskStart != null ? () => onSubtaskStart!(sub) : null,
-                            onPause: onSubtaskPause != null ? () => onSubtaskPause!(sub) : null,
-                            onComplete: onSubtaskComplete != null ? () => onSubtaskComplete!(sub) : null,
-                          )),
-                    ],
-                    if ((isActive || isPaused) && !task.hasSubtasks) ...[
-                      const SizedBox(height: 12),
-                      _ActiveControls(
-                        pauseLabel: isPaused ? s.continueLabel : s.pause,
-                        finishLabel: s.finish,
-                        onPause: onPause,
-                        onComplete: onComplete,
-                      ),
-                    ] else if (!task.isCompleted && !task.hasSubtasks && !isFocused) ...[
-                      const SizedBox(height: 12),
-                      Row(
-                        children: [
-                          _ActionChip(
-                            label: s.start,
-                            icon: Icons.play_arrow_rounded,
-                            color: color,
-                            onTap: onStart,
+                        if (task.hasSubtasks) ...[
+                          const SizedBox(height: 12),
+                          ...task.subtasks.map((sub) => _SubtaskRow(
+                                subtask: sub,
+                                parentColor: color,
+                                s: s,
+                                focusSession: session,
+                                onTap: onSubtaskTap != null ? () => onSubtaskTap!(sub) : null,
+                                onStart: onSubtaskStart != null ? () => onSubtaskStart!(sub) : null,
+                                onPause: onSubtaskPause != null ? () => onSubtaskPause!(sub) : null,
+                                onComplete: onSubtaskComplete != null ? () => onSubtaskComplete!(sub) : null,
+                              )),
+                        ],
+                        if ((isActive || isPaused) && !task.hasSubtasks) ...[
+                          const SizedBox(height: 12),
+                          _ActiveControls(
+                            pauseLabel: isPaused ? s.continueLabel : s.pause,
+                            finishLabel: s.finish,
+                            onPause: onPause,
+                            onComplete: onComplete,
                           ),
-                          const SizedBox(width: 8),
-                          _ActionChip(
-                            label: s.complete,
-                            icon: Icons.check_rounded,
-                            color: MimioColors.success,
-                            onTap: onComplete,
+                        ] else if (!task.isCompleted && !task.hasSubtasks && !isFocused) ...[
+                          const SizedBox(height: 12),
+                          Row(
+                            children: [
+                              _ActionChip(
+                                label: s.start,
+                                icon: Icons.play_arrow_rounded,
+                                color: color,
+                                onTap: onStart,
+                              ),
+                              const SizedBox(width: 8),
+                              _ActionChip(
+                                label: s.complete,
+                                icon: Icons.check_rounded,
+                                color: MimioColors.success,
+                                onTap: onComplete,
+                              ),
+                            ],
                           ),
                         ],
-                      ),
-                    ],
-                  ],
+                      ],
+                    ),
+                  ),
                 ),
-              ),
+              ],
             ),
-          ],
+          ),
         ),
       ),
     );
@@ -438,6 +446,119 @@ class _ActionChip extends StatelessWidget {
             ],
           ),
         ),
+      ),
+    );
+  }
+}
+
+class _SwipeToDelete extends StatefulWidget {
+  const _SwipeToDelete({
+    required this.child,
+    required this.deleteLabel,
+    this.onDelete,
+  });
+
+  final Widget child;
+  final String deleteLabel;
+  final Future<void> Function()? onDelete;
+
+  @override
+  State<_SwipeToDelete> createState() => _SwipeToDeleteState();
+}
+
+class _SwipeToDeleteState extends State<_SwipeToDelete> with SingleTickerProviderStateMixin {
+  static const _actionWidth = 76.0;
+
+  late final AnimationController _controller;
+  late final Animation<double> _offset;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(vsync: this, duration: const Duration(milliseconds: 200));
+    _offset = Tween<double>(begin: 0, end: -_actionWidth).animate(
+      CurvedAnimation(parent: _controller, curve: Curves.easeOutCubic),
+    );
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  void _open() => _controller.forward();
+
+  void _close() => _controller.reverse();
+
+  Future<void> _handleDelete() async {
+    await widget.onDelete?.call();
+    if (mounted) _close();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (widget.onDelete == null) return widget.child;
+
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(20),
+      child: Stack(
+        children: [
+          Positioned.fill(
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                Material(
+                  color: Colors.red.shade400,
+                  child: InkWell(
+                    onTap: _handleDelete,
+                    child: SizedBox(
+                      width: _actionWidth,
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const Icon(Icons.delete_outline_rounded, color: Colors.white, size: 22),
+                          const SizedBox(height: 4),
+                          Text(
+                            widget.deleteLabel,
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          GestureDetector(
+            onHorizontalDragUpdate: (details) {
+              _controller.value = (_controller.value - details.delta.dx / _actionWidth).clamp(0.0, 1.0);
+            },
+            onHorizontalDragEnd: (details) {
+              final velocity = details.primaryVelocity ?? 0;
+              if (velocity > 400) {
+                _close();
+              } else if (_controller.value > 0.35 || velocity < -400) {
+                _open();
+              } else {
+                _close();
+              }
+            },
+            child: AnimatedBuilder(
+              animation: _offset,
+              builder: (context, child) => Transform.translate(
+                offset: Offset(_offset.value, 0),
+                child: child,
+              ),
+              child: widget.child,
+            ),
+          ),
+        ],
       ),
     );
   }

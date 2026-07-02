@@ -17,7 +17,6 @@ import 'package:mimio/features/auth/register_screen.dart';
 import 'package:mimio/features/providers.dart';
 import 'package:mimio/features/ai/ai_plan_screen.dart';
 import 'package:mimio/features/focus/focus_screen.dart';
-import 'package:mimio/features/focus/widgets/celebration_overlay.dart';
 import 'package:mimio/features/profile/profile_screen.dart';
 import 'package:mimio/features/timeline/home_screen.dart';
 import 'package:mimio/features/timeline/home_tab.dart';
@@ -43,15 +42,13 @@ class MimioApp extends ConsumerWidget {
     final router = ref.watch(routerProvider);
     final lang = ref.watch(appLanguageProvider).valueOrNull ?? 'tr';
 
-    return CelebrationOverlay(
-      child: LiveActivityDeepLinkListener(
-        child: MaterialApp.router(
-          title: 'Mimio',
-          theme: MimioTheme.light,
-          locale: Locale(lang),
-          routerConfig: router,
-          debugShowCheckedModeBanner: false,
-        ),
+    return LiveActivityDeepLinkListener(
+      child: MaterialApp.router(
+        title: 'Mimio',
+        theme: MimioTheme.light,
+        locale: Locale(lang),
+        routerConfig: router,
+        debugShowCheckedModeBanner: false,
       ),
     );
   }

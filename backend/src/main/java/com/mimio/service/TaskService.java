@@ -309,6 +309,30 @@ public class TaskService {
     }
 
     @Transactional
+    public TaskResponse uncompleteTask(User user, UUID taskId) {
+        Task task = findTaskOrThrow(user, taskId);
+        if (task.getStatus() != TaskStatus.COMPLETED) {
+            throw new BadRequestException("Task is not completed");
+        }
+
+        task.setStatus(TaskStatus.PENDING);
+        task.setCompletedAt(null);
+        task.setStartedAt(null);
+        taskRepository.save(task);
+
+        if (task.getParentTask() != null) {
+            Task parent = task.getParentTask();
+            if (parent.getStatus() == TaskStatus.COMPLETED) {
+                parent.setStatus(TaskStatus.PENDING);
+                parent.setCompletedAt(null);
+                taskRepository.save(parent);
+            }
+        }
+
+        return TaskResponse.from(task);
+    }
+
+    @Transactional
     public TaskResponse scheduleFromInbox(User user, UUID taskId, Instant scheduledAt) {
         Task task = findTaskOrThrow(user, taskId);
         if (!task.getIsInbox()) {

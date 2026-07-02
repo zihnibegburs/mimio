@@ -1,104 +1,127 @@
+import 'dart:async';
 import 'dart:math';
 
 import 'package:confetti/confetti.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mimio/core/l10n/app_strings.dart';
+import 'package:mimio/core/models/models.dart';
 import 'package:mimio/core/theme/mimio_theme.dart';
 import 'package:mimio/features/providers.dart';
 
-class CelebrationOverlay extends ConsumerStatefulWidget {
-  const CelebrationOverlay({
-    super.key,
-    required this.child,
-  });
+Future<void> showTaskCelebration(
+  WidgetRef ref,
+  TaskModel task,
+  BuildContext context,
+) {
+  final s = ref.read(stringsProvider);
+  final navigator = Navigator.of(context, rootNavigator: true);
 
-  final Widget child;
-
-  @override
-  ConsumerState<CelebrationOverlay> createState() => _CelebrationOverlayState();
+  return showGeneralDialog<void>(
+    context: navigator.context,
+    barrierDismissible: true,
+    barrierLabel: MaterialLocalizations.of(context).modalBarrierDismissLabel,
+    barrierColor: Colors.black.withValues(alpha: 0.45),
+    transitionDuration: const Duration(milliseconds: 220),
+    pageBuilder: (_, __, ___) {
+      return _CelebrationDialog(
+        event: CelebrationEvent(taskTitle: task.title, reward: task.reward),
+        strings: s,
+      );
+    },
+    transitionBuilder: (context, animation, _, child) {
+      final curved = CurvedAnimation(parent: animation, curve: Curves.easeOutCubic);
+      return FadeTransition(
+        opacity: curved,
+        child: ScaleTransition(
+          scale: Tween<double>(begin: 0.92, end: 1).animate(curved),
+          child: child,
+        ),
+      );
+    },
+  );
 }
 
-class _CelebrationOverlayState extends ConsumerState<CelebrationOverlay> {
+class _CelebrationDialog extends StatefulWidget {
+  const _CelebrationDialog({
+    required this.event,
+    required this.strings,
+  });
+
+  final CelebrationEvent event;
+  final S strings;
+
+  @override
+  State<_CelebrationDialog> createState() => _CelebrationDialogState();
+}
+
+class _CelebrationDialogState extends State<_CelebrationDialog> {
   late ConfettiController _controller;
-  CelebrationEvent? _activeEvent;
+  Timer? _autoDismissTimer;
 
   @override
   void initState() {
     super.initState();
     _controller = ConfettiController(duration: const Duration(seconds: 3));
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      _controller.play();
+    });
+    _autoDismissTimer = Timer(const Duration(seconds: 8), _close);
   }
 
   @override
   void dispose() {
+    _autoDismissTimer?.cancel();
     _controller.dispose();
     super.dispose();
   }
 
-  void _dismiss() {
-    _controller.stop();
-    setState(() => _activeEvent = null);
-    ref.read(celebrationEventProvider.notifier).state = null;
-  }
-
-  void _showCelebration(CelebrationEvent event) {
-    setState(() => _activeEvent = event);
-    _controller.play();
+  void _close() {
+    if (!mounted) return;
+    Navigator.of(context, rootNavigator: true).pop();
   }
 
   @override
   Widget build(BuildContext context) {
-    ref.listen<CelebrationEvent?>(celebrationEventProvider, (previous, next) {
-      if (next != null && next != _activeEvent) {
-        _showCelebration(next);
-      }
-    });
-
-    final event = _activeEvent;
-    final s = ref.watch(stringsProvider);
-
-    return Stack(
-      children: [
-        widget.child,
-        if (event != null)
-          Positioned.fill(
-            child: GestureDetector(
-              onTap: _dismiss,
-              child: ColoredBox(
-                color: Colors.black.withValues(alpha: 0.45),
-                child: Center(
-                  child: GestureDetector(
-                    onTap: () {},
-                    child: _CelebrationCard(
-                      event: event,
-                      strings: s,
-                      onDismiss: _dismiss,
-                    ),
-                  ),
-                ),
+    return Material(
+      type: MaterialType.transparency,
+      child: Stack(
+        alignment: Alignment.center,
+        children: [
+          IgnorePointer(
+            child: Align(
+              alignment: Alignment.topCenter,
+              child: ConfettiWidget(
+                confettiController: _controller,
+                blastDirection: pi / 2,
+                maxBlastForce: 20,
+                minBlastForce: 8,
+                emissionFrequency: 0.05,
+                numberOfParticles: 20,
+                gravity: 0.12,
+                colors: const [
+                  Color(0xFF6C63FF),
+                  Color(0xFFFF6B9D),
+                  Color(0xFF4ECDC4),
+                  Color(0xFFFFE66D),
+                  Color(0xFF2ECC71),
+                ],
               ),
             ),
           ),
-        Align(
-          alignment: Alignment.topCenter,
-          child: ConfettiWidget(
-            confettiController: _controller,
-            blastDirection: pi / 2,
-            maxBlastForce: 24,
-            minBlastForce: 10,
-            emissionFrequency: 0.04,
-            numberOfParticles: 36,
-            gravity: 0.12,
-            colors: const [
-              Color(0xFF6C63FF),
-              Color(0xFFFF6B9D),
-              Color(0xFF4ECDC4),
-              Color(0xFFFFE66D),
-              Color(0xFF2ECC71),
-            ],
+          SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24),
+              child: _CelebrationCard(
+                event: widget.event,
+                strings: widget.strings,
+                onDismiss: _close,
+              ),
+            ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 }
@@ -118,7 +141,6 @@ class _CelebrationCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       width: min(MediaQuery.sizeOf(context).width - 48, 360),
-      margin: const EdgeInsets.symmetric(horizontal: 24),
       padding: const EdgeInsets.fromLTRB(28, 32, 28, 24),
       decoration: BoxDecoration(
         color: Colors.white,
