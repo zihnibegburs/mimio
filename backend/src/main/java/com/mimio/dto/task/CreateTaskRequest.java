@@ -1,6 +1,7 @@
 package com.mimio.dto.task;
 
-import com.mimio.domain.enums.TaskStatus;
+import com.mimio.domain.enums.RecurrenceType;
+import com.mimio.domain.enums.RecurrenceUnit;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
@@ -18,5 +19,8 @@ public record CreateTaskRequest(
         Instant scheduledAt,
         Boolean isInbox,
         Integer sortOrder,
-        UUID parentTaskId
+        UUID parentTaskId,
+        RecurrenceType recurrenceType,
+        Integer recurrenceInterval,
+        RecurrenceUnit recurrenceUnit
 ) {}

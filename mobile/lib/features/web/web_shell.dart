@@ -1,16 +1,20 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mimio/core/config/platform_config.dart';
+import 'package:mimio/core/l10n/app_strings.dart';
 import 'package:mimio/core/theme/mimio_theme.dart';
 import 'package:mimio/features/web/weekly_view.dart';
 
-class WebShell extends StatelessWidget {
+class WebShell extends ConsumerWidget {
   const WebShell({super.key, required this.child});
 
   final Widget child;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     if (!PlatformConfig.isWeb) return child;
+
+    final s = ref.watch(stringsProvider);
 
     return Scaffold(
       body: Row(
@@ -39,16 +43,16 @@ class WebShell extends StatelessWidget {
                 ],
               ),
             ),
-            destinations: const [
+            destinations: [
               NavigationRailDestination(
-                icon: Icon(Icons.calendar_view_week_outlined),
-                selectedIcon: Icon(Icons.calendar_view_week_rounded),
-                label: Text('Hafta'),
+                icon: const Icon(Icons.calendar_view_week_outlined),
+                selectedIcon: const Icon(Icons.calendar_view_week_rounded),
+                label: Text(s.week),
               ),
               NavigationRailDestination(
-                icon: Icon(Icons.view_day_outlined),
-                selectedIcon: Icon(Icons.view_day_rounded),
-                label: Text('Gün'),
+                icon: const Icon(Icons.view_day_outlined),
+                selectedIcon: const Icon(Icons.view_day_rounded),
+                label: Text(s.day),
               ),
             ],
           ),

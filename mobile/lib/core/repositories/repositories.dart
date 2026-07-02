@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mimio/core/models/models.dart';
+import 'package:mimio/core/models/recurrence.dart';
 import 'package:mimio/core/network/dio_provider.dart';
 import 'package:mimio/core/storage/token_storage.dart';
 
@@ -93,6 +94,7 @@ class TaskRepository {
     int durationMinutes = 30,
     DateTime? scheduledAt,
     bool isInbox = false,
+    RecurrenceSelection recurrence = const RecurrenceSelection(),
   }) async {
     final response = await _dio.post('/tasks', data: {
       'title': title,
@@ -102,6 +104,7 @@ class TaskRepository {
       'durationMinutes': durationMinutes,
       if (scheduledAt != null) 'scheduledAt': scheduledAt.toUtc().toIso8601String(),
       'isInbox': isInbox,
+      ...recurrence.toApiJson(),
     });
     return TaskModel.fromJson(response.data as Map<String, dynamic>);
   }

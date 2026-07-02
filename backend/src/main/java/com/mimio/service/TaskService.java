@@ -2,11 +2,14 @@ package com.mimio.service;
 
 import com.mimio.domain.entity.Task;
 import com.mimio.domain.entity.User;
+import com.mimio.domain.enums.RecurrenceType;
+import com.mimio.domain.enums.RecurrenceUnit;
 import com.mimio.domain.enums.TaskStatus;
 import com.mimio.domain.repository.TaskRepository;
 import com.mimio.dto.task.*;
 import com.mimio.exception.BadRequestException;
 import com.mimio.exception.ResourceNotFoundException;
+import com.mimio.util.RecurrenceGenerator;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -28,6 +31,7 @@ public class TaskService {
     private final TaskRepository taskRepository;
     private final FocusSessionService focusSessionService;
 
+    @Transactional(readOnly = true)
     public TimelineResponse getTimeline(User user, LocalDate date) {
         Instant dayStart = date.atStartOfDay().toInstant(ZoneOffset.UTC);
         Instant dayEnd = date.plusDays(1).atStartOfDay().toInstant(ZoneOffset.UTC);
@@ -68,6 +72,18 @@ public class TaskService {
 
     @Transactional
     public TaskResponse createTask(User user, CreateTaskRequest request) {
+        RecurrenceType recurrenceType = request.recurrenceType() != null
+                ? request.recurrenceType()
+                : RecurrenceType.NONE;
+        int recurrenceInterval = request.recurrenceInterval() != null && request.recurrenceInterval() > 0
+                ? request.recurrenceInterval()
+                : 1;
+        RecurrenceUnit recurrenceUnit = request.recurrenceUnit();
+
+        if (recurrenceType == RecurrenceType.CUSTOM && recurrenceUnit == null) {
+            throw new BadRequestException("Custom recurrence requires a unit");
+        }
+
         Task task = Task.builder()
                 .user(user)
                 .title(request.title().trim())
@@ -78,6 +94,9 @@ public class TaskService {
                 .scheduledAt(request.scheduledAt())
                 .isInbox(request.isInbox() != null ? request.isInbox() : false)
                 .sortOrder(request.sortOrder() != null ? request.sortOrder() : 0)
+                .recurrenceType(recurrenceType)
+                .recurrenceInterval(recurrenceInterval)
+                .recurrenceUnit(recurrenceUnit)
                 .build();
 
         if (request.parentTaskId() != null) {
@@ -85,7 +104,48 @@ public class TaskService {
             task.setParentTask(parent);
         }
 
-        return TaskResponse.from(taskRepository.save(task));
+        task = taskRepository.save(task);
+
+        if (recurrenceType != RecurrenceType.NONE && request.scheduledAt() != null && request.parentTaskId() == null) {
+            task.setRecurrenceSeriesId(task.getId());
+            task = taskRepository.save(task);
+            createRecurringInstances(user, task, recurrenceType, recurrenceInterval, recurrenceUnit);
+        }
+
+        return TaskResponse.from(task);
+    }
+
+    private void createRecurringInstances(
+            User user,
+            Task template,
+            RecurrenceType recurrenceType,
+            int recurrenceInterval,
+            RecurrenceUnit recurrenceUnit
+    ) {
+        List<Instant> occurrences = RecurrenceGenerator.generateOccurrences(
+                template.getScheduledAt(),
+                recurrenceType,
+                recurrenceInterval,
+                recurrenceUnit
+        );
+
+        for (Instant scheduledAt : occurrences) {
+            Task instance = Task.builder()
+                    .user(user)
+                    .title(template.getTitle())
+                    .description(template.getDescription())
+                    .color(template.getColor())
+                    .icon(template.getIcon())
+                    .durationMinutes(template.getDurationMinutes())
+                    .scheduledAt(scheduledAt)
+                    .isInbox(false)
+                    .sortOrder(template.getSortOrder())
+                    .recurrenceType(RecurrenceType.NONE)
+                    .recurrenceInterval(1)
+                    .recurrenceSeriesId(template.getRecurrenceSeriesId())
+                    .build();
+            taskRepository.save(instance);
+        }
     }
 
     @Transactional

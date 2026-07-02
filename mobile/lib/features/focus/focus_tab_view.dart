@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:mimio/core/l10n/app_strings.dart';
 import 'package:mimio/core/models/models.dart';
 import 'package:mimio/core/theme/mimio_theme.dart';
 import 'package:mimio/features/focus/widgets/focus_timer_widget.dart';
@@ -13,13 +14,14 @@ class FocusTabView extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final sessionAsync = ref.watch(focusSessionProvider);
     final timeline = ref.watch(timelineProvider).valueOrNull;
+    final s = ref.watch(stringsProvider);
 
     return sessionAsync.when(
       loading: () => const Center(child: CircularProgressIndicator()),
-      error: (e, _) => Center(child: Text('Hata: $e')),
+      error: (e, _) => Center(child: Text(s.errorPrefix(e))),
       data: (session) {
         if (session == null) {
-          return _NoActiveFocus(tasks: timeline?.tasks ?? []);
+          return _NoActiveFocus(tasks: timeline?.tasks ?? [], s: s);
         }
 
         return Padding(
@@ -36,7 +38,7 @@ class FocusTabView extends ConsumerWidget {
               ),
               const SizedBox(height: 8),
               Text(
-                session.isPaused ? 'Duraklatıldı' : 'Odak modundasın — devam et!',
+                session.isPaused ? s.paused : s.focusModeOn,
                 style: const TextStyle(color: MimioColors.textSecondary),
               ),
               const Spacer(),
@@ -45,26 +47,51 @@ class FocusTabView extends ConsumerWidget {
                   Expanded(
                     child: OutlinedButton.icon(
                       onPressed: () async {
-                        if (session.isActive) {
-                          await ref.read(timelineProvider.notifier).pauseTask(session.taskId);
-                        } else {
-                          await ref.read(timelineProvider.notifier).startTask(session.taskId);
+                        final s = ref.read(stringsProvider);
+                        try {
+                          if (session.isActive) {
+                            await ref.read(timelineProvider.notifier).pauseTask(session.taskId);
+                          } else {
+                            await ref.read(timelineProvider.notifier).startTask(session.taskId);
+                          }
+                          ref.invalidate(focusSessionProvider);
+                        } catch (e) {
+                          if (context.mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text(s.friendlyTaskActionError(e)),
+                                backgroundColor: Colors.red.shade400,
+                              ),
+                            );
+                          }
                         }
-                        ref.invalidate(focusSessionProvider);
                       },
                       icon: Icon(session.isActive ? Icons.pause_rounded : Icons.play_arrow_rounded),
-                      label: Text(session.isActive ? 'Duraklat' : 'Devam'),
+                      label: Text(session.isActive ? s.pause : s.continueLabel),
                     ),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
                     child: ElevatedButton.icon(
                       onPressed: () async {
-                        await ref.read(timelineProvider.notifier).completeTask(session.taskId);
-                        ref.read(celebrationTriggerProvider.notifier).state = true;
+                        final s = ref.read(stringsProvider);
+                        try {
+                          await ref.read(timelineProvider.notifier).completeTask(session.taskId);
+                          ref.invalidate(focusSessionProvider);
+                          ref.read(celebrationTriggerProvider.notifier).state = true;
+                        } catch (e) {
+                          if (context.mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text(s.friendlyTaskActionError(e)),
+                                backgroundColor: Colors.red.shade400,
+                              ),
+                            );
+                          }
+                        }
                       },
                       icon: const Icon(Icons.check_rounded),
-                      label: const Text('Bitir'),
+                      label: Text(s.finish),
                       style: ElevatedButton.styleFrom(backgroundColor: MimioColors.success),
                     ),
                   ),
@@ -79,9 +106,10 @@ class FocusTabView extends ConsumerWidget {
 }
 
 class _NoActiveFocus extends ConsumerWidget {
-  const _NoActiveFocus({required this.tasks});
+  const _NoActiveFocus({required this.tasks, required this.s});
 
   final List<TaskModel> tasks;
+  final S s;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -96,18 +124,18 @@ class _NoActiveFocus extends ConsumerWidget {
             Icon(Icons.self_improvement_rounded, size: 72, color: MimioColors.primary.withValues(alpha: 0.4)),
             const SizedBox(height: 24),
             Text(
-              'Odak modu kapalı',
+              s.focusModeOff,
               style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800),
             ),
             const SizedBox(height: 8),
-            const Text(
-              'Bir görevi başlattığında zamanlayıcı burada görünür.\nWidget ile kilit ekranından da takip edebilirsin.',
+            Text(
+              s.focusModeHint,
               textAlign: TextAlign.center,
-              style: TextStyle(color: MimioColors.textSecondary, height: 1.5),
+              style: const TextStyle(color: MimioColors.textSecondary, height: 1.5),
             ),
             if (pending.isNotEmpty) ...[
               const SizedBox(height: 32),
-              Text('Hızlı başlat', style: Theme.of(context).textTheme.labelLarge),
+              Text(s.quickStart, style: Theme.of(context).textTheme.labelLarge),
               const SizedBox(height: 12),
               ...pending.take(3).map((task) {
                 final color = MimioColors.fromHex(task.color);
@@ -121,9 +149,21 @@ class _NoActiveFocus extends ConsumerWidget {
                   title: Text(task.title, style: const TextStyle(fontWeight: FontWeight.w600)),
                   trailing: const Icon(Icons.chevron_right_rounded),
                   onTap: () async {
-                    await ref.read(timelineProvider.notifier).startTask(task.id);
-                    ref.read(homeTabProvider.notifier).state = HomeTab.focus;
-                    ref.invalidate(focusSessionProvider);
+                    final s = ref.read(stringsProvider);
+                    try {
+                      await ref.read(timelineProvider.notifier).startTask(task.id);
+                      ref.read(homeTabProvider.notifier).state = HomeTab.focus;
+                      ref.invalidate(focusSessionProvider);
+                    } catch (e) {
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text(s.friendlyTaskActionError(e)),
+                            backgroundColor: Colors.red.shade400,
+                          ),
+                        );
+                      }
+                    }
                   },
                 );
               }),

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:mimio/core/l10n/app_strings.dart';
 import 'package:mimio/core/theme/mimio_theme.dart';
 import 'package:mimio/features/providers.dart';
 
@@ -40,6 +41,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   @override
   Widget build(BuildContext context) {
     final authState = ref.watch(authStateProvider);
+    final s = ref.watch(stringsProvider);
 
     ref.listen(authStateProvider, (_, next) {
       if (next.hasError && mounted) {
@@ -68,43 +70,43 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Hesap Oluştur',
+                  s.createAccount,
                   style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                         fontWeight: FontWeight.w800,
                       ),
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  'Planlamaya başlamak için kayıt ol',
+                  s.registerSubtitle,
                   style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                         color: MimioColors.textSecondary,
                       ),
                 ),
                 const SizedBox(height: 32),
-                Text('Adın', style: Theme.of(context).textTheme.labelLarge),
+                Text(s.yourName, style: Theme.of(context).textTheme.labelLarge),
                 const SizedBox(height: 8),
                 TextFormField(
                   controller: _nameController,
-                  decoration: const InputDecoration(hintText: 'Adın'),
-                  validator: (v) => v == null || v.length < 2 ? 'En az 2 karakter' : null,
+                  decoration: InputDecoration(hintText: s.yourName),
+                  validator: (v) => v == null || v.length < 2 ? s.nameMin2 : null,
                 ),
                 const SizedBox(height: 20),
-                Text('E-posta', style: Theme.of(context).textTheme.labelLarge),
+                Text(s.email, style: Theme.of(context).textTheme.labelLarge),
                 const SizedBox(height: 8),
                 TextFormField(
                   controller: _emailController,
                   keyboardType: TextInputType.emailAddress,
                   decoration: const InputDecoration(hintText: 'ornek@email.com'),
-                  validator: (v) => v == null || !v.contains('@') ? 'Geçerli e-posta gir' : null,
+                  validator: (v) => v == null || !v.contains('@') ? s.validEmail : null,
                 ),
                 const SizedBox(height: 20),
-                Text('Şifre', style: Theme.of(context).textTheme.labelLarge),
+                Text(s.password, style: Theme.of(context).textTheme.labelLarge),
                 const SizedBox(height: 8),
                 TextFormField(
                   controller: _passwordController,
                   obscureText: true,
-                  decoration: const InputDecoration(hintText: 'En az 6 karakter'),
-                  validator: (v) => v == null || v.length < 6 ? 'En az 6 karakter' : null,
+                  decoration: InputDecoration(hintText: s.passwordMin6),
+                  validator: (v) => v == null || v.length < 6 ? s.passwordMin6 : null,
                 ),
                 const SizedBox(height: 32),
                 SizedBox(
@@ -117,7 +119,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                             width: 20,
                             child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
                           )
-                        : const Text('Kayıt Ol'),
+                        : Text(s.register),
                   ),
                 ),
               ],

@@ -1,24 +1,39 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+import 'package:mimio/core/l10n/app_strings.dart';
 import 'package:mimio/core/models/models.dart';
 import 'package:mimio/core/theme/mimio_theme.dart';
 
 typedef SubtaskAction = void Function(TaskModel subtask);
 
-class TaskCard extends StatelessWidget {
+class TaskCard extends ConsumerWidget {
   const TaskCard({
     super.key,
     required this.task,
     this.onTap,
+    this.onStart,
+    this.onPause,
+    this.onComplete,
     this.onSubtaskTap,
+    this.onSubtaskStart,
+    this.onSubtaskPause,
+    this.onSubtaskComplete,
   });
 
   final TaskModel task;
   final VoidCallback? onTap;
+  final VoidCallback? onStart;
+  final VoidCallback? onPause;
+  final VoidCallback? onComplete;
   final SubtaskAction? onSubtaskTap;
+  final SubtaskAction? onSubtaskStart;
+  final SubtaskAction? onSubtaskPause;
+  final SubtaskAction? onSubtaskComplete;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final s = ref.watch(stringsProvider);
     final color = MimioColors.fromHex(task.color);
     final timeFormat = DateFormat('HH:mm');
     final startTime = task.scheduledAt != null ? timeFormat.format(task.scheduledAt!.toLocal()) : '--:--';
@@ -82,7 +97,7 @@ class TaskCard extends StatelessWidget {
                                   ),
                                   const SizedBox(width: 8),
                                   Text(
-                                    '${task.durationMinutes} dk',
+                                    s.minutesShort(task.durationMinutes),
                                     style: const TextStyle(
                                       fontSize: 12,
                                       color: MimioColors.textSecondary,
@@ -97,7 +112,7 @@ class TaskCard extends StatelessWidget {
                                         borderRadius: BorderRadius.circular(6),
                                       ),
                                       child: Text(
-                                        '${task.completedSubtaskCount}/${task.subtasks.length} adım',
+                                        s.stepsProgress(task.completedSubtaskCount, task.subtasks.length),
                                         style: const TextStyle(
                                           fontSize: 11,
                                           fontWeight: FontWeight.w600,
@@ -133,8 +148,40 @@ class TaskCard extends StatelessWidget {
                       ...task.subtasks.map((sub) => _SubtaskRow(
                             subtask: sub,
                             parentColor: color,
+                            s: s,
                             onTap: onSubtaskTap != null ? () => onSubtaskTap!(sub) : null,
+                            onStart: onSubtaskStart != null ? () => onSubtaskStart!(sub) : null,
+                            onPause: onSubtaskPause != null ? () => onSubtaskPause!(sub) : null,
+                            onComplete: onSubtaskComplete != null ? () => onSubtaskComplete!(sub) : null,
                           )),
+                    ],
+                    if (task.isActive && !task.hasSubtasks) ...[
+                      const SizedBox(height: 12),
+                      _ActiveControls(
+                        pauseLabel: s.pause,
+                        finishLabel: s.finish,
+                        onPause: onPause,
+                        onComplete: onComplete,
+                      ),
+                    ] else if (!task.isCompleted && !task.hasSubtasks) ...[
+                      const SizedBox(height: 12),
+                      Row(
+                        children: [
+                          _ActionChip(
+                            label: s.start,
+                            icon: Icons.play_arrow_rounded,
+                            color: color,
+                            onTap: onStart,
+                          ),
+                          const SizedBox(width: 8),
+                          _ActionChip(
+                            label: s.complete,
+                            icon: Icons.check_rounded,
+                            color: MimioColors.success,
+                            onTap: onComplete,
+                          ),
+                        ],
+                      ),
                     ],
                   ],
                 ),
@@ -151,12 +198,20 @@ class _SubtaskRow extends StatelessWidget {
   const _SubtaskRow({
     required this.subtask,
     required this.parentColor,
+    required this.s,
     this.onTap,
+    this.onStart,
+    this.onPause,
+    this.onComplete,
   });
 
   final TaskModel subtask;
   final Color parentColor;
+  final S s;
   final VoidCallback? onTap;
+  final VoidCallback? onStart;
+  final VoidCallback? onPause;
+  final VoidCallback? onComplete;
 
   @override
   Widget build(BuildContext context) {
@@ -212,7 +267,7 @@ class _SubtaskRow extends StatelessWidget {
                       ),
                       if (timeLabel.isNotEmpty)
                         Text(
-                          '$timeLabel · ${subtask.durationMinutes} dk',
+                          '$timeLabel · ${s.minutesShort(subtask.durationMinutes)}',
                           style: const TextStyle(fontSize: 11, color: MimioColors.textSecondary),
                         ),
                     ],
@@ -221,11 +276,133 @@ class _SubtaskRow extends StatelessWidget {
               ),
             ),
           ),
-          if (onTap != null)
-            Icon(Icons.more_horiz_rounded, size: 16, color: MimioColors.textSecondary.withValues(alpha: 0.5)),
+          if (subtask.isActive) ...[
+            _MiniAction(icon: Icons.pause_rounded, color: MimioColors.warning, onTap: onPause),
+            const SizedBox(width: 4),
+            _MiniAction(icon: Icons.check_rounded, color: MimioColors.success, onTap: onComplete),
+          ] else if (!subtask.isCompleted) ...[
+            _MiniAction(icon: Icons.play_arrow_rounded, color: parentColor, onTap: onStart),
+            const SizedBox(width: 4),
+            _MiniAction(icon: Icons.check_rounded, color: MimioColors.success, onTap: onComplete),
+          ],
+          if (onTap != null) ...[
+            const SizedBox(width: 4),
+            GestureDetector(
+              onTap: onTap,
+              child: Icon(Icons.more_horiz_rounded, size: 16, color: MimioColors.textSecondary.withValues(alpha: 0.5)),
+            ),
+          ],
         ],
       ),
     );
   }
 }
 
+class _MiniAction extends StatelessWidget {
+  const _MiniAction({required this.icon, required this.color, this.onTap});
+
+  final IconData icon;
+  final Color color;
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(8),
+        child: Container(
+          padding: const EdgeInsets.all(6),
+          constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+          child: Icon(icon, size: 16, color: color),
+        ),
+      ),
+    );
+  }
+}
+
+class _ActiveControls extends StatelessWidget {
+  const _ActiveControls({
+    required this.pauseLabel,
+    required this.finishLabel,
+    this.onPause,
+    this.onComplete,
+  });
+
+  final String pauseLabel;
+  final String finishLabel;
+  final VoidCallback? onPause;
+  final VoidCallback? onComplete;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Expanded(
+          child: ElevatedButton.icon(
+            onPressed: onPause,
+            icon: const Icon(Icons.pause_rounded, size: 18),
+            label: Text(pauseLabel),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: MimioColors.warning,
+              padding: const EdgeInsets.symmetric(vertical: 10),
+            ),
+          ),
+        ),
+        const SizedBox(width: 8),
+        Expanded(
+          child: ElevatedButton.icon(
+            onPressed: onComplete,
+            icon: const Icon(Icons.check_rounded, size: 18),
+            label: Text(finishLabel),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: MimioColors.success,
+              padding: const EdgeInsets.symmetric(vertical: 10),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _ActionChip extends StatelessWidget {
+  const _ActionChip({
+    required this.label,
+    required this.icon,
+    required this.color,
+    this.onTap,
+  });
+
+  final String label;
+  final IconData icon;
+  final Color color;
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(10),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          decoration: BoxDecoration(
+            color: color.withValues(alpha: 0.12),
+            borderRadius: BorderRadius.circular(10),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(icon, size: 16, color: color),
+              const SizedBox(width: 4),
+              Text(label, style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: color)),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}

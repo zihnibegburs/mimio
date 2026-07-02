@@ -1,10 +1,12 @@
 import 'dart:math';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:mimio/core/l10n/app_strings.dart';
 import 'package:mimio/core/models/models.dart';
 import 'package:mimio/core/theme/mimio_theme.dart';
 
-class FocusTimerWidget extends StatelessWidget {
+class FocusTimerWidget extends ConsumerWidget {
   const FocusTimerWidget({
     super.key,
     required this.session,
@@ -19,7 +21,8 @@ class FocusTimerWidget extends StatelessWidget {
   final bool inverted;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final s = ref.watch(stringsProvider);
     final color = inverted ? Colors.white : MimioColors.fromHex(session.color);
     final trackColor = inverted
         ? Colors.white.withValues(alpha: 0.25)
@@ -56,8 +59,8 @@ class FocusTimerWidget extends StatelessWidget {
                     color: MimioColors.warning.withValues(alpha: 0.2),
                     borderRadius: BorderRadius.circular(8),
                   ),
-                  child: const Text(
-                    'DURAKLATILDI',
+                  child: Text(
+                    s.pausedUpper,
                     style: TextStyle(
                       fontSize: 10,
                       fontWeight: FontWeight.w800,
@@ -79,7 +82,7 @@ class FocusTimerWidget extends StatelessWidget {
               if (showLabel) ...[
                 const SizedBox(height: 4),
                 Text(
-                  'kalan süre',
+                  s.remainingTime,
                   style: TextStyle(
                     fontSize: size * 0.05,
                     color: subtextColor,

@@ -1,10 +1,12 @@
-import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:mimio/core/l10n/app_strings.dart';
 import 'package:mimio/core/models/ai_models.dart';
+import 'package:mimio/core/models/recurrence.dart';
 import 'package:mimio/core/repositories/ai_repository.dart';
 import 'package:mimio/core/theme/mimio_theme.dart';
 import 'package:mimio/features/providers.dart';
+import 'package:mimio/features/timeline/widgets/recurrence_picker.dart';
 
 class AddTaskSheet extends ConsumerStatefulWidget {
   const AddTaskSheet({super.key, required this.selectedDate});
@@ -20,6 +22,7 @@ class _AddTaskSheetState extends ConsumerState<AddTaskSheet> {
   int _duration = 30;
   String _selectedColor = MimioColors.taskColors.first;
   TimeOfDay _time = TimeOfDay.now();
+  RecurrenceSelection _recurrence = const RecurrenceSelection();
   bool _splitIntoSubtasks = false;
   List<AiStepModel>? _previewSteps;
   bool _loadingPreview = false;
@@ -62,29 +65,14 @@ class _AddTaskSheetState extends ConsumerState<AddTaskSheet> {
       }
     } catch (e) {
       if (mounted) {
-        setState(() => _error = _friendlyError(e));
+        setState(() => _error = ref.read(stringsProvider).friendlyAiError(e, includeBootRunHint: true));
       }
     } finally {
       if (mounted) setState(() => _loadingPreview = false);
     }
   }
 
-  String _friendlyError(Object e) {
-    if (e is DioException) {
-      final status = e.response?.statusCode;
-      final data = e.response?.data;
-      if (data is Map && data['message'] != null) {
-        return data['message'] as String;
-      }
-      if (status == 401) return 'Oturum süresi doldu. Tekrar giriş yapın.';
-      if (status == 403) {
-        return 'AI isteği reddedildi. Backend\'i yeniden başlatın (./gradlew bootRun).';
-      }
-    }
-    final msg = e.toString();
-    if (msg.contains('Groq')) return 'AI servisi kullanılamıyor. Groq API anahtarını kontrol edin.';
-    return msg.replaceFirst('Exception: ', '');
-  }
+  String _friendlyError(Object e) => ref.read(stringsProvider).friendlyAiError(e, includeBootRunHint: true);
 
   Future<void> _submit() async {
     if (_titleController.text.trim().isEmpty) return;
@@ -116,6 +104,7 @@ class _AddTaskSheetState extends ConsumerState<AddTaskSheet> {
               durationMinutes: _duration,
               color: _selectedColor,
               scheduledAt: _scheduledAt,
+              recurrence: _recurrence,
             );
       }
 
@@ -129,6 +118,8 @@ class _AddTaskSheetState extends ConsumerState<AddTaskSheet> {
 
   @override
   Widget build(BuildContext context) {
+    final s = ref.watch(stringsProvider);
+
     return Container(
       decoration: const BoxDecoration(
         color: Colors.white,
@@ -157,14 +148,14 @@ class _AddTaskSheetState extends ConsumerState<AddTaskSheet> {
             ),
             const SizedBox(height: 20),
             Text(
-              'Yeni Görev',
+              s.newTask,
               style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800),
             ),
             const SizedBox(height: 20),
             TextField(
               controller: _titleController,
               autofocus: true,
-              decoration: const InputDecoration(hintText: 'Görev adı...'),
+              decoration: InputDecoration(hintText: s.taskNameHint),
               onChanged: (_) {
                 if (_previewSteps != null) {
                   setState(() => _previewSteps = null);
@@ -178,10 +169,10 @@ class _AddTaskSheetState extends ConsumerState<AddTaskSheet> {
                 borderRadius: BorderRadius.circular(16),
               ),
               child: SwitchListTile(
-                title: const Text('Adımlara böl', style: TextStyle(fontWeight: FontWeight.w600)),
-                subtitle: const Text(
-                  'AI görevi küçük adımlara ayırır',
-                  style: TextStyle(fontSize: 12, color: MimioColors.textSecondary),
+                title: Text(s.splitIntoSteps, style: const TextStyle(fontWeight: FontWeight.w600)),
+                subtitle: Text(
+                  s.splitIntoStepsHint,
+                  style: const TextStyle(fontSize: 12, color: MimioColors.textSecondary),
                 ),
                 secondary: const Icon(Icons.auto_awesome_rounded, color: MimioColors.primary),
                 value: _splitIntoSubtasks,
@@ -204,7 +195,7 @@ class _AddTaskSheetState extends ConsumerState<AddTaskSheet> {
                           child: CircularProgressIndicator(strokeWidth: 2),
                         )
                       : const Icon(Icons.visibility_rounded, size: 18),
-                  label: Text(_loadingPreview ? 'AI düşünüyor...' : 'Adımları Önizle'),
+                  label: Text(_loadingPreview ? s.aiThinking : s.previewSteps),
                 ),
               ),
               if (_previewSteps != null) ...[
@@ -225,7 +216,7 @@ class _AddTaskSheetState extends ConsumerState<AddTaskSheet> {
                           const SizedBox(width: 8),
                           Expanded(child: Text(e.value.title, style: const TextStyle(fontWeight: FontWeight.w600))),
                           Text(
-                            '${e.value.durationMinutes} dk',
+                            s.minutesShort(e.value.durationMinutes),
                             style: TextStyle(
                               fontSize: 12,
                               fontWeight: FontWeight.w600,
@@ -239,14 +230,14 @@ class _AddTaskSheetState extends ConsumerState<AddTaskSheet> {
             ],
             if (!_splitIntoSubtasks) ...[
               const SizedBox(height: 20),
-              Text('Süre', style: Theme.of(context).textTheme.labelLarge),
+              Text(s.duration, style: Theme.of(context).textTheme.labelLarge),
               const SizedBox(height: 8),
               Wrap(
                 spacing: 8,
                 children: [15, 30, 45, 60, 90].map((min) {
                   final selected = _duration == min;
                   return ChoiceChip(
-                    label: Text('$min dk'),
+                    label: Text(s.minutesShort(min)),
                     selected: selected,
                     onSelected: (_) => setState(() => _duration = min),
                     selectedColor: MimioColors.primary.withValues(alpha: 0.2),
@@ -255,7 +246,7 @@ class _AddTaskSheetState extends ConsumerState<AddTaskSheet> {
               ),
             ],
             const SizedBox(height: 20),
-            Text('Saat', style: Theme.of(context).textTheme.labelLarge),
+            Text(s.time, style: Theme.of(context).textTheme.labelLarge),
             const SizedBox(height: 8),
             InkWell(
               onTap: _pickTime,
@@ -278,8 +269,15 @@ class _AddTaskSheetState extends ConsumerState<AddTaskSheet> {
                 ),
               ),
             ),
+            if (!_splitIntoSubtasks) ...[
+              const SizedBox(height: 20),
+              RecurrencePicker(
+                value: _recurrence,
+                onChanged: (value) => setState(() => _recurrence = value),
+              ),
+            ],
             const SizedBox(height: 20),
-            Text('Renk', style: Theme.of(context).textTheme.labelLarge),
+            Text(s.color, style: Theme.of(context).textTheme.labelLarge),
             const SizedBox(height: 8),
             Wrap(
               spacing: 10,
@@ -317,7 +315,7 @@ class _AddTaskSheetState extends ConsumerState<AddTaskSheet> {
                         height: 20,
                         child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
                       )
-                    : Text(_splitIntoSubtasks ? 'Görev ve Adımları Ekle' : 'Görevi Ekle'),
+                    : Text(_splitIntoSubtasks ? s.addTaskAndSteps : s.addTaskButton),
               ),
             ),
           ],

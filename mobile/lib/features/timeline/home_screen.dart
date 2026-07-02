@@ -27,6 +27,7 @@ class HomeScreen extends ConsumerWidget {
     final celebration = ref.watch(celebrationTriggerProvider);
     final auth = ref.watch(authStateProvider).value;
     final selectedDate = ref.watch(selectedDateProvider);
+    final s = ref.watch(stringsProvider);
 
     return CelebrationOverlay(
       trigger: celebration,
@@ -36,9 +37,9 @@ class HomeScreen extends ConsumerWidget {
           title: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('Merhaba, ${auth?.displayName ?? ''} 👋'),
+              Text(s.hello(auth?.displayName ?? '')),
               Text(
-                _tabSubtitle(tab, selectedDate, ref),
+                _tabSubtitle(tab, selectedDate, ref, s),
                 style: const TextStyle(
                   fontSize: 13,
                   color: MimioColors.textSecondary,
@@ -50,7 +51,7 @@ class HomeScreen extends ConsumerWidget {
           actions: [
             IconButton(
               icon: const Icon(Icons.auto_awesome_rounded),
-              tooltip: 'AI Planlayıcı',
+              tooltip: s.aiPlanner,
               onPressed: () => context.push('/ai'),
             ),
             if (tab == HomeTab.today)
@@ -61,7 +62,7 @@ class HomeScreen extends ConsumerWidget {
                     icon: Icon(viewMode == TimelineViewMode.list
                         ? Icons.view_timeline_rounded
                         : Icons.view_list_rounded),
-                    tooltip: viewMode == TimelineViewMode.list ? 'Saat görünümü' : 'Liste görünümü',
+                    tooltip: viewMode == TimelineViewMode.list ? s.hourView : s.listView,
                     onPressed: () {
                       ref.read(timelineViewModeProvider.notifier).state =
                           viewMode == TimelineViewMode.list ? TimelineViewMode.grid : TimelineViewMode.list;
@@ -98,21 +99,21 @@ class HomeScreen extends ConsumerWidget {
         bottomNavigationBar: NavigationBar(
           selectedIndex: tab.index,
           onDestinationSelected: (i) => ref.read(homeTabProvider.notifier).state = HomeTab.values[i],
-          destinations: const [
+          destinations: [
             NavigationDestination(
-              icon: Icon(Icons.today_outlined),
-              selectedIcon: Icon(Icons.today_rounded),
-              label: 'Bugün',
+              icon: const Icon(Icons.today_outlined),
+              selectedIcon: const Icon(Icons.today_rounded),
+              label: s.today,
             ),
             NavigationDestination(
-              icon: Icon(Icons.calendar_view_week_outlined),
-              selectedIcon: Icon(Icons.calendar_view_week_rounded),
-              label: 'Hafta',
+              icon: const Icon(Icons.calendar_view_week_outlined),
+              selectedIcon: const Icon(Icons.calendar_view_week_rounded),
+              label: s.week,
             ),
             NavigationDestination(
-              icon: Icon(Icons.timer_outlined),
-              selectedIcon: Icon(Icons.timer_rounded),
-              label: 'Odak',
+              icon: const Icon(Icons.timer_outlined),
+              selectedIcon: const Icon(Icons.timer_rounded),
+              label: s.focus,
             ),
           ],
         ),
@@ -123,20 +124,20 @@ class HomeScreen extends ConsumerWidget {
                   _showAddTask(context, ref, date);
                 },
                 icon: const Icon(Icons.add_rounded),
-                label: const Text('Görev Ekle'),
+                label: Text(s.addTask),
               )
             : null,
       ),
     );
   }
 
-  String _tabSubtitle(HomeTab tab, DateTime selectedDate, WidgetRef ref) {
+  String _tabSubtitle(HomeTab tab, DateTime selectedDate, WidgetRef ref, S s) {
     final lang = ref.watch(appLanguageProvider).valueOrNull ?? 'tr';
-    final locale = lang == 'en' ? 'en_US' : 'tr_TR';
+    final locale = dateLocaleFor(lang);
     return switch (tab) {
       HomeTab.today => DateFormat('d MMMM yyyy, EEEE', locale).format(selectedDate),
-      HomeTab.week => lang == 'en' ? 'Weekly plan summary' : 'Haftalık plan özeti',
-      HomeTab.focus => lang == 'en' ? 'Focus timer' : 'Odak zamanlayıcı',
+      HomeTab.week => s.weeklyPlanSummary,
+      HomeTab.focus => s.focusTimer,
     };
   }
 
@@ -158,6 +159,7 @@ class _TodayTab extends ConsumerWidget {
     final timelineAsync = ref.watch(timelineProvider);
     final viewMode = ref.watch(timelineViewModeProvider);
     final selectedDate = ref.watch(selectedDateProvider);
+    final s = ref.watch(stringsProvider);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -166,7 +168,7 @@ class _TodayTab extends ConsumerWidget {
         Expanded(
           child: timelineAsync.when(
             loading: () => const Center(child: CircularProgressIndicator()),
-            error: (e, _) => _ErrorView(error: '$e', onRetry: () => ref.invalidate(timelineProvider)),
+            error: (e, _) => _ErrorView(error: '$e', onRetry: () => ref.invalidate(timelineProvider), s: s),
             data: (timeline) => RefreshIndicator(
               onRefresh: () => ref.read(timelineProvider.notifier).refresh(),
               child: CustomScrollView(
@@ -180,12 +182,12 @@ class _TodayTab extends ConsumerWidget {
                       child: Row(
                         children: [
                           Text(
-                            'Günün Planı',
+                            s.todaysPlan,
                             style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800),
                           ),
                           const Spacer(),
                           Text(
-                            '${timeline.tasks.length} görev',
+                            s.taskCount(timeline.tasks.length),
                             style: const TextStyle(color: MimioColors.textSecondary),
                           ),
                         ],
@@ -197,6 +199,7 @@ class _TodayTab extends ConsumerWidget {
                       hasScrollBody: false,
                       child: _EmptyTimeline(
                         onAdd: () => _showAddTask(context, ref, selectedDate),
+                        s: s,
                       ),
                     )
                   else if (viewMode == TimelineViewMode.grid)
@@ -216,7 +219,13 @@ class _TodayTab extends ConsumerWidget {
                             return TaskCard(
                               task: task,
                               onTap: () => _showTaskActions(context, ref, task, selectedDate),
+                              onStart: () => _startTask(context, ref, task.id),
+                              onPause: () => ref.read(timelineProvider.notifier).pauseTask(task.id),
+                              onComplete: () => _completeTask(context, ref, task.id),
                               onSubtaskTap: (sub) => _showTaskActions(context, ref, sub, selectedDate),
+                              onSubtaskStart: (sub) => _startTask(context, ref, sub.id),
+                              onSubtaskPause: (sub) => ref.read(timelineProvider.notifier).pauseTask(sub.id),
+                              onSubtaskComplete: (sub) => _completeTask(context, ref, sub.id),
                             );
                           },
                           childCount: timeline.tasks.length,
@@ -234,14 +243,40 @@ class _TodayTab extends ConsumerWidget {
   }
 
   Future<void> _startTask(BuildContext context, WidgetRef ref, String id) async {
-    await ref.read(timelineProvider.notifier).startTask(id);
-    ref.read(homeTabProvider.notifier).state = HomeTab.focus;
-    if (context.mounted) context.push('/focus');
+    final s = ref.read(stringsProvider);
+    try {
+      await ref.read(timelineProvider.notifier).startTask(id);
+      ref.read(homeTabProvider.notifier).state = HomeTab.focus;
+      ref.invalidate(focusSessionProvider);
+      if (context.mounted) context.push('/focus');
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(s.friendlyTaskActionError(e)),
+            backgroundColor: Colors.red.shade400,
+          ),
+        );
+      }
+    }
   }
 
-  Future<void> _completeTask(WidgetRef ref, String id) async {
-    await ref.read(timelineProvider.notifier).completeTask(id);
-    ref.read(celebrationTriggerProvider.notifier).state = true;
+  Future<void> _completeTask(BuildContext context, WidgetRef ref, String id) async {
+    final s = ref.read(stringsProvider);
+    try {
+      await ref.read(timelineProvider.notifier).completeTask(id);
+      ref.invalidate(focusSessionProvider);
+      ref.read(celebrationTriggerProvider.notifier).state = true;
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(s.friendlyTaskActionError(e)),
+            backgroundColor: Colors.red.shade400,
+          ),
+        );
+      }
+    }
   }
 
   void _handleTaskTap(BuildContext context, WidgetRef ref, TaskModel task) {
@@ -257,7 +292,7 @@ class _TodayTab extends ConsumerWidget {
       selectedDate: date,
       onStart: () => _startTask(context, ref, task.id),
       onPause: () => ref.read(timelineProvider.notifier).pauseTask(task.id),
-      onComplete: () => _completeTask(ref, task.id),
+      onComplete: () => _completeTask(context, ref, task.id),
       onDelete: () => ref.read(timelineProvider.notifier).deleteTask(task.id),
       onFocus: (task.isActive || task.status == TaskStatus.paused)
           ? () => context.push('/focus')
@@ -276,10 +311,11 @@ class _TodayTab extends ConsumerWidget {
 }
 
 class _ErrorView extends StatelessWidget {
-  const _ErrorView({required this.error, required this.onRetry});
+  const _ErrorView({required this.error, required this.onRetry, required this.s});
 
   final String error;
   final VoidCallback onRetry;
+  final S s;
 
   @override
   Widget build(BuildContext context) {
@@ -289,11 +325,11 @@ class _ErrorView extends StatelessWidget {
         children: [
           const Icon(Icons.cloud_off_rounded, size: 48, color: MimioColors.textSecondary),
           const SizedBox(height: 16),
-          Text('Bağlantı hatası', style: Theme.of(context).textTheme.titleMedium),
+          Text(s.connectionError, style: Theme.of(context).textTheme.titleMedium),
           const SizedBox(height: 8),
           Text(error, textAlign: TextAlign.center, style: const TextStyle(color: MimioColors.textSecondary)),
           const SizedBox(height: 16),
-          ElevatedButton(onPressed: onRetry, child: const Text('Tekrar Dene')),
+          ElevatedButton(onPressed: onRetry, child: Text(s.retry)),
         ],
       ),
     );
@@ -301,9 +337,10 @@ class _ErrorView extends StatelessWidget {
 }
 
 class _EmptyTimeline extends StatelessWidget {
-  const _EmptyTimeline({required this.onAdd});
+  const _EmptyTimeline({required this.onAdd, required this.s});
 
   final VoidCallback onAdd;
+  final S s;
 
   @override
   Widget build(BuildContext context) {
@@ -316,20 +353,20 @@ class _EmptyTimeline extends StatelessWidget {
             Icon(Icons.wb_sunny_rounded, size: 64, color: MimioColors.primary.withValues(alpha: 0.5)),
             const SizedBox(height: 24),
             Text(
-              'Bugün için plan yok',
+              s.noPlanToday,
               style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700),
             ),
             const SizedBox(height: 8),
-            const Text(
-              'İlk görevini ekleyerek güne başla.\nKüçük adımlar büyük fark yaratır.',
+            Text(
+              s.emptyPlanHint,
               textAlign: TextAlign.center,
-              style: TextStyle(color: MimioColors.textSecondary, height: 1.5),
+              style: const TextStyle(color: MimioColors.textSecondary, height: 1.5),
             ),
             const SizedBox(height: 24),
             ElevatedButton.icon(
               onPressed: onAdd,
               icon: const Icon(Icons.add_rounded),
-              label: const Text('İlk Görevi Ekle'),
+              label: Text(s.addFirstTask),
             ),
           ],
         ),

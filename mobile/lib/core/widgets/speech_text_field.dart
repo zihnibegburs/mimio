@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:mimio/core/l10n/app_strings.dart';
 import 'package:mimio/core/theme/mimio_theme.dart';
 import 'package:speech_to_text/speech_recognition_result.dart';
 import 'package:speech_to_text/speech_to_text.dart';
 
-class SpeechTextField extends StatefulWidget {
+class SpeechTextField extends ConsumerStatefulWidget {
   const SpeechTextField({
     super.key,
     required this.controller,
@@ -18,10 +20,10 @@ class SpeechTextField extends StatefulWidget {
   final ValueChanged<String>? onChanged;
 
   @override
-  State<SpeechTextField> createState() => _SpeechTextFieldState();
+  ConsumerState<SpeechTextField> createState() => _SpeechTextFieldState();
 }
 
-class _SpeechTextFieldState extends State<SpeechTextField> {
+class _SpeechTextFieldState extends ConsumerState<SpeechTextField> {
   final _speech = SpeechToText();
   bool _speechAvailable = false;
   bool _isListening = false;
@@ -61,10 +63,15 @@ class _SpeechTextFieldState extends State<SpeechTextField> {
       _textBeforeListen = '$_textBeforeListen ';
     }
 
+    final lang = ref.read(appLanguageProvider).valueOrNull ?? 'tr';
     final locales = await _speech.locales();
-    final locale = locales.any((l) => l.localeId.startsWith('tr'))
-        ? locales.firstWhere((l) => l.localeId.startsWith('tr')).localeId
-        : null;
+    String? locale;
+    for (final l in locales) {
+      if (l.localeId.startsWith(lang)) {
+        locale = l.localeId;
+        break;
+      }
+    }
 
     final started = await _speech.listen(
       onResult: _onSpeechResult,
@@ -98,6 +105,8 @@ class _SpeechTextFieldState extends State<SpeechTextField> {
 
   @override
   Widget build(BuildContext context) {
+    final s = ref.watch(stringsProvider);
+
     return TextField(
       controller: widget.controller,
       maxLines: widget.maxLines,
@@ -105,7 +114,7 @@ class _SpeechTextFieldState extends State<SpeechTextField> {
       decoration: (widget.decoration ?? const InputDecoration()).copyWith(
         suffixIcon: _speechAvailable
             ? IconButton(
-                tooltip: _isListening ? 'Dinlemeyi durdur' : 'Sesle yaz',
+                tooltip: _isListening ? s.stopListening : s.speakToType,
                 onPressed: _toggleListening,
                 icon: AnimatedContainer(
                   duration: const Duration(milliseconds: 200),

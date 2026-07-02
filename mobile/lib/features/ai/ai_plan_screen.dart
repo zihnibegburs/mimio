@@ -2,6 +2,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:mimio/core/l10n/app_strings.dart';
 import 'package:mimio/core/models/ai_models.dart';
 import 'package:mimio/core/repositories/ai_repository.dart';
 import 'package:mimio/core/theme/mimio_theme.dart';
@@ -55,30 +56,24 @@ class _AiPlanScreenState extends ConsumerState<AiPlanScreen> {
         setState(() => _plan = result);
       }
     } catch (e) {
-      setState(() => _error = _friendlyError(e));
+      final s = ref.read(stringsProvider);
+      setState(() => _error = _friendlyError(e, s));
     } finally {
       setState(() => _loading = false);
     }
   }
 
-  String _friendlyError(Object e) {
+  String _friendlyError(Object e, S s) {
     if (e is DioException) {
       final status = e.response?.statusCode;
       final data = e.response?.data;
       if (data is Map && data['message'] != null) {
         return data['message'] as String;
       }
-      if (status == 401) return 'Oturum süresi doldu. Tekrar giriş yapın.';
-      if (status == 403) {
-        return 'AI endpoint erişilemedi. Backend ve ngrok çalışıyor mu? Backend\'i yeniden başlatın.';
-      }
+      if (status == 401) return s.sessionExpired;
+      if (status == 403) return s.aiEndpointError;
     }
-    final msg = e.toString();
-    if (msg.contains('Groq')) return 'AI servisi kullanılamıyor. Groq API anahtarını kontrol edin.';
-    if (msg.contains('connection') || msg.contains('SocketException')) {
-      return 'Sunucuya bağlanılamadı. Backend çalışıyor mu?';
-    }
-    return msg.replaceFirst('Exception: ', '').replaceFirst('DioException [bad response]: ', '');
+    return s.friendlyAiError(e);
   }
 
   Future<void> _applyPlan() async {
@@ -92,10 +87,11 @@ class _AiPlanScreenState extends ConsumerState<AiPlanScreen> {
           );
     }
     if (mounted) {
+      final s = ref.read(stringsProvider);
       ref.read(homeTabProvider.notifier).state = HomeTab.today;
       context.go('/home');
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('${_plan!.tasks.length} görev plana eklendi ✨')),
+        SnackBar(content: Text(s.tasksAddedToPlan(_plan!.tasks.length))),
       );
     }
   }
@@ -120,10 +116,11 @@ class _AiPlanScreenState extends ConsumerState<AiPlanScreen> {
         );
 
     if (mounted) {
+      final s = ref.read(stringsProvider);
       ref.read(homeTabProvider.notifier).state = HomeTab.today;
       context.go('/home');
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('${_breakdown!.steps.length} adımlı görev eklendi ✨')),
+        SnackBar(content: Text(s.stepsTaskAdded(_breakdown!.steps.length))),
       );
     }
   }
@@ -131,10 +128,11 @@ class _AiPlanScreenState extends ConsumerState<AiPlanScreen> {
   @override
   Widget build(BuildContext context) {
     final mode = ref.watch(aiModeProvider);
+    final s = ref.watch(stringsProvider);
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('AI Planlayıcı'),
+        title: Text(s.aiPlanner),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_rounded),
           onPressed: () => context.pop(),
@@ -155,13 +153,13 @@ class _AiPlanScreenState extends ConsumerState<AiPlanScreen> {
               child: Row(
                 children: [
                   _ModeChip(
-                    label: 'Gün Planla',
+                    label: s.planDay,
                     icon: Icons.auto_awesome_rounded,
                     selected: mode == AiMode.plan,
                     onTap: () => ref.read(aiModeProvider.notifier).state = AiMode.plan,
                   ),
                   _ModeChip(
-                    label: 'Görev Böl',
+                    label: s.splitTask,
                     icon: Icons.checklist_rounded,
                     selected: mode == AiMode.breakdown,
                     onTap: () => ref.read(aiModeProvider.notifier).state = AiMode.breakdown,
@@ -171,14 +169,12 @@ class _AiPlanScreenState extends ConsumerState<AiPlanScreen> {
             ),
             const SizedBox(height: 20),
             Text(
-              mode == AiMode.plan ? 'Aklındakileri yaz veya sesle söyle' : 'Büyük görevi yaz veya sesle söyle',
+              mode == AiMode.plan ? s.planPrompt : s.breakdownPrompt,
               style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
             ),
             const SizedBox(height: 8),
             Text(
-              mode == AiMode.plan
-                  ? 'Örn: "Sabah spor, öğleden sonra toplantı, akşam alışveriş"'
-                  : 'Örn: "Ev temizliği yapacağım" → küçük adımlara böler',
+              mode == AiMode.plan ? s.planExample : s.breakdownExample,
               style: const TextStyle(color: MimioColors.textSecondary, fontSize: 13),
             ),
             const SizedBox(height: 16),
@@ -186,7 +182,7 @@ class _AiPlanScreenState extends ConsumerState<AiPlanScreen> {
               controller: _controller,
               maxLines: 5,
               decoration: InputDecoration(
-                hintText: mode == AiMode.plan ? 'Bugün ne yapmak istiyorsun?' : 'Hangi görevi bölelim?',
+                hintText: mode == AiMode.plan ? s.planHint : s.breakdownHint,
               ),
             ),
             const SizedBox(height: 16),
@@ -199,7 +195,7 @@ class _AiPlanScreenState extends ConsumerState<AiPlanScreen> {
                       child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
                     )
                   : const Icon(Icons.auto_awesome_rounded),
-              label: Text(_loading ? 'AI düşünüyor...' : 'Plan Oluştur'),
+              label: Text(_loading ? s.aiThinking : s.createPlan),
             ),
             if (_error != null) ...[
               const SizedBox(height: 16),
@@ -223,18 +219,18 @@ class _AiPlanScreenState extends ConsumerState<AiPlanScreen> {
               const SizedBox(height: 24),
               _ResultHeader(
                 title: _plan!.summary,
-                subtitle: '${_plan!.tasks.length} görev · ${_plan!.totalMinutes} dk',
+                subtitle: s.planSummary(_plan!.tasks.length, _plan!.totalMinutes),
               ),
               ..._plan!.tasks.map((t) => _TaskResultTile(
                     title: t.title,
-                    subtitle: '${t.suggestedTime} · ${t.durationMinutes} dk',
+                    subtitle: '${t.suggestedTime} · ${s.minutesShort(t.durationMinutes)}',
                     color: MimioColors.fromHex(t.color),
                   )),
               const SizedBox(height: 16),
               ElevatedButton.icon(
                 onPressed: _applyPlan,
                 icon: const Icon(Icons.calendar_today_rounded),
-                label: const Text('Planı Güne Ekle'),
+                label: Text(s.addPlanToDay),
                 style: ElevatedButton.styleFrom(backgroundColor: MimioColors.success),
               ),
             ],
@@ -242,26 +238,26 @@ class _AiPlanScreenState extends ConsumerState<AiPlanScreen> {
               const SizedBox(height: 24),
               _ResultHeader(
                 title: _breakdown!.originalTask,
-                subtitle: '${_breakdown!.steps.length} adım · ${_breakdown!.totalMinutes} dk',
+                subtitle: '${s.stepsCount(_breakdown!.steps.length)} · ${s.minutesShort(_breakdown!.totalMinutes)}',
               ),
               ..._breakdown!.steps.asMap().entries.map((e) => _TaskResultTile(
                     title: '${e.key + 1}. ${e.value.title}',
-                    subtitle: '${e.value.durationMinutes} dk',
+                    subtitle: s.minutesShort(e.value.durationMinutes),
                     color: MimioColors.fromHex(e.value.color),
                   )),
               const SizedBox(height: 16),
               ElevatedButton.icon(
                 onPressed: _applyBreakdown,
                 icon: const Icon(Icons.add_task_rounded),
-                label: const Text('Görev ve Adımları Ekle'),
+                label: Text(s.addTaskAndSteps),
                 style: ElevatedButton.styleFrom(backgroundColor: MimioColors.success),
               ),
             ],
             const SizedBox(height: 12),
-            const Text(
-              'Powered by Groq AI',
+            Text(
+              s.poweredByGroq,
               textAlign: TextAlign.center,
-              style: TextStyle(fontSize: 11, color: MimioColors.textSecondary),
+              style: const TextStyle(fontSize: 11, color: MimioColors.textSecondary),
             ),
           ],
         ),

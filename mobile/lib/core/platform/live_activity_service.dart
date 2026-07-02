@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:live_activities/live_activities.dart';
 import 'package:mimio/core/config/platform_config.dart';
+import 'package:mimio/core/l10n/app_strings.dart';
 import 'package:mimio/core/models/models.dart';
 
 class LiveActivityService {
@@ -29,15 +30,17 @@ class LiveActivityService {
     }
   }
 
-  Future<void> syncFocusSession(FocusSessionModel? session) async {
+  Future<void> syncFocusSession(FocusSessionModel? session, {String language = 'tr'}) async {
     if (!_initialized || session == null) return;
 
+    final s = S(language);
     final data = <String, dynamic>{
       'taskTitle': session.title,
       'remaining': session.remainingFormatted,
       'progress': session.progressPercent,
       'color': session.color,
       'paused': session.isPaused,
+      'statusLabel': session.isPaused ? s.paused : s.focus,
     };
 
     final activityId = session.taskId;

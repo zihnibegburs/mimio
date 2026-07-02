@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+import 'package:mimio/core/l10n/app_strings.dart';
 import 'package:mimio/core/models/models.dart';
 import 'package:mimio/core/theme/mimio_theme.dart';
 
-class TimelineHourGrid extends StatelessWidget {
+class TimelineHourGrid extends ConsumerWidget {
   const TimelineHourGrid({
     super.key,
     required this.tasks,
@@ -18,7 +20,8 @@ class TimelineHourGrid extends StatelessWidget {
   static const double _hourHeight = 64;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final s = ref.watch(stringsProvider);
     final totalHours = _endHour - _startHour + 1;
     final gridHeight = totalHours * _hourHeight;
 
@@ -75,6 +78,7 @@ class TimelineHourGrid extends StatelessWidget {
                   }),
                   ...tasks.map((task) => _TaskBlock(
                         task: task,
+                        s: s,
                         onTap: () => onTaskTap?.call(task),
                       )),
                 ],
@@ -88,9 +92,10 @@ class TimelineHourGrid extends StatelessWidget {
 }
 
 class _TaskBlock extends StatelessWidget {
-  const _TaskBlock({required this.task, this.onTap});
+  const _TaskBlock({required this.task, required this.s, this.onTap});
 
   final TaskModel task;
+  final S s;
   final VoidCallback? onTap;
 
   @override
@@ -146,8 +151,8 @@ class _TaskBlock extends StatelessWidget {
               if (height > 40)
                 Text(
                   task.hasSubtasks
-                      ? '${task.subtasks.length} adım · ${task.durationMinutes} dk'
-                      : '${timeFormat.format(local)} · ${task.durationMinutes} dk',
+                      ? '${s.stepsCount(task.subtasks.length)} · ${s.minutesShort(task.durationMinutes)}'
+                      : '${timeFormat.format(local)} · ${s.minutesShort(task.durationMinutes)}',
                   style: TextStyle(
                     color: Colors.white.withValues(alpha: 0.85),
                     fontSize: 10,

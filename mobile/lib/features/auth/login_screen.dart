@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:mimio/core/l10n/app_strings.dart';
 import 'package:mimio/core/theme/mimio_theme.dart';
 import 'package:mimio/features/providers.dart';
 
@@ -38,6 +39,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     final authState = ref.watch(authStateProvider);
+    final s = ref.watch(stringsProvider);
 
     ref.listen(authStateProvider, (_, next) {
       if (next.hasError && mounted) {
@@ -84,23 +86,23 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 const SizedBox(height: 8),
                 Center(
                   child: Text(
-                    'Görsel günlük planlayıcın',
+                    s.loginTagline,
                     style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                           color: MimioColors.textSecondary,
                         ),
                   ),
                 ),
                 const SizedBox(height: 48),
-                Text('E-posta', style: Theme.of(context).textTheme.labelLarge),
+                Text(s.email, style: Theme.of(context).textTheme.labelLarge),
                 const SizedBox(height: 8),
                 TextFormField(
                   controller: _emailController,
                   keyboardType: TextInputType.emailAddress,
                   decoration: const InputDecoration(hintText: 'ornek@email.com'),
-                  validator: (v) => v == null || v.isEmpty ? 'E-posta gerekli' : null,
+                  validator: (v) => v == null || v.isEmpty ? s.emailRequired : null,
                 ),
                 const SizedBox(height: 20),
-                Text('Şifre', style: Theme.of(context).textTheme.labelLarge),
+                Text(s.password, style: Theme.of(context).textTheme.labelLarge),
                 const SizedBox(height: 8),
                 TextFormField(
                   controller: _passwordController,
@@ -112,7 +114,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
                     ),
                   ),
-                  validator: (v) => v == null || v.length < 6 ? 'En az 6 karakter' : null,
+                  validator: (v) => v == null || v.length < 6 ? s.passwordMin6 : null,
                 ),
                 const SizedBox(height: 32),
                 SizedBox(
@@ -125,14 +127,14 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                             width: 20,
                             child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
                           )
-                        : const Text('Giriş Yap'),
+                        : Text(s.login),
                   ),
                 ),
                 const SizedBox(height: 16),
                 Center(
                   child: TextButton(
                     onPressed: () => context.go('/register'),
-                    child: const Text('Hesabın yok mu? Kayıt ol'),
+                    child: Text(s.noAccountRegister),
                   ),
                 ),
               ],

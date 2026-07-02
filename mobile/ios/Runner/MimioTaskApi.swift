@@ -1,5 +1,11 @@
 import Foundation
 
+private enum MimioL10n {
+    static func string(_ key: String) -> String {
+        NSLocalizedString(key, bundle: .main, comment: "")
+    }
+}
+
 enum MimioTaskApiError: Error, LocalizedError {
     case notAuthenticated
     case invalidConfiguration
@@ -9,13 +15,13 @@ enum MimioTaskApiError: Error, LocalizedError {
     var errorDescription: String? {
         switch self {
         case .notAuthenticated:
-            return "Önce Mimio'da oturum açman gerekiyor."
+            return MimioL10n.string("api.error.not_authenticated")
         case .invalidConfiguration:
-            return "Mimio yapılandırması eksik. Uygulamayı bir kez aç."
+            return MimioL10n.string("api.error.invalid_configuration")
         case .networkError(let message):
-            return "Bağlantı hatası: \(message)"
+            return String(format: MimioL10n.string("api.error.network"), message)
         case .serverError:
-            return "Görev eklenemedi. Biraz sonra tekrar dene."
+            return MimioL10n.string("intent.add_task.error.retry")
         }
     }
 }
@@ -53,7 +59,7 @@ enum MimioTaskApi {
         }
 
         guard let http = response as? HTTPURLResponse else {
-            throw MimioTaskApiError.networkError("Geçersiz yanıt")
+            throw MimioTaskApiError.networkError(MimioL10n.string("api.error.invalid_response"))
         }
 
         switch http.statusCode {

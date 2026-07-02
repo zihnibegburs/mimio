@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:mimio/core/l10n/app_strings.dart';
 import 'package:mimio/core/theme/mimio_theme.dart';
 import 'package:mimio/features/focus/widgets/focus_timer_widget.dart';
 import 'package:mimio/features/providers.dart';
@@ -11,6 +12,7 @@ class FocusScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final sessionAsync = ref.watch(focusSessionProvider);
+    final s = ref.watch(stringsProvider);
     final color = sessionAsync.valueOrNull != null
         ? MimioColors.fromHex(sessionAsync.value!.color)
         : MimioColors.primary;
@@ -22,15 +24,15 @@ class FocusScreen extends ConsumerWidget {
           icon: const Icon(Icons.close_rounded),
           onPressed: () => context.pop(),
         ),
-        title: const Text('Odak Modu'),
+        title: Text(s.focusMode),
       ),
       body: sessionAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, _) => Center(child: Text('Hata: $e')),
+        error: (e, _) => Center(child: Text(s.errorPrefix(e))),
         data: (session) {
           if (session == null) {
-            return const Center(
-              child: Text('Aktif görev yok', style: TextStyle(color: MimioColors.textSecondary)),
+            return Center(
+              child: Text(s.noActiveTask, style: const TextStyle(color: MimioColors.textSecondary)),
             );
           }
 
@@ -50,7 +52,7 @@ class FocusScreen extends ConsumerWidget {
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  '${session.durationMinutes} dakikalık görev',
+                  s.durationTask(session.durationMinutes),
                   style: const TextStyle(color: MimioColors.textSecondary),
                 ),
                 const Spacer(),
@@ -60,15 +62,39 @@ class FocusScreen extends ConsumerWidget {
                       child: OutlinedButton.icon(
                         onPressed: session.isActive
                             ? () async {
-                                await ref.read(timelineProvider.notifier).pauseTask(session.taskId);
-                                ref.invalidate(focusSessionProvider);
+                                final s = ref.read(stringsProvider);
+                                try {
+                                  await ref.read(timelineProvider.notifier).pauseTask(session.taskId);
+                                  ref.invalidate(focusSessionProvider);
+                                } catch (e) {
+                                  if (context.mounted) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(
+                                        content: Text(s.friendlyTaskActionError(e)),
+                                        backgroundColor: Colors.red.shade400,
+                                      ),
+                                    );
+                                  }
+                                }
                               }
                             : () async {
-                                await ref.read(timelineProvider.notifier).startTask(session.taskId);
-                                ref.invalidate(focusSessionProvider);
+                                final s = ref.read(stringsProvider);
+                                try {
+                                  await ref.read(timelineProvider.notifier).startTask(session.taskId);
+                                  ref.invalidate(focusSessionProvider);
+                                } catch (e) {
+                                  if (context.mounted) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(
+                                        content: Text(s.friendlyTaskActionError(e)),
+                                        backgroundColor: Colors.red.shade400,
+                                      ),
+                                    );
+                                  }
+                                }
                               },
                         icon: Icon(session.isActive ? Icons.pause_rounded : Icons.play_arrow_rounded),
-                        label: Text(session.isActive ? 'Duraklat' : 'Devam Et'),
+                        label: Text(session.isActive ? s.pause : s.resume),
                         style: OutlinedButton.styleFrom(
                           padding: const EdgeInsets.symmetric(vertical: 16),
                           side: BorderSide(color: color),
@@ -80,12 +106,25 @@ class FocusScreen extends ConsumerWidget {
                     Expanded(
                       child: ElevatedButton.icon(
                         onPressed: () async {
-                          await ref.read(timelineProvider.notifier).completeTask(session.taskId);
-                          ref.read(celebrationTriggerProvider.notifier).state = true;
-                          if (context.mounted) context.pop();
+                          final s = ref.read(stringsProvider);
+                          try {
+                            await ref.read(timelineProvider.notifier).completeTask(session.taskId);
+                            ref.invalidate(focusSessionProvider);
+                            ref.read(celebrationTriggerProvider.notifier).state = true;
+                            if (context.mounted) context.pop();
+                          } catch (e) {
+                            if (context.mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text(s.friendlyTaskActionError(e)),
+                                  backgroundColor: Colors.red.shade400,
+                                ),
+                              );
+                            }
+                          }
                         },
                         icon: const Icon(Icons.check_rounded),
-                        label: const Text('Tamamla'),
+                        label: Text(s.complete),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: MimioColors.success,
                           padding: const EdgeInsets.symmetric(vertical: 16),

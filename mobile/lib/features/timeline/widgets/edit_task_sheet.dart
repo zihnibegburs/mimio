@@ -1,6 +1,6 @@
-import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:mimio/core/l10n/app_strings.dart';
 import 'package:mimio/core/models/ai_models.dart';
 import 'package:mimio/core/models/models.dart';
 import 'package:mimio/core/repositories/ai_repository.dart';
@@ -90,22 +90,7 @@ class _EditTaskSheetState extends ConsumerState<EditTaskSheet> {
     }
   }
 
-  String _friendlyError(Object e) {
-    if (e is DioException) {
-      final status = e.response?.statusCode;
-      final data = e.response?.data;
-      if (data is Map && data['message'] != null) {
-        return data['message'] as String;
-      }
-      if (status == 401) return 'Oturum süresi doldu. Tekrar giriş yapın.';
-      if (status == 403) {
-        return 'AI isteği reddedildi. Backend\'i yeniden başlatın.';
-      }
-    }
-    final msg = e.toString();
-    if (msg.contains('Groq')) return 'AI servisi kullanılamıyor. Groq API anahtarını kontrol edin.';
-    return msg.replaceFirst('Exception: ', '');
-  }
+  String _friendlyError(Object e) => ref.read(stringsProvider).friendlyAiError(e);
 
   Future<void> _save() async {
     if (_titleController.text.trim().isEmpty) return;
@@ -167,17 +152,18 @@ class _EditTaskSheetState extends ConsumerState<EditTaskSheet> {
   }
 
   Future<void> _delete() async {
+    final s = ref.read(stringsProvider);
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Görevi Sil'),
-        content: Text('“${widget.task.title}” silinsin mi?'),
+        title: Text(s.deleteTask),
+        content: Text(s.deleteTaskConfirm(widget.task.title)),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('İptal')),
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text(s.cancel)),
           TextButton(
             onPressed: () => Navigator.pop(ctx, true),
             style: TextButton.styleFrom(foregroundColor: Colors.red),
-            child: const Text('Sil'),
+            child: Text(s.delete),
           ),
         ],
       ),
@@ -199,6 +185,7 @@ class _EditTaskSheetState extends ConsumerState<EditTaskSheet> {
   @override
   Widget build(BuildContext context) {
     final busy = _submitting || _breakingDown;
+    final s = ref.watch(stringsProvider);
 
     return Container(
       decoration: const BoxDecoration(
@@ -231,35 +218,35 @@ class _EditTaskSheetState extends ConsumerState<EditTaskSheet> {
               children: [
                 Expanded(
                   child: Text(
-                    _isSubtask ? 'Adımı Düzenle' : 'Görevi Düzenle',
+                    _isSubtask ? s.editStep : s.editTask,
                     style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800),
                   ),
                 ),
                 IconButton(
                   icon: const Icon(Icons.delete_outline_rounded, color: Colors.red),
                   onPressed: busy ? null : _delete,
-                  tooltip: 'Sil',
+                  tooltip: s.delete,
                 ),
               ],
             ),
             const SizedBox(height: 20),
             TextField(
               controller: _titleController,
-              decoration: const InputDecoration(hintText: 'Görev adı...'),
+              decoration: InputDecoration(hintText: s.taskNameHint),
               onChanged: (_) {
                 if (_previewSteps != null) setState(() => _previewSteps = null);
               },
             ),
             if (!_isSubtask && !widget.task.hasSubtasks) ...[
               const SizedBox(height: 20),
-              Text('Süre', style: Theme.of(context).textTheme.labelLarge),
+              Text(s.duration, style: Theme.of(context).textTheme.labelLarge),
               const SizedBox(height: 8),
               Wrap(
                 spacing: 8,
                 children: [15, 30, 45, 60, 90].map((min) {
                   final selected = _duration == min;
                   return ChoiceChip(
-                    label: Text('$min dk'),
+                    label: Text(s.minutesShort(min)),
                     selected: selected,
                     onSelected: (_) => setState(() => _duration = min),
                     selectedColor: MimioColors.primary.withValues(alpha: 0.2),
@@ -268,14 +255,14 @@ class _EditTaskSheetState extends ConsumerState<EditTaskSheet> {
               ),
             ] else if (_isSubtask) ...[
               const SizedBox(height: 20),
-              Text('Süre', style: Theme.of(context).textTheme.labelLarge),
+              Text(s.duration, style: Theme.of(context).textTheme.labelLarge),
               const SizedBox(height: 8),
               Wrap(
                 spacing: 8,
                 children: [5, 10, 15, 20, 30, 45].map((min) {
                   final selected = _duration == min;
                   return ChoiceChip(
-                    label: Text('$min dk'),
+                    label: Text(s.minutesShort(min)),
                     selected: selected,
                     onSelected: (_) => setState(() => _duration = min),
                     selectedColor: MimioColors.primary.withValues(alpha: 0.2),
@@ -284,7 +271,7 @@ class _EditTaskSheetState extends ConsumerState<EditTaskSheet> {
               ),
             ],
             const SizedBox(height: 20),
-            Text('Saat', style: Theme.of(context).textTheme.labelLarge),
+            Text(s.time, style: Theme.of(context).textTheme.labelLarge),
             const SizedBox(height: 8),
             InkWell(
               onTap: _pickTime,
@@ -308,7 +295,7 @@ class _EditTaskSheetState extends ConsumerState<EditTaskSheet> {
               ),
             ),
             const SizedBox(height: 20),
-            Text('Renk', style: Theme.of(context).textTheme.labelLarge),
+            Text(s.color, style: Theme.of(context).textTheme.labelLarge),
             const SizedBox(height: 8),
             Wrap(
               spacing: 10,
@@ -340,15 +327,15 @@ class _EditTaskSheetState extends ConsumerState<EditTaskSheet> {
                   const Icon(Icons.auto_awesome_rounded, color: MimioColors.primary, size: 20),
                   const SizedBox(width: 8),
                   Text(
-                    'AI ile Adımlara Böl',
+                    s.aiBreakdown,
                     style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
                   ),
                 ],
               ),
               const SizedBox(height: 8),
-              const Text(
-                'Bu görevi küçük adımlara ayırarak odaklanmayı kolaylaştır.',
-                style: TextStyle(fontSize: 13, color: MimioColors.textSecondary),
+              Text(
+                s.aiBreakdownHint,
+                style: const TextStyle(fontSize: 13, color: MimioColors.textSecondary),
               ),
               const SizedBox(height: 12),
               SizedBox(
@@ -362,7 +349,7 @@ class _EditTaskSheetState extends ConsumerState<EditTaskSheet> {
                           child: CircularProgressIndicator(strokeWidth: 2),
                         )
                       : const Icon(Icons.visibility_rounded, size: 18),
-                  label: Text(_loadingPreview ? 'AI düşünüyor...' : 'Adımları Önizle'),
+                  label: Text(_loadingPreview ? s.aiThinking : s.previewSteps),
                 ),
               ),
               if (_previewSteps != null) ...[
@@ -383,7 +370,7 @@ class _EditTaskSheetState extends ConsumerState<EditTaskSheet> {
                           const SizedBox(width: 8),
                           Expanded(child: Text(e.value.title, style: const TextStyle(fontWeight: FontWeight.w600))),
                           Text(
-                            '${e.value.durationMinutes} dk',
+                            s.minutesShort(e.value.durationMinutes),
                             style: TextStyle(
                               fontSize: 12,
                               fontWeight: FontWeight.w600,
@@ -405,7 +392,7 @@ class _EditTaskSheetState extends ConsumerState<EditTaskSheet> {
                             child: CircularProgressIndicator(strokeWidth: 2),
                           )
                         : const Icon(Icons.auto_awesome_rounded, size: 18),
-                    label: Text(_breakingDown ? 'Adımlar ekleniyor...' : 'Adımları Uygula'),
+                    label: Text(_breakingDown ? s.applyingSteps : s.applySteps),
                   ),
                 ),
               ],
@@ -425,7 +412,7 @@ class _EditTaskSheetState extends ConsumerState<EditTaskSheet> {
                         height: 20,
                         child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
                       )
-                    : const Text('Kaydet'),
+                    : Text(s.save),
               ),
             ),
           ],

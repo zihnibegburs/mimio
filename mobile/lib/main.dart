@@ -19,8 +19,9 @@ import 'package:mimio/features/web/web_shell.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await initializeDateFormatting('tr_TR');
-  await initializeDateFormatting('en_US');
+  for (final locale in ['tr_TR', 'en_US', 'es_ES', 'fr_FR', 'de_DE']) {
+    await initializeDateFormatting(locale);
+  }
   await WidgetSyncService.initialize();
   await LiveActivityService.instance.initialize();
   final existingToken = await TokenStorage().getToken();

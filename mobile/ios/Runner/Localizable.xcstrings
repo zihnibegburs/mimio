@@ -1,0 +1,326 @@
+{
+  "sourceLanguage" : "en",
+  "strings" : {
+    "intent.add_task.title" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aufgabe hinzufügen"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Add Task"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Añadir tarea"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ajouter une tâche"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Görev Ekle"
+          }
+        }
+      }
+    },
+    "intent.add_task.description" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fügt Mimio eine neue Aufgabe hinzu."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Adds a new task to Mimio."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Añade una nueva tarea a Mimio."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ajoute une nouvelle tâche à Mimio."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mimio'ya yeni bir görev ekler."
+          }
+        }
+      }
+    },
+    "intent.add_task.parameter.title" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aufgabe"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Task"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tarea"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tâche"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Görev"
+          }
+        }
+      }
+    },
+    "intent.add_task.parameter.prompt" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Was möchtest du hinzufügen?"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "What would you like to add?"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "¿Qué quieres añadir?"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Que voulez-vous ajouter ?"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ne eklemek istiyorsun?"
+          }
+        }
+      }
+    },
+    "intent.add_task.error.empty" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sag den Aufgabennamen."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Say the task name."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Di el nombre de la tarea."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dites le nom de la tâche."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Görev adını söyle."
+          }
+        }
+      }
+    },
+    "intent.add_task.error.failed" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aufgabe konnte nicht hinzugefügt werden."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Could not add task."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No se pudo añadir la tarea."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Impossible d'ajouter la tâche."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Görev eklenemedi."
+          }
+        }
+      }
+    },
+    "intent.add_task.success" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Okay, \"%@\" wurde hinzugefügt."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Done, added \"%@\"."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Listo, se añadió \"%@\"."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "C'est fait, « %@ » a été ajouté."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tamam, \"%@\" görevini ekledim."
+          }
+        }
+      }
+    },
+    "intent.add_task.error.retry" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aufgabe konnte nicht hinzugefügt werden. Versuche es später erneut."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Could not add task. Try again later."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No se pudo añadir la tarea. Inténtalo más tarde."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Impossible d'ajouter la tâche. Réessayez plus tard."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Görev eklenemedi. Biraz sonra tekrar dene."
+          }
+        }
+      }
+    },
+    "api.error.not_authenticated" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Please log in to Mimio first." } },
+        "tr" : { "stringUnit" : { "state" : "translated", "value" : "Önce Mimio'da oturum açman gerekiyor." } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "Primero inicia sesión en Mimio." } },
+        "fr" : { "stringUnit" : { "state" : "translated", "value" : "Connectez-vous d'abord à Mimio." } },
+        "de" : { "stringUnit" : { "state" : "translated", "value" : "Bitte melde dich zuerst bei Mimio an." } }
+      }
+    },
+    "api.error.invalid_configuration" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Mimio configuration is missing. Open the app once." } },
+        "tr" : { "stringUnit" : { "state" : "translated", "value" : "Mimio yapılandırması eksik. Uygulamayı bir kez aç." } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "Falta la configuración de Mimio. Abre la app una vez." } },
+        "fr" : { "stringUnit" : { "state" : "translated", "value" : "Configuration Mimio manquante. Ouvrez l'app une fois." } },
+        "de" : { "stringUnit" : { "state" : "translated", "value" : "Mimio-Konfiguration fehlt. Öffne die App einmal." } }
+      }
+    },
+    "api.error.network" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Connection error: %@" } },
+        "tr" : { "stringUnit" : { "state" : "translated", "value" : "Bağlantı hatası: %@" } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "Error de conexión: %@" } },
+        "fr" : { "stringUnit" : { "state" : "translated", "value" : "Erreur de connexion : %@" } },
+        "de" : { "stringUnit" : { "state" : "translated", "value" : "Verbindungsfehler: %@" } }
+      }
+    },
+    "api.error.invalid_response" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Invalid response" } },
+        "tr" : { "stringUnit" : { "state" : "translated", "value" : "Geçersiz yanıt" } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "Respuesta no válida" } },
+        "fr" : { "stringUnit" : { "state" : "translated", "value" : "Réponse invalide" } },
+        "de" : { "stringUnit" : { "state" : "translated", "value" : "Ungültige Antwort" } }
+      }
+    }
+  },
+  "version" : "1.0"
+}

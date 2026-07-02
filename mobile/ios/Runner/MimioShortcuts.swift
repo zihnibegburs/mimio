@@ -6,12 +6,16 @@ struct MimioShortcuts: AppShortcutsProvider {
         AppShortcut(
             intent: AddMimioTaskIntent(),
             phrases: [
-                "Mimio'ya \(\.$taskTitle) ekle",
-                "\(.applicationName)'da görev ekle \(\.$taskTitle)",
-                "Mimio'ya görev ekle \(\.$taskTitle)",
-                "Add \(\.$taskTitle) in \(.applicationName)",
+                "Add task in \(.applicationName)",
+                "Add a task to \(.applicationName)",
+                "Görev ekle \(.applicationName) ile",
+                "\(.applicationName) görev ekle",
+                "\(.applicationName)'a görev ekle",
+                "Añadir tarea en \(.applicationName)",
+                "Ajouter une tâche dans \(.applicationName)",
+                "Aufgabe in \(.applicationName) hinzufügen",
             ],
-            shortTitle: "Görev Ekle",
+            shortTitle: LocalizedStringResource("intent.add_task.title"),
             systemImageName: "plus.circle.fill"
         )
     }

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:mimio/core/l10n/app_strings.dart';
 import 'package:mimio/core/models/models.dart';
 import 'package:mimio/core/theme/mimio_theme.dart';
 import 'package:mimio/features/focus/widgets/focus_timer_widget.dart';
@@ -14,6 +15,7 @@ class ActiveTaskBanner extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final sessionAsync = ref.watch(focusSessionProvider);
+    final s = ref.watch(stringsProvider);
     final color = MimioColors.fromHex(task.color);
 
     return GestureDetector(
@@ -50,7 +52,7 @@ class ActiveTaskBanner extends ConsumerWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    task.isActive ? 'Şu an aktif' : 'Duraklatıldı',
+                    task.isActive ? s.currentlyActive : s.paused,
                     style: const TextStyle(color: Colors.white70, fontSize: 12),
                   ),
                   Text(
@@ -59,7 +61,7 @@ class ActiveTaskBanner extends ConsumerWidget {
                   ),
                   if (sessionAsync.valueOrNull != null)
                     Text(
-                      '${sessionAsync.value!.remainingFormatted} kaldı',
+                      s.remainingLabel(sessionAsync.value!.remainingFormatted),
                       style: const TextStyle(color: Colors.white70, fontSize: 13),
                     ),
                 ],

@@ -5,7 +5,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.mimio.domain.entity.Task;
 import com.mimio.domain.enums.TaskStatus;
 import com.mimio.dto.focus.FocusSessionResponse;
-import com.mimio.exception.ResourceNotFoundException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.StringRedisTemplate;
@@ -61,10 +60,14 @@ public class FocusSessionService {
     }
 
     public void clearSession(UUID userId) {
-        if (redisTemplate != null) {
-            redisTemplate.delete(FOCUS_KEY_PREFIX + userId);
-        } else {
-            memorySessions.remove(userId);
+        try {
+            if (redisTemplate != null) {
+                redisTemplate.delete(FOCUS_KEY_PREFIX + userId);
+            } else {
+                memorySessions.remove(userId);
+            }
+        } catch (Exception e) {
+            log.warn("Failed to clear focus session for user {}: {}", userId, e.getMessage());
         }
     }
 
@@ -126,8 +129,8 @@ public class FocusSessionService {
             } else {
                 memorySessions.put(userId, json);
             }
-        } catch (JsonProcessingException e) {
-            throw new ResourceNotFoundException("Failed to save focus session");
+        } catch (Exception e) {
+            log.warn("Failed to save focus session for user {}: {}", userId, e.getMessage());
         }
     }
 

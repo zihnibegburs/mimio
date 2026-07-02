@@ -2,7 +2,9 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:mimio/core/l10n/app_strings.dart';
 import 'package:mimio/core/models/models.dart';
+import 'package:mimio/core/models/recurrence.dart';
 import 'package:mimio/core/platform/live_activity_service.dart';
 import 'package:mimio/core/platform/widget_sync_service.dart';
 import 'package:mimio/core/repositories/repositories.dart';
@@ -83,7 +85,8 @@ class FocusSessionNotifier extends AsyncNotifier<FocusSessionModel?> {
     final session = await ref.read(taskRepositoryProvider).getFocusSession();
 
     if (session != null && session.isActive) {
-      await ref.read(liveActivityServiceProvider).syncFocusSession(session);
+      final lang = ref.read(appLanguageProvider).valueOrNull ?? 'tr';
+      await ref.read(liveActivityServiceProvider).syncFocusSession(session, language: lang);
     }
 
     _pollTimer?.cancel();
@@ -113,8 +116,8 @@ class TimelineNotifier extends AsyncNotifier<TimelineModel> {
     return timeline;
   }
 
-  Future<void> refresh() async {
-    state = const AsyncLoading();
+  Future<void> refresh({bool showLoading = true}) async {
+    if (showLoading) state = const AsyncLoading();
     final date = ref.read(selectedDateProvider);
     state = await AsyncValue.guard(() async {
       return ref.read(taskRepositoryProvider).getTimeline(date);
@@ -124,15 +127,31 @@ class TimelineNotifier extends AsyncNotifier<TimelineModel> {
     if (timeline != null) await _syncPlatform(timeline);
   }
 
+  Future<void> _refreshAfterAction() async {
+    final date = ref.read(selectedDateProvider);
+    final previous = state.valueOrNull;
+    try {
+      final timeline = await ref.read(taskRepositoryProvider).getTimeline(date);
+      state = AsyncData(timeline);
+      ref.invalidate(focusSessionProvider);
+      await _syncPlatform(timeline);
+    } catch (e, st) {
+      debugPrint('Refresh after task action failed: $e\n$st');
+      if (previous != null) state = AsyncData(previous);
+      rethrow;
+    }
+  }
+
   Future<void> _syncPlatform(TimelineModel timeline) async {
     try {
       FocusSessionModel? session;
       try {
         session = await ref.read(taskRepositoryProvider).getFocusSession();
       } catch (_) {}
-      await WidgetSyncService.syncTimeline(timeline, session: session);
+      final lang = ref.read(appLanguageProvider).valueOrNull ?? 'tr';
+      await WidgetSyncService.syncTimeline(timeline, session: session, language: lang);
       if (session != null && session.isActive) {
-        await ref.read(liveActivityServiceProvider).syncFocusSession(session);
+        await ref.read(liveActivityServiceProvider).syncFocusSession(session, language: lang);
       } else if (timeline.activeTask == null) {
         await ref.read(liveActivityServiceProvider).endActivity();
       }
@@ -146,12 +165,14 @@ class TimelineNotifier extends AsyncNotifier<TimelineModel> {
     int durationMinutes = 30,
     String color = '#6C63FF',
     DateTime? scheduledAt,
+    RecurrenceSelection recurrence = const RecurrenceSelection(),
   }) async {
     await ref.read(taskRepositoryProvider).createTask(
           title: title,
           durationMinutes: durationMinutes,
           color: color,
           scheduledAt: scheduledAt,
+          recurrence: recurrence,
         );
     await refresh();
   }
@@ -203,20 +224,29 @@ class TimelineNotifier extends AsyncNotifier<TimelineModel> {
 
   Future<void> startTask(String id) async {
     await ref.read(taskRepositoryProvider).startTask(id);
-    await refresh();
-    final session = await ref.read(taskRepositoryProvider).getFocusSession();
-    await ref.read(liveActivityServiceProvider).syncFocusSession(session);
+    await _refreshAfterAction();
+    try {
+      final session = await ref.read(taskRepositoryProvider).getFocusSession();
+      final lang = ref.read(appLanguageProvider).valueOrNull ?? 'tr';
+      await ref.read(liveActivityServiceProvider).syncFocusSession(session, language: lang);
+    } catch (e) {
+      debugPrint('Focus sync after start skipped: $e');
+    }
   }
 
   Future<void> pauseTask(String id) async {
     await ref.read(taskRepositoryProvider).pauseTask(id);
-    await refresh();
+    await _refreshAfterAction();
   }
 
   Future<bool> completeTask(String id) async {
     await ref.read(taskRepositoryProvider).completeTask(id);
-    await ref.read(liveActivityServiceProvider).endActivity();
-    await refresh();
+    try {
+      await ref.read(liveActivityServiceProvider).endActivity();
+    } catch (e) {
+      debugPrint('Live activity end skipped: $e');
+    }
+    await _refreshAfterAction();
     return true;
   }
 

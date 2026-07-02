@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+import 'package:mimio/core/l10n/app_strings.dart';
 import 'package:mimio/core/models/models.dart';
 import 'package:mimio/core/theme/mimio_theme.dart';
 import 'package:mimio/features/providers.dart';
@@ -16,10 +17,11 @@ class WeeklyView extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final weekAsync = ref.watch(weeklyTimelineProvider);
     final selected = ref.watch(selectedDateProvider);
+    final s = ref.watch(stringsProvider);
 
     return weekAsync.when(
       loading: () => const Center(child: CircularProgressIndicator()),
-      error: (e, _) => Center(child: Text('Haftalık plan yüklenemedi: $e')),
+      error: (e, _) => Center(child: Text(s.weeklyLoadError(e))),
       data: (days) {
         if (compact) {
           return Row(

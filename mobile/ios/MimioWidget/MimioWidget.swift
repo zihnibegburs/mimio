@@ -9,11 +9,18 @@ struct MimioWidgetEntry: TimelineEntry {
     let title: String
     let subtitle: String
     let taskCount: Int
+    let taskCountLabel: String
 }
 
 struct MimioWidgetProvider: TimelineProvider {
     func placeholder(in context: Context) -> MimioWidgetEntry {
-        MimioWidgetEntry(date: Date(), title: "Kahvaltı", subtitle: "Sıradaki · 08:00", taskCount: 3)
+        MimioWidgetEntry(
+            date: Date(),
+            title: "Breakfast",
+            subtitle: "Up next · 08:00",
+            taskCount: 3,
+            taskCountLabel: "3 tasks"
+        )
     }
 
     func getSnapshot(in context: Context, completion: @escaping (MimioWidgetEntry) -> Void) {
@@ -30,10 +37,17 @@ struct MimioWidgetProvider: TimelineProvider {
         let defaults = UserDefaults(suiteName: appGroupId)
         let active = defaults?.string(forKey: "active_task_title")
         let next = defaults?.string(forKey: "next_task_title")
-        let title = active ?? next ?? "Bugün plan yok"
+        let title = active ?? next ?? defaults?.string(forKey: "widget_title") ?? "Mimio"
         let subtitle = defaults?.string(forKey: "widget_subtitle") ?? "Mimio"
         let count = defaults?.integer(forKey: "task_count") ?? 0
-        return MimioWidgetEntry(date: Date(), title: title, subtitle: subtitle, taskCount: count)
+        let countLabel = defaults?.string(forKey: "task_count_label") ?? "\(count)"
+        return MimioWidgetEntry(
+            date: Date(),
+            title: title,
+            subtitle: subtitle,
+            taskCount: count,
+            taskCountLabel: countLabel
+        )
     }
 }
 
@@ -48,7 +62,7 @@ struct MimioWidgetView: View {
                     .fontWeight(.bold)
                     .foregroundColor(Color(red: 0.42, green: 0.39, blue: 1.0))
                 Spacer()
-                Text("\(entry.taskCount) görev")
+                Text(entry.taskCountLabel)
                     .font(.caption2)
                     .foregroundColor(.secondary)
             }
@@ -109,10 +123,10 @@ struct MimioLiveActivityWidget: Widget {
             let defaults = UserDefaults(suiteName: appGroupId)
             let title = defaults?.string(forKey: context.attributes.prefixedKey("taskTitle")) ?? "Mimio"
             let remaining = defaults?.string(forKey: context.attributes.prefixedKey("remaining")) ?? "--:--"
-            let paused = defaults?.bool(forKey: context.attributes.prefixedKey("paused")) ?? false
+            let status = defaults?.string(forKey: context.attributes.prefixedKey("statusLabel")) ?? "Mimio"
 
             VStack(alignment: .leading, spacing: 6) {
-                Text(paused ? "Duraklatıldı" : "Odak modu")
+                Text(status)
                     .font(.caption)
                     .foregroundColor(.secondary)
                 Text(title)

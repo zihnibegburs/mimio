@@ -1,5 +1,7 @@
 package com.mimio.domain.entity;
 
+import com.mimio.domain.enums.RecurrenceType;
+import com.mimio.domain.enums.RecurrenceUnit;
 import com.mimio.domain.enums.TaskStatus;
 import jakarta.persistence.*;
 import lombok.*;
@@ -76,4 +78,20 @@ public class Task {
 
     @Column(name = "completed_at")
     private Instant completedAt;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "recurrence_type", nullable = false)
+    @Builder.Default
+    private RecurrenceType recurrenceType = RecurrenceType.NONE;
+
+    @Column(name = "recurrence_interval", nullable = false)
+    @Builder.Default
+    private Integer recurrenceInterval = 1;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "recurrence_unit")
+    private RecurrenceUnit recurrenceUnit;
+
+    @Column(name = "recurrence_series_id")
+    private UUID recurrenceSeriesId;
 }

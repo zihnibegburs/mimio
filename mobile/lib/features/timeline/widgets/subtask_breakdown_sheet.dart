@@ -175,7 +175,7 @@ class _SubtaskBreakdownSheetState extends ConsumerState<SubtaskBreakdownSheet> {
                         const SizedBox(width: 8),
                         Expanded(child: Text(e.value.title, style: const TextStyle(fontWeight: FontWeight.w600))),
                         Text(
-                          '${e.value.durationMinutes} dk',
+                          s.minutesShort(e.value.durationMinutes),
                           style: TextStyle(
                             fontSize: 12,
                             fontWeight: FontWeight.w600,

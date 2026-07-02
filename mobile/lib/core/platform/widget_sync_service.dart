@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:home_widget/home_widget.dart';
 import 'package:intl/intl.dart';
 import 'package:mimio/core/config/platform_config.dart';
+import 'package:mimio/core/l10n/app_strings.dart';
 import 'package:mimio/core/models/models.dart';
 
 class WidgetSyncService {
@@ -15,6 +16,8 @@ class WidgetSyncService {
   static const _taskCount = 'task_count';
   static const _dateLabel = 'date_label';
   static const _subtitle = 'widget_subtitle';
+  static const _widgetTitle = 'widget_title';
+  static const _taskCountLabel = 'task_count_label';
 
   static bool _available = false;
 
@@ -34,8 +37,15 @@ class WidgetSyncService {
     }
   }
 
-  static Future<void> syncTimeline(TimelineModel timeline, {FocusSessionModel? session}) async {
+  static Future<void> syncTimeline(
+    TimelineModel timeline, {
+    FocusSessionModel? session,
+    String language = 'tr',
+  }) async {
     if (kIsWeb || !_available) return;
+
+    final s = S(language);
+    final dateLocale = dateLocaleFor(language);
 
     try {
       final pending = timeline.tasks.where((t) => !t.isCompleted).toList();
@@ -46,14 +56,16 @@ class WidgetSyncService {
               orElse: () => pending.first,
             );
 
-      final dateLabel = DateFormat('d MMM', 'tr_TR').format(timeline.date);
+      final dateLabel = DateFormat('d MMM', dateLocale).format(timeline.date);
       String subtitle;
       String title;
 
       if (timeline.activeTask != null) {
         title = timeline.activeTask!.title;
-        final remaining = session?.remainingFormatted ?? '${timeline.activeTask!.durationMinutes} dk';
-        subtitle = session?.isPaused == true ? 'Duraklatıldı · $remaining' : 'Aktif · $remaining kaldı';
+        final remaining = session?.remainingFormatted ?? s.minutesShort(timeline.activeTask!.durationMinutes);
+        subtitle = session?.isPaused == true
+            ? s.widgetPausedSubtitle(remaining)
+            : s.widgetActiveSubtitle(remaining);
         await HomeWidget.saveWidgetData<String>(_activeTitle, title);
         await HomeWidget.saveWidgetData<String>(_activeRemaining, remaining);
       } else if (next != null) {
@@ -61,16 +73,18 @@ class WidgetSyncService {
         final time = next.scheduledAt != null
             ? DateFormat('HH:mm').format(next.scheduledAt!.toLocal())
             : '--:--';
-        subtitle = 'Sıradaki · $time';
+        subtitle = s.widgetNextSubtitle(time);
         await HomeWidget.saveWidgetData<String>(_nextTitle, title);
         await HomeWidget.saveWidgetData<String>(_nextTime, time);
       } else {
-        title = 'Bugün plan yok';
+        title = s.noPlanWidget;
         subtitle = 'Mimio · $dateLabel';
       }
 
       await HomeWidget.saveWidgetData<String>(_subtitle, subtitle);
+      await HomeWidget.saveWidgetData<String>(_widgetTitle, title);
       await HomeWidget.saveWidgetData<int>(_taskCount, timeline.tasks.length);
+      await HomeWidget.saveWidgetData<String>(_taskCountLabel, s.taskCount(timeline.tasks.length));
       await HomeWidget.saveWidgetData<String>(_dateLabel, dateLabel);
       await HomeWidget.saveWidgetData<String>(
         'tasks_json',

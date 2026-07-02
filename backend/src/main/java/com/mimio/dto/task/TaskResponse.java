@@ -1,6 +1,8 @@
 package com.mimio.dto.task;
 
 import com.mimio.domain.entity.Task;
+import com.mimio.domain.enums.RecurrenceType;
+import com.mimio.domain.enums.RecurrenceUnit;
 import com.mimio.domain.enums.TaskStatus;
 
 import java.time.Instant;
@@ -22,7 +24,11 @@ public record TaskResponse(
         Instant completedAt,
         Instant createdAt,
         UUID parentTaskId,
-        List<TaskResponse> subtasks
+        List<TaskResponse> subtasks,
+        RecurrenceType recurrenceType,
+        Integer recurrenceInterval,
+        RecurrenceUnit recurrenceUnit,
+        UUID recurrenceSeriesId
 ) {
     public static TaskResponse from(Task task) {
         return from(task, List.of());
@@ -44,7 +50,11 @@ public record TaskResponse(
                 task.getCompletedAt(),
                 task.getCreatedAt(),
                 task.getParentTask() != null ? task.getParentTask().getId() : null,
-                subtasks.stream().map(TaskResponse::from).toList()
+                subtasks.stream().map(TaskResponse::from).toList(),
+                task.getRecurrenceType(),
+                task.getRecurrenceInterval(),
+                task.getRecurrenceUnit(),
+                task.getRecurrenceSeriesId()
         );
     }
 }
