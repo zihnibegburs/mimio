@@ -113,6 +113,7 @@ class HomeScreen extends ConsumerWidget {
             ),
           ],
         ),
+        floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
         floatingActionButton: tab == HomeTab.today
             ? FloatingActionButton.extended(
                 onPressed: () {
