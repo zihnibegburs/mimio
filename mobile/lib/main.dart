@@ -16,6 +16,7 @@ import 'package:mimio/features/auth/login_screen.dart';
 import 'package:mimio/features/auth/register_screen.dart';
 import 'package:mimio/features/providers.dart';
 import 'package:mimio/features/ai/ai_plan_screen.dart';
+import 'package:mimio/features/achievements/achievements_screen.dart';
 import 'package:mimio/features/integrations/calendar_import_screen.dart';
 import 'package:mimio/features/focus/focus_screen.dart';
 import 'package:mimio/features/profile/profile_screen.dart';
@@ -121,6 +122,7 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(path: '/ai', builder: (_, __) => const AiPlanScreen()),
       GoRoute(path: '/profile', builder: (_, __) => const ProfileScreen()),
       GoRoute(path: '/calendar-import', builder: (_, __) => const CalendarImportScreen()),
+      GoRoute(path: '/achievements', builder: (_, __) => const AchievementsScreen()),
     ],
   );
 });
