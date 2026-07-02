@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:mimio/core/l10n/app_strings.dart';
 import 'package:mimio/core/models/models.dart';
+import 'package:mimio/core/utils/task_icons.dart';
 import 'package:mimio/core/theme/mimio_theme.dart';
 import 'package:mimio/features/providers.dart';
 
@@ -140,14 +141,35 @@ class TaskCard extends ConsumerWidget {
                                     ],
                                   ),
                                   const SizedBox(height: 8),
-                                  Text(
-                                    task.title,
-                                    style: TextStyle(
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.w700,
-                                      color: task.isCompleted ? MimioColors.textSecondary : MimioColors.textPrimary,
-                                      decoration: task.isCompleted ? TextDecoration.lineThrough : null,
-                                    ),
+                                  Row(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Container(
+                                        width: 38,
+                                        height: 38,
+                                        decoration: BoxDecoration(
+                                          color: color.withValues(alpha: 0.14),
+                                          borderRadius: BorderRadius.circular(12),
+                                        ),
+                                        child: Icon(
+                                          TaskIcons.iconForTask(title: task.title, icon: task.icon),
+                                          color: color,
+                                          size: 20,
+                                        ),
+                                      ),
+                                      const SizedBox(width: 12),
+                                      Expanded(
+                                        child: Text(
+                                          task.title,
+                                          style: TextStyle(
+                                            fontSize: 16,
+                                            fontWeight: FontWeight.w700,
+                                            color: task.isCompleted ? MimioColors.textSecondary : MimioColors.textPrimary,
+                                            decoration: task.isCompleted ? TextDecoration.lineThrough : null,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
                                   ),
                                   if (task.hasReward && !task.isCompleted) ...[
                                     const SizedBox(height: 6),

@@ -53,6 +53,7 @@ class S {
   String get account => l10n(lang, _m(en: 'Account', tr: 'Hesap', es: 'Cuenta', fr: 'Compte', de: 'Konto'));
   String get logout => l10n(lang, _m(en: 'Log out', tr: 'Çıkış yap', es: 'Cerrar sesión', fr: 'Se déconnecter', de: 'Abmelden'));
   String get save => l10n(lang, _m(en: 'Save', tr: 'Kaydet', es: 'Guardar', fr: 'Enregistrer', de: 'Speichern'));
+  String get saving => l10n(lang, _m(en: 'Saving...', tr: 'Kaydediliyor...', es: 'Guardando...', fr: 'Enregistrement...', de: 'Speichern...'));
   String get cancel => l10n(lang, _m(en: 'Cancel', tr: 'İptal', es: 'Cancelar', fr: 'Annuler', de: 'Abbrechen'));
   String get version => l10n(lang, _m(en: 'Version', tr: 'Sürüm', es: 'Versión', fr: 'Version', de: 'Version'));
   String get notifications =>
@@ -151,6 +152,8 @@ class S {
       l10n(lang, _m(en: 'All day', tr: 'Tüm gün', es: 'Todo el día', fr: 'Journée entière', de: 'Ganztägig'));
   String get achievementsTitle =>
       l10n(lang, _m(en: 'Achievements', tr: 'Başarımlar', es: 'Logros', fr: 'Succès', de: 'Erfolge'));
+  String get achievementsNav =>
+      l10n(lang, _m(en: 'Badges', tr: 'Rozetler', es: 'Logros', fr: 'Badges', de: 'Abzeichen'));
   String get achievementsSubtitle => l10n(lang, _m(
         en: 'Keep completing tasks to unlock badges.',
         tr: 'Görevleri tamamlayarak rozetleri aç.',
@@ -196,6 +199,9 @@ class S {
         AchievementId.earlyBird => _m(en: 'Early Bird', tr: 'Erken Kuş', es: 'Madrugador', fr: 'Lève-tôt', de: 'Frühaufsteher'),
         AchievementId.nightOwl => _m(en: 'Night Owl', tr: 'Gece Kuşu', es: 'Noctámbulo', fr: 'Oiseau de nuit', de: 'Nachteule'),
         AchievementId.calendarImporter => _m(en: 'Calendar Sync', tr: 'Takvim Senkronu', es: 'Sincronía de calendario', fr: 'Sync calendrier', de: 'Kalender-Sync'),
+        AchievementId.aiWhisperer => _m(en: 'AI Whisperer', tr: 'AI Fısıldayan', es: 'Susurro de IA', fr: 'Murmure IA', de: 'KI-Flüsterer'),
+        AchievementId.hatTrick => _m(en: 'Hat Trick', tr: 'Üçlü Vuruş', es: 'Hat-trick', fr: 'Triplé', de: 'Hattrick'),
+        AchievementId.twoWeekStreak => _m(en: 'Two-Week Streak', tr: '2 Haftalık Seri', es: 'Racha de 2 semanas', fr: 'Série de 2 semaines', de: '2-Wochen-Serie'),
       });
 
   String achievementDescription(AchievementId id) => l10n(lang, switch (id) {
@@ -297,6 +303,27 @@ class S {
               fr: 'Importez des événements de votre calendrier.',
               de: 'Importiere Termine aus deinem Kalender.',
             ),
+        AchievementId.aiWhisperer => _m(
+              en: 'Save a plan from the AI planner.',
+              tr: 'AI planlayıcıdan plan kaydet.',
+              es: 'Guarda un plan del planificador IA.',
+              fr: 'Enregistrez un plan depuis le planificateur IA.',
+              de: 'Speichere einen Plan aus dem KI-Planer.',
+            ),
+        AchievementId.hatTrick => _m(
+              en: 'Complete 3 tasks in one day.',
+              tr: 'Bir günde 3 görev tamamla.',
+              es: 'Completa 3 tareas en un día.',
+              fr: 'Terminez 3 tâches en une journée.',
+              de: 'Schließe 3 Aufgaben an einem Tag ab.',
+            ),
+        AchievementId.twoWeekStreak => _m(
+              en: 'Keep a 14-day completion streak.',
+              tr: '14 günlük tamamlama serisi yap.',
+              es: 'Mantén una racha de 14 días.',
+              fr: 'Maintenez une série de 14 jours.',
+              de: 'Halte eine 14-Tage-Serie.',
+            ),
       });
 
   // Tasks
@@ -379,6 +406,47 @@ class S {
       l10n(lang, _m(en: 'Add first task', tr: 'İlk Görevi Ekle', es: 'Añadir primera tarea', fr: 'Ajouter la première tâche', de: 'Erste Aufgabe hinzufügen'));
   String get duration =>
       l10n(lang, _m(en: 'Duration', tr: 'Süre', es: 'Duración', fr: 'Durée', de: 'Dauer'));
+  String get aiDuration =>
+      l10n(lang, _m(en: 'AI decide', tr: 'AI belirlesin', es: 'Decidir con IA', fr: 'IA décide', de: 'KI entscheidet'));
+  String get stepDurations =>
+      l10n(lang, _m(en: 'Step durations', tr: 'Adım süreleri', es: 'Duración de pasos', fr: 'Durées des étapes', de: 'Schrittdauern'));
+  String get taskReminders =>
+      l10n(lang, _m(en: 'Reminders', tr: 'Hatırlatmalar', es: 'Recordatorios', fr: 'Rappels', de: 'Erinnerungen'));
+  String get remind10Min =>
+      l10n(lang, _m(en: '10 minutes before', tr: '10 dk önce', es: '10 min antes', fr: '10 min avant', de: '10 Min. vorher'));
+  String get remind1Min =>
+      l10n(lang, _m(en: '1 minute before', tr: '1 dk önce', es: '1 min antes', fr: '1 min avant', de: '1 Min. vorher'));
+  String get taskReminderTitle =>
+      l10n(lang, _m(en: 'Upcoming task', tr: 'Yaklaşan görev', es: 'Tarea próxima', fr: 'Tâche à venir', de: 'Anstehende Aufgabe'));
+  String taskReminder10(String title) => l10n(lang, _m(
+        en: '$title starts in 10 minutes',
+        tr: '$title 10 dakika içinde başlıyor',
+        es: '$title empieza en 10 minutos',
+        fr: '« $title » commence dans 10 minutes',
+        de: '„$title“ beginnt in 10 Minuten',
+      ));
+  String taskReminder1(String title) => l10n(lang, _m(
+        en: '$title starts in 1 minute',
+        tr: '$title 1 dakika içinde başlıyor',
+        es: '$title empieza en 1 minuto',
+        fr: '« $title » commence dans 1 minute',
+        de: '„$title“ beginnt in 1 Minute',
+      ));
+  String get timerSeekBack5 =>
+      l10n(lang, _m(en: '-5m', tr: '-5dk', es: '-5m', fr: '-5m', de: '-5m'));
+  String get timerSeekBack1 =>
+      l10n(lang, _m(en: '-1m', tr: '-1dk', es: '-1m', fr: '-1m', de: '-1m'));
+  String get timerSeekForward1 =>
+      l10n(lang, _m(en: '+1m', tr: '+1dk', es: '+1m', fr: '+1m', de: '+1m'));
+  String get timerSeekForward5 =>
+      l10n(lang, _m(en: '+5m', tr: '+5dk', es: '+5m', fr: '+5m', de: '+5m'));
+  String get timerDragHint => l10n(lang, _m(
+        en: 'Drag the ring to adjust',
+        tr: 'Süreyi daire üzerinde kaydır',
+        es: 'Arrastra el anillo para ajustar',
+        fr: 'Faites glisser l\'anneau',
+        de: 'Ring zum Anpassen ziehen',
+      ));
   String get time => l10n(lang, _m(en: 'Time', tr: 'Saat', es: 'Hora', fr: 'Heure', de: 'Uhrzeit'));
   String get color => l10n(lang, _m(en: 'Color', tr: 'Renk', es: 'Color', fr: 'Couleur', de: 'Farbe'));
   String get repeat => l10n(lang, _m(en: 'Repeat', tr: 'Tekrar', es: 'Repetir', fr: 'Répéter', de: 'Wiederholen'));

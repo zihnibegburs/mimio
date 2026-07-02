@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:mimio/core/l10n/app_strings.dart';
 import 'package:mimio/core/models/models.dart';
+import 'package:mimio/core/utils/task_icons.dart';
 import 'package:mimio/core/theme/mimio_theme.dart';
 
 class TimelineHourGrid extends ConsumerWidget {
@@ -134,30 +135,42 @@ class _TaskBlock extends StatelessWidget {
               ),
             ],
           ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+          child: Row(
             children: [
-              Text(
-                task.title,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: TextStyle(
-                  color: task.isCompleted ? Colors.white70 : Colors.white,
-                  fontWeight: FontWeight.w700,
-                  fontSize: 13,
-                  decoration: task.isCompleted ? TextDecoration.lineThrough : null,
+              Icon(
+                TaskIcons.iconForTask(title: task.title, icon: task.icon),
+                color: Colors.white.withValues(alpha: 0.9),
+                size: 14,
+              ),
+              const SizedBox(width: 6),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      task.title,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        color: task.isCompleted ? Colors.white70 : Colors.white,
+                        fontWeight: FontWeight.w700,
+                        fontSize: 13,
+                        decoration: task.isCompleted ? TextDecoration.lineThrough : null,
+                      ),
+                    ),
+                    if (height > 40)
+                      Text(
+                        task.hasSubtasks
+                            ? '${s.stepsCount(task.subtasks.length)} · ${s.minutesShort(task.durationMinutes)}'
+                            : '${timeFormat.format(local)} · ${s.minutesShort(task.durationMinutes)}',
+                        style: TextStyle(
+                          color: Colors.white.withValues(alpha: 0.85),
+                          fontSize: 10,
+                        ),
+                      ),
+                  ],
                 ),
               ),
-              if (height > 40)
-                Text(
-                  task.hasSubtasks
-                      ? '${s.stepsCount(task.subtasks.length)} · ${s.minutesShort(task.durationMinutes)}'
-                      : '${timeFormat.format(local)} · ${s.minutesShort(task.durationMinutes)}',
-                  style: TextStyle(
-                    color: Colors.white.withValues(alpha: 0.85),
-                    fontSize: 10,
-                  ),
-                ),
             ],
           ),
         ),

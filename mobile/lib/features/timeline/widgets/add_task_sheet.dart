@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mimio/core/l10n/app_strings.dart';
 import 'package:mimio/core/models/ai_models.dart';
 import 'package:mimio/core/models/recurrence.dart';
+import 'package:mimio/core/platform/notification_service.dart';
 import 'package:mimio/core/repositories/ai_repository.dart';
 import 'package:mimio/core/theme/mimio_theme.dart';
 import 'package:mimio/features/providers.dart';
@@ -20,11 +21,14 @@ class AddTaskSheet extends ConsumerStatefulWidget {
 class _AddTaskSheetState extends ConsumerState<AddTaskSheet> {
   final _titleController = TextEditingController();
   final _rewardController = TextEditingController();
+  bool _useAiDuration = true;
   int _duration = 30;
   String _selectedColor = MimioColors.taskColors.first;
   TimeOfDay _time = TimeOfDay.now();
   RecurrenceSelection _recurrence = const RecurrenceSelection();
   bool _splitIntoSubtasks = false;
+  bool _remind10Min = false;
+  bool _remind1Min = false;
   List<AiStepModel>? _previewSteps;
   bool _loadingPreview = false;
   bool _submitting = false;
@@ -77,7 +81,7 @@ class _AddTaskSheetState extends ConsumerState<AddTaskSheet> {
   String _friendlyError(Object e) => ref.read(stringsProvider).friendlyAiError(e, includeBootRunHint: true);
 
   Future<void> _submit() async {
-    if (_titleController.text.trim().isEmpty) return;
+    if (_titleController.text.trim().isEmpty || _submitting) return;
 
     setState(() {
       _submitting = true;
@@ -85,6 +89,7 @@ class _AddTaskSheetState extends ConsumerState<AddTaskSheet> {
     });
 
     try {
+      final reminders = TaskReminderSettings(remind10Min: _remind10Min, remind1Min: _remind1Min);
       if (_splitIntoSubtasks) {
         var steps = _previewSteps;
         if (steps == null || steps.isEmpty) {
@@ -101,13 +106,21 @@ class _AddTaskSheetState extends ConsumerState<AddTaskSheet> {
                   .toList(),
             );
       } else {
+        var duration = _duration;
+        if (_useAiDuration) {
+          final result = await ref.read(aiRepositoryProvider).breakdown(_titleController.text.trim());
+          duration = result.steps.fold<int>(0, (sum, step) => sum + step.durationMinutes);
+          if (duration <= 0) duration = 30;
+        }
+
         await ref.read(timelineProvider.notifier).createTask(
               title: _titleController.text.trim(),
-              durationMinutes: _duration,
+              durationMinutes: duration,
               color: _selectedColor,
               scheduledAt: _scheduledAt,
               recurrence: _recurrence,
               reward: _rewardController.text.trim().isEmpty ? null : _rewardController.text.trim(),
+              reminders: reminders,
             );
       }
 
@@ -255,15 +268,45 @@ class _AddTaskSheetState extends ConsumerState<AddTaskSheet> {
               const SizedBox(height: 8),
               Wrap(
                 spacing: 8,
-                children: [15, 30, 45, 60, 90].map((min) {
-                  final selected = _duration == min;
-                  return ChoiceChip(
-                    label: Text(s.minutesShort(min)),
-                    selected: selected,
-                    onSelected: (_) => setState(() => _duration = min),
+                runSpacing: 8,
+                children: [
+                  ChoiceChip(
+                    avatar: const Icon(Icons.auto_awesome_rounded, size: 16),
+                    label: Text(s.aiDuration),
+                    selected: _useAiDuration,
+                    onSelected: (_) => setState(() => _useAiDuration = true),
                     selectedColor: MimioColors.primary.withValues(alpha: 0.2),
-                  );
-                }).toList(),
+                  ),
+                  ...[15, 30, 45, 60, 90].map((min) {
+                    final selected = !_useAiDuration && _duration == min;
+                    return ChoiceChip(
+                      label: Text(s.minutesShort(min)),
+                      selected: selected,
+                      onSelected: (_) => setState(() {
+                        _useAiDuration = false;
+                        _duration = min;
+                      }),
+                      selectedColor: MimioColors.primary.withValues(alpha: 0.2),
+                    );
+                  }),
+                ],
+              ),
+            ],
+            if (!_splitIntoSubtasks) ...[
+              const SizedBox(height: 16),
+              Text(s.taskReminders, style: Theme.of(context).textTheme.labelLarge),
+              const SizedBox(height: 8),
+              SwitchListTile(
+                contentPadding: EdgeInsets.zero,
+                title: Text(s.remind10Min, style: const TextStyle(fontWeight: FontWeight.w600)),
+                value: _remind10Min,
+                onChanged: (v) => setState(() => _remind10Min = v),
+              ),
+              SwitchListTile(
+                contentPadding: EdgeInsets.zero,
+                title: Text(s.remind1Min, style: const TextStyle(fontWeight: FontWeight.w600)),
+                value: _remind1Min,
+                onChanged: (v) => setState(() => _remind1Min = v),
               ),
             ],
             const SizedBox(height: 20),

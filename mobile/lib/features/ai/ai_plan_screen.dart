@@ -7,8 +7,10 @@ import 'package:mimio/core/models/ai_models.dart';
 import 'package:mimio/core/repositories/ai_repository.dart';
 import 'package:mimio/core/theme/mimio_theme.dart';
 import 'package:mimio/core/widgets/speech_text_field.dart';
+import 'package:mimio/core/utils/task_icons.dart';
 import 'package:mimio/features/providers.dart';
 import 'package:mimio/features/timeline/home_tab.dart';
+import 'package:mimio/features/achievements/achievements_screen.dart';
 
 enum AiMode { breakdown, plan }
 
@@ -24,6 +26,7 @@ class AiPlanScreen extends ConsumerStatefulWidget {
 class _AiPlanScreenState extends ConsumerState<AiPlanScreen> {
   final _controller = TextEditingController();
   bool _loading = false;
+  bool _applying = false;
   AiBreakdownModel? _breakdown;
   AiPlanModel? _plan;
   String? _error;
@@ -77,53 +80,84 @@ class _AiPlanScreenState extends ConsumerState<AiPlanScreen> {
   }
 
   Future<void> _applyPlan() async {
-    if (_plan == null) return;
-    for (final task in _plan!.tasks) {
-      await ref.read(timelineProvider.notifier).createTask(
-            title: task.title,
-            durationMinutes: task.durationMinutes,
-            color: task.color,
-            scheduledAt: task.scheduledAt(_plan!.date),
-            autoStart: false,
-          );
-    }
-    if (mounted) {
+    if (_plan == null || _applying) return;
+
+    setState(() {
+      _applying = true;
+      _error = null;
+    });
+
+    try {
+      for (final task in _plan!.tasks) {
+        await ref.read(timelineProvider.notifier).createTask(
+              title: task.title,
+              durationMinutes: task.durationMinutes,
+              color: task.color,
+              icon: TaskIcons.inferName(task.title),
+              scheduledAt: task.scheduledAt(_plan!.date),
+              autoStart: false,
+            );
+      }
+      await ref.read(achievementStatsProvider.notifier).recordAiPlanApplied();
+      if (!mounted) return;
       final s = ref.read(stringsProvider);
       ref.read(homeTabProvider.notifier).state = HomeTab.today;
       context.go('/home');
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(s.tasksAddedToPlan(_plan!.tasks.length))),
       );
+    } catch (e) {
+      if (mounted) {
+        final s = ref.read(stringsProvider);
+        setState(() => _error = _friendlyError(e, s));
+      }
+    } finally {
+      if (mounted) setState(() => _applying = false);
     }
   }
 
   Future<void> _applyBreakdown() async {
-    if (_breakdown == null) return;
-    final date = ref.read(selectedDateProvider);
-    var hour = DateTime.now().hour;
-    var minute = 0;
-    if (hour < 8) {
-      hour = 8;
-    }
-    final scheduledAt = DateTime(date.year, date.month, date.day, hour, minute);
+    if (_breakdown == null || _applying) return;
 
-    await ref.read(timelineProvider.notifier).createTaskWithSubtasks(
-          title: _breakdown!.originalTask,
-          scheduledAt: scheduledAt,
-          color: _breakdown!.steps.first.color,
-          subtasks: _breakdown!.steps
-              .map((s) => (title: s.title, durationMinutes: s.durationMinutes, color: s.color))
-              .toList(),
-          autoStart: false,
-        );
+    setState(() {
+      _applying = true;
+      _error = null;
+    });
 
-    if (mounted) {
+    try {
+      final date = ref.read(selectedDateProvider);
+      var hour = DateTime.now().hour;
+      var minute = 0;
+      if (hour < 8) {
+        hour = 8;
+      }
+      final scheduledAt = DateTime(date.year, date.month, date.day, hour, minute);
+
+      await ref.read(timelineProvider.notifier).createTaskWithSubtasks(
+            title: _breakdown!.originalTask,
+            scheduledAt: scheduledAt,
+            color: _breakdown!.steps.first.color,
+            subtasks: _breakdown!.steps
+                .map((s) => (title: s.title, durationMinutes: s.durationMinutes, color: s.color))
+                .toList(),
+            autoStart: false,
+          );
+      await ref.read(achievementStatsProvider.notifier).recordAiPlanApplied();
+
+      if (!mounted) return;
       final s = ref.read(stringsProvider);
       ref.read(homeTabProvider.notifier).state = HomeTab.today;
       context.go('/home');
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(s.stepsTaskAdded(_breakdown!.steps.length))),
       );
+    } catch (e) {
+      if (mounted) {
+        final s = ref.read(stringsProvider);
+        setState(() => _error = _friendlyError(e, s));
+      }
+    } finally {
+      if (mounted) setState(() => _applying = false);
     }
   }
 
@@ -230,9 +264,15 @@ class _AiPlanScreenState extends ConsumerState<AiPlanScreen> {
                   )),
               const SizedBox(height: 16),
               ElevatedButton.icon(
-                onPressed: _applyPlan,
-                icon: const Icon(Icons.calendar_today_rounded),
-                label: Text(s.addPlanToDay),
+                onPressed: _applying ? null : _applyPlan,
+                icon: _applying
+                    ? const SizedBox(
+                        width: 18,
+                        height: 18,
+                        child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                      )
+                    : const Icon(Icons.calendar_today_rounded),
+                label: Text(_applying ? s.saving : s.addPlanToDay),
                 style: ElevatedButton.styleFrom(backgroundColor: MimioColors.success),
               ),
             ],
@@ -249,9 +289,15 @@ class _AiPlanScreenState extends ConsumerState<AiPlanScreen> {
                   )),
               const SizedBox(height: 16),
               ElevatedButton.icon(
-                onPressed: _applyBreakdown,
-                icon: const Icon(Icons.add_task_rounded),
-                label: Text(s.addTaskAndSteps),
+                onPressed: _applying ? null : _applyBreakdown,
+                icon: _applying
+                    ? const SizedBox(
+                        width: 18,
+                        height: 18,
+                        child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                      )
+                    : const Icon(Icons.add_task_rounded),
+                label: Text(_applying ? s.saving : s.addTaskAndSteps),
                 style: ElevatedButton.styleFrom(backgroundColor: MimioColors.success),
               ),
             ],

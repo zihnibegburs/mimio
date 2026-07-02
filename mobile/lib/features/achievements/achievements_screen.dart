@@ -50,15 +50,35 @@ class AchievementStatsNotifier extends AsyncNotifier<AchievementStats> {
     await storage.save(updated);
     state = AsyncData(updated);
   }
+
+  Future<void> recordAiPlanApplied() async {
+    final storage = ref.read(achievementStorageProvider);
+    final current = state.valueOrNull ?? await storage.load();
+    final updated = storage.recordAiPlanApplied(current);
+    await storage.save(updated);
+    state = AsyncData(updated);
+  }
 }
 
 class AchievementsScreen extends ConsumerWidget {
-  const AchievementsScreen({super.key});
+  const AchievementsScreen({super.key, this.embedded = false});
+
+  final bool embedded;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final statsAsync = ref.watch(achievementStatsProvider);
     final s = ref.watch(stringsProvider);
+
+    final body = statsAsync.when(
+      loading: () => const Center(child: CircularProgressIndicator()),
+      error: (e, _) => Center(child: Text('$e')),
+      data: (stats) => _AchievementsBody(stats: stats, strings: s),
+    );
+
+    if (embedded) {
+      return body;
+    }
 
     return Scaffold(
       appBar: AppBar(
@@ -68,11 +88,7 @@ class AchievementsScreen extends ConsumerWidget {
           onPressed: () => context.pop(),
         ),
       ),
-      body: statsAsync.when(
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, _) => Center(child: Text('$e')),
-        data: (stats) => _AchievementsBody(stats: stats, strings: s),
-      ),
+      body: body,
     );
   }
 }

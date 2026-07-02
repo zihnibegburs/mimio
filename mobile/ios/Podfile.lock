@@ -2,8 +2,12 @@ PODS:
   - CwlCatchException (2.2.1):
     - CwlCatchExceptionSupport (~> 2.2.1)
   - CwlCatchExceptionSupport (2.2.1)
+  - device_calendar (0.0.1):
+    - Flutter
   - Flutter (1.0.0)
   - flutter_app_group_directory (0.0.1):
+    - Flutter
+  - flutter_local_notifications (0.0.1):
     - Flutter
   - home_widget (0.0.1):
     - Flutter
@@ -23,8 +27,10 @@ PODS:
     - FlutterMacOS
 
 DEPENDENCIES:
+  - device_calendar (from `.symlinks/plugins/device_calendar/ios`)
   - Flutter (from `Flutter`)
   - flutter_app_group_directory (from `.symlinks/plugins/flutter_app_group_directory/ios`)
+  - flutter_local_notifications (from `.symlinks/plugins/flutter_local_notifications/ios`)
   - home_widget (from `.symlinks/plugins/home_widget/ios`)
   - live_activities (from `.symlinks/plugins/live_activities/ios`)
   - path_provider_foundation (from `.symlinks/plugins/path_provider_foundation/darwin`)
@@ -38,10 +44,14 @@ SPEC REPOS:
     - CwlCatchExceptionSupport
 
 EXTERNAL SOURCES:
+  device_calendar:
+    :path: ".symlinks/plugins/device_calendar/ios"
   Flutter:
     :path: Flutter
   flutter_app_group_directory:
     :path: ".symlinks/plugins/flutter_app_group_directory/ios"
+  flutter_local_notifications:
+    :path: ".symlinks/plugins/flutter_local_notifications/ios"
   home_widget:
     :path: ".symlinks/plugins/home_widget/ios"
   live_activities:
@@ -58,8 +68,10 @@ EXTERNAL SOURCES:
 SPEC CHECKSUMS:
   CwlCatchException: 7acc161b299a6de7f0a46a6ed741eae2c8b4d75a
   CwlCatchExceptionSupport: 54ccab8d8c78907b57f99717fb19d4cc3bce02dc
+  device_calendar: 9cb33f88a02e19652ec7b8b122ca778f751b1f7b
   Flutter: cabc95a1d2626b1b06e7179b784ebcf0c0cde467
   flutter_app_group_directory: d2c3337f424828558953172f9378d00df9b7756d
+  flutter_local_notifications: df98d66e515e1ca797af436137b4459b160ad8c9
   home_widget: 0434835a4c9a75704264feff6be17ea40e0f0d57
   live_activities: 5a5313d5bf801bbbbe80d51eab80aed6d6df376b
   path_provider_foundation: 0b743cbb62d8e47eab856f09262bb8c1ddcfe6ba

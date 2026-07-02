@@ -15,6 +15,9 @@ enum AchievementId {
   earlyBird,
   nightOwl,
   calendarImporter,
+  aiWhisperer,
+  hatTrick,
+  twoWeekStreak,
 }
 
 class AchievementDefinition {
@@ -49,6 +52,10 @@ class AchievementStats {
     this.earlyBirdCompletions = 0,
     this.nightOwlCompletions = 0,
     this.lastCompletionDate,
+    this.aiPlansApplied = 0,
+    this.maxDailyCompletions = 0,
+    this.completionsToday = 0,
+    this.weekendCompletions = 0,
   });
 
   final int tasksCompleted;
@@ -62,6 +69,10 @@ class AchievementStats {
   final int earlyBirdCompletions;
   final int nightOwlCompletions;
   final String? lastCompletionDate;
+  final int aiPlansApplied;
+  final int maxDailyCompletions;
+  final int completionsToday;
+  final int weekendCompletions;
 
   AchievementStats copyWith({
     int? tasksCompleted,
@@ -75,6 +86,10 @@ class AchievementStats {
     int? earlyBirdCompletions,
     int? nightOwlCompletions,
     String? lastCompletionDate,
+    int? aiPlansApplied,
+    int? maxDailyCompletions,
+    int? completionsToday,
+    int? weekendCompletions,
   }) {
     return AchievementStats(
       tasksCompleted: tasksCompleted ?? this.tasksCompleted,
@@ -88,6 +103,10 @@ class AchievementStats {
       earlyBirdCompletions: earlyBirdCompletions ?? this.earlyBirdCompletions,
       nightOwlCompletions: nightOwlCompletions ?? this.nightOwlCompletions,
       lastCompletionDate: lastCompletionDate ?? this.lastCompletionDate,
+      aiPlansApplied: aiPlansApplied ?? this.aiPlansApplied,
+      maxDailyCompletions: maxDailyCompletions ?? this.maxDailyCompletions,
+      completionsToday: completionsToday ?? this.completionsToday,
+      weekendCompletions: weekendCompletions ?? this.weekendCompletions,
     );
   }
 
@@ -103,6 +122,10 @@ class AchievementStats {
         'earlyBirdCompletions': earlyBirdCompletions,
         'nightOwlCompletions': nightOwlCompletions,
         'lastCompletionDate': lastCompletionDate,
+        'aiPlansApplied': aiPlansApplied,
+        'maxDailyCompletions': maxDailyCompletions,
+        'completionsToday': completionsToday,
+        'weekendCompletions': weekendCompletions,
       };
 
   factory AchievementStats.fromJson(Map<String, dynamic> json) => AchievementStats(
@@ -117,6 +140,10 @@ class AchievementStats {
         earlyBirdCompletions: json['earlyBirdCompletions'] as int? ?? 0,
         nightOwlCompletions: json['nightOwlCompletions'] as int? ?? 0,
         lastCompletionDate: json['lastCompletionDate'] as String?,
+        aiPlansApplied: json['aiPlansApplied'] as int? ?? 0,
+        maxDailyCompletions: json['maxDailyCompletions'] as int? ?? 0,
+        completionsToday: json['completionsToday'] as int? ?? 0,
+        weekendCompletions: json['weekendCompletions'] as int? ?? 0,
       );
 }
 
@@ -219,6 +246,27 @@ const achievementDefinitions = [
     target: 1,
     progressOf: _calendarImports,
   ),
+  AchievementDefinition(
+    id: AchievementId.aiWhisperer,
+    icon: Icons.psychology_rounded,
+    color: Color(0xFFAB47BC),
+    target: 1,
+    progressOf: _aiPlansApplied,
+  ),
+  AchievementDefinition(
+    id: AchievementId.hatTrick,
+    icon: Icons.looks_3_rounded,
+    color: Color(0xFF26A69A),
+    target: 3,
+    progressOf: _maxDailyCompletions,
+  ),
+  AchievementDefinition(
+    id: AchievementId.twoWeekStreak,
+    icon: Icons.military_tech_rounded,
+    color: Color(0xFFFF7043),
+    target: 14,
+    progressOf: _longestStreak,
+  ),
 ];
 
 int _tasksCompleted(AchievementStats stats) => stats.tasksCompleted;
@@ -230,3 +278,5 @@ int _tasksCreated(AchievementStats stats) => stats.tasksCreated;
 int _earlyBird(AchievementStats stats) => stats.earlyBirdCompletions;
 int _nightOwl(AchievementStats stats) => stats.nightOwlCompletions;
 int _calendarImports(AchievementStats stats) => stats.calendarImports;
+int _aiPlansApplied(AchievementStats stats) => stats.aiPlansApplied;
+int _maxDailyCompletions(AchievementStats stats) => stats.maxDailyCompletions;

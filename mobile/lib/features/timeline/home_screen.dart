@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 import 'package:mimio/core/l10n/app_strings.dart';
 import 'package:mimio/core/models/models.dart';
 import 'package:mimio/core/theme/mimio_theme.dart';
+import 'package:mimio/features/achievements/achievements_screen.dart';
 import 'package:mimio/features/focus/focus_tab_view.dart';
 import 'package:mimio/features/focus/widgets/celebration_dialog.dart';
 import 'package:mimio/features/focus/widgets/active_task_banner.dart';
@@ -13,6 +14,7 @@ import 'package:mimio/features/timeline/home_tab.dart';
 import 'package:mimio/features/timeline/widgets/add_task_sheet.dart';
 import 'package:mimio/features/timeline/widgets/day_progress_card.dart';
 import 'package:mimio/features/timeline/widgets/task_action_sheet.dart';
+import 'package:mimio/features/timeline/widgets/modern_bottom_bar.dart';
 import 'package:mimio/features/timeline/widgets/task_card.dart';
 import 'package:mimio/features/timeline/widgets/timeline_hour_grid.dart';
 import 'package:mimio/features/timeline/widgets/week_strip.dart';
@@ -29,6 +31,7 @@ class HomeScreen extends ConsumerWidget {
     final s = ref.watch(stringsProvider);
 
     return Scaffold(
+        extendBody: true,
         appBar: AppBar(
           title: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -90,40 +93,38 @@ class HomeScreen extends ConsumerWidget {
             _TodayTab(),
             WeeklyView(),
             FocusTabView(),
+            _AchievementsTab(),
           ],
         ),
-        bottomNavigationBar: NavigationBar(
-          selectedIndex: tab.index,
-          onDestinationSelected: (i) => ref.read(homeTabProvider.notifier).state = HomeTab.values[i],
-          destinations: [
-            NavigationDestination(
-              icon: const Icon(Icons.today_outlined),
-              selectedIcon: const Icon(Icons.today_rounded),
-              label: s.today,
-            ),
-            NavigationDestination(
-              icon: const Icon(Icons.calendar_view_week_outlined),
-              selectedIcon: const Icon(Icons.calendar_view_week_rounded),
-              label: s.week,
-            ),
-            NavigationDestination(
-              icon: const Icon(Icons.timer_outlined),
-              selectedIcon: const Icon(Icons.timer_rounded),
-              label: s.focus,
-            ),
-          ],
-        ),
-        floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
         floatingActionButton: tab == HomeTab.today
-            ? FloatingActionButton.extended(
+            ? FloatingActionButton(
                 onPressed: () {
                   final date = ref.read(selectedDateProvider);
                   _showAddTask(context, ref, date);
                 },
-                icon: const Icon(Icons.add_rounded),
-                label: Text(s.addTask),
+                elevation: 6,
+                child: const Icon(Icons.add_rounded, size: 28),
               )
             : null,
+        floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
+        bottomNavigationBar: ModernBottomBar(
+          selectedIndex: tab.index,
+          onSelected: (i) => ref.read(homeTabProvider.notifier).state = HomeTab.values[i],
+          items: [
+            ModernNavItem(icon: Icons.today_outlined, selectedIcon: Icons.today_rounded, label: s.today),
+            ModernNavItem(
+              icon: Icons.calendar_view_week_outlined,
+              selectedIcon: Icons.calendar_view_week_rounded,
+              label: s.week,
+            ),
+            ModernNavItem(icon: Icons.timer_outlined, selectedIcon: Icons.timer_rounded, label: s.focus),
+            ModernNavItem(
+              icon: Icons.emoji_events_outlined,
+              selectedIcon: Icons.emoji_events_rounded,
+              label: s.achievementsNav,
+            ),
+          ],
+        ),
     );
   }
 
@@ -134,6 +135,7 @@ class HomeScreen extends ConsumerWidget {
       HomeTab.today => DateFormat('d MMMM yyyy, EEEE', locale).format(selectedDate),
       HomeTab.week => s.weeklyPlanSummary,
       HomeTab.focus => s.focusTimer,
+      HomeTab.achievements => s.achievementsTitle,
     };
   }
 
@@ -143,6 +145,28 @@ class HomeScreen extends ConsumerWidget {
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (_) => AddTaskSheet(selectedDate: date),
+    );
+  }
+}
+
+class _AchievementsTab extends ConsumerWidget {
+  const _AchievementsTab();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final s = ref.watch(stringsProvider);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
+          child: Text(
+            s.achievementsTitle,
+            style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800),
+          ),
+        ),
+        const Expanded(child: AchievementsScreen(embedded: true)),
+      ],
     );
   }
 }
@@ -430,15 +454,24 @@ class _EmptyTimeline extends StatelessWidget {
   Widget build(BuildContext context) {
     return Center(
       child: Padding(
-        padding: const EdgeInsets.all(40),
+        padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 40),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.wb_sunny_rounded, size: 64, color: MimioColors.primary.withValues(alpha: 0.5)),
+            Container(
+              width: 88,
+              height: 88,
+              decoration: BoxDecoration(
+                color: MimioColors.primary.withValues(alpha: 0.1),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(Icons.wb_sunny_rounded, size: 44, color: MimioColors.primary.withValues(alpha: 0.7)),
+            ),
             const SizedBox(height: 24),
             Text(
               s.noPlanToday,
-              style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700),
+              textAlign: TextAlign.center,
+              style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800),
             ),
             const SizedBox(height: 8),
             Text(
@@ -446,11 +479,40 @@ class _EmptyTimeline extends StatelessWidget {
               textAlign: TextAlign.center,
               style: const TextStyle(color: MimioColors.textSecondary, height: 1.5),
             ),
-            const SizedBox(height: 24),
-            ElevatedButton.icon(
-              onPressed: onAdd,
-              icon: const Icon(Icons.add_rounded),
-              label: Text(s.addFirstTask),
+            const SizedBox(height: 28),
+            Material(
+              color: Colors.transparent,
+              child: InkWell(
+                onTap: onAdd,
+                borderRadius: BorderRadius.circular(16),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [MimioColors.primary, MimioColors.primary.withValues(alpha: 0.85)],
+                    ),
+                    borderRadius: BorderRadius.circular(16),
+                    boxShadow: [
+                      BoxShadow(
+                        color: MimioColors.primary.withValues(alpha: 0.3),
+                        blurRadius: 16,
+                        offset: const Offset(0, 6),
+                      ),
+                    ],
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(Icons.add_rounded, color: Colors.white, size: 20),
+                      const SizedBox(width: 8),
+                      Text(
+                        s.addFirstTask,
+                        style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 15),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
             ),
           ],
         ),

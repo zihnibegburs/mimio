@@ -42,7 +42,7 @@ class FocusScreen extends ConsumerWidget {
             child: Column(
               children: [
                 const Spacer(),
-                FocusTimerWidget(session: session, size: 260),
+                FocusTimerWidget(session: session, size: 260, interactive: true),
                 const SizedBox(height: 32),
                 Text(
                   session.title,

@@ -20,6 +20,8 @@ dependencies:
   home_widget: ^0.7.0
   live_activities: ^2.3.0
   speech_to_text: ^7.4.0
+  flutter_local_notifications: ^18.0.1
+  timezone: ^0.9.4
   device_calendar: ^4.3.3
 
 dev_dependencies:

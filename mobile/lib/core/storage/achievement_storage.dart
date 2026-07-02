@@ -47,6 +47,16 @@ class AchievementStorage {
 
     final longest = streak > current.longestStreak ? streak : current.longestStreak;
     final hour = completedAt.hour;
+    final weekday = completedAt.weekday;
+    final isWeekend = weekday == DateTime.saturday || weekday == DateTime.sunday;
+
+    var completionsToday = 1;
+    if (current.lastCompletionDate == today) {
+      completionsToday = current.completionsToday + 1;
+    }
+    final maxDaily = completionsToday > current.maxDailyCompletions
+        ? completionsToday
+        : current.maxDailyCompletions;
 
     return current.copyWith(
       tasksCompleted: current.tasksCompleted + 1,
@@ -57,12 +67,19 @@ class AchievementStorage {
       longestStreak: longest,
       earlyBirdCompletions: hour < 9 ? current.earlyBirdCompletions + 1 : current.earlyBirdCompletions,
       nightOwlCompletions: hour >= 21 ? current.nightOwlCompletions + 1 : current.nightOwlCompletions,
+      weekendCompletions: isWeekend ? current.weekendCompletions + 1 : current.weekendCompletions,
+      maxDailyCompletions: maxDaily,
+      completionsToday: completionsToday,
       lastCompletionDate: today,
     );
   }
 
   AchievementStats recordTaskCreated(AchievementStats current) {
     return current.copyWith(tasksCreated: current.tasksCreated + 1);
+  }
+
+  AchievementStats recordAiPlanApplied(AchievementStats current) {
+    return current.copyWith(aiPlansApplied: current.aiPlansApplied + 1);
   }
 
   AchievementStats recordCalendarImport(AchievementStats current, int count) {

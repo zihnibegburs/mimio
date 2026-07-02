@@ -2,12 +2,14 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:live_activities/models/url_scheme_data.dart';
 import 'package:mimio/core/l10n/app_strings.dart';
 import 'package:mimio/core/platform/live_activity_service.dart';
+import 'package:mimio/core/platform/notification_service.dart';
 import 'package:mimio/core/platform/siri_sync_service.dart';
 import 'package:mimio/core/platform/widget_sync_service.dart';
 import 'package:mimio/core/storage/token_storage.dart';
@@ -31,6 +33,7 @@ void main() async {
   }
   await WidgetSyncService.initialize();
   await LiveActivityService.instance.initialize();
+  await NotificationService(FlutterLocalNotificationsPlugin()).initialize();
   final existingToken = await TokenStorage().getToken();
   await SiriSyncService.syncCredentials(token: existingToken);
   runApp(const ProviderScope(child: MimioApp()));

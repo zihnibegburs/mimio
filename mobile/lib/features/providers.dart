@@ -6,10 +6,12 @@ import 'package:mimio/core/l10n/app_strings.dart';
 import 'package:mimio/core/models/models.dart';
 import 'package:mimio/core/models/recurrence.dart';
 import 'package:mimio/core/platform/live_activity_service.dart';
+import 'package:mimio/core/platform/notification_service.dart';
 import 'package:mimio/core/platform/widget_sync_service.dart';
 import 'package:mimio/core/repositories/repositories.dart';
 import 'package:mimio/core/services/calendar_import_service.dart';
 import 'package:mimio/features/achievements/achievements_screen.dart';
+import 'package:mimio/core/utils/task_icons.dart';
 import 'package:mimio/core/storage/local_focus_storage.dart';
 import 'package:mimio/core/storage/settings_storage.dart';
 
@@ -142,6 +144,26 @@ class FocusSessionNotifier extends AsyncNotifier<FocusSessionModel?> {
     _syncTickTimer();
   }
 
+  Future<void> seekBySeconds(int seconds) async {
+    final session = _session;
+    if (session == null) return;
+    _session = session.copyWith(
+      startedAt: session.startedAt.subtract(Duration(seconds: seconds)),
+    );
+    await _persistAndSync();
+  }
+
+  Future<void> seekToProgress(double progress) async {
+    final session = _session;
+    if (session == null) return;
+    final total = session.durationMinutes * 60;
+    final targetElapsed = (progress.clamp(0.0, 1.0) * total).round();
+    final currentElapsed = session.toFocusSessionModel().elapsedSeconds;
+    final int delta = targetElapsed - currentElapsed;
+    if (delta == 0) return;
+    await seekBySeconds(delta);
+  }
+
   Future<void> clearSession() async {
     _tickTimer?.cancel();
     _session = null;
@@ -225,18 +247,22 @@ class TimelineNotifier extends AsyncNotifier<TimelineModel> {
   Future<void> createTask({
     required String title,
     String? description,
+    String? icon,
     int durationMinutes = 30,
     String color = '#6C63FF',
     DateTime? scheduledAt,
     RecurrenceSelection recurrence = const RecurrenceSelection(),
     String? reward,
     bool autoStart = false,
+    TaskReminderSettings reminders = const TaskReminderSettings(),
   }) async {
+    final taskIcon = icon ?? TaskIcons.inferName(title);
     final task = await ref.read(taskRepositoryProvider).createTask(
           title: title,
           description: description,
           durationMinutes: durationMinutes,
           color: color,
+          icon: taskIcon,
           scheduledAt: scheduledAt,
           recurrence: recurrence,
           reward: reward,
@@ -246,6 +272,7 @@ class TimelineNotifier extends AsyncNotifier<TimelineModel> {
       await ref.read(focusSessionProvider.notifier).startWithTask(task);
     }
     await refresh(showLoading: false);
+    await _scheduleReminders(task, reminders);
   }
 
   Future<int> importCalendarEvents(List<CalendarImportEvent> events) async {
@@ -280,6 +307,7 @@ class TimelineNotifier extends AsyncNotifier<TimelineModel> {
           title: title,
           scheduledAt: scheduledAt,
           color: color,
+          icon: TaskIcons.inferName(title),
           subtasks: subtasks,
         );
     await ref.read(achievementStatsProvider.notifier).recordTaskCreated();
@@ -298,8 +326,9 @@ class TimelineNotifier extends AsyncNotifier<TimelineModel> {
     int? durationMinutes,
     DateTime? scheduledAt,
     String? reward,
+    TaskReminderSettings? reminders,
   }) async {
-    await ref.read(taskRepositoryProvider).updateTask(
+    final task = await ref.read(taskRepositoryProvider).updateTask(
           id: id,
           title: title,
           description: description,
@@ -309,6 +338,14 @@ class TimelineNotifier extends AsyncNotifier<TimelineModel> {
           reward: reward,
         );
     await refresh(showLoading: false);
+    if (reminders != null) {
+      await _scheduleReminders(task, reminders);
+    } else if (scheduledAt != null) {
+      final existing = await ref.read(notificationServiceProvider).loadReminderSettings(id);
+      if (existing.hasAny) {
+        await _scheduleReminders(task, existing);
+      }
+    }
   }
 
   Future<void> addSubtasksToTask({
@@ -388,8 +425,25 @@ class TimelineNotifier extends AsyncNotifier<TimelineModel> {
     if (session?.taskId == id) {
       await ref.read(focusSessionProvider.notifier).clearSession();
     }
+    await ref.read(notificationServiceProvider).cancelTaskReminders(id);
     await ref.read(taskRepositoryProvider).deleteTask(id);
     await refresh(showLoading: false);
+  }
+
+  Future<void> _scheduleReminders(TaskModel task, TaskReminderSettings reminders) async {
+    if (!reminders.hasAny) {
+      await ref.read(notificationServiceProvider).cancelTaskReminders(task.id);
+      return;
+    }
+    final s = ref.read(stringsProvider);
+    await ref.read(notificationServiceProvider).requestPermission();
+    await ref.read(notificationServiceProvider).scheduleTaskReminders(
+          task,
+          settings: reminders,
+          titlePrefix: s.taskReminderTitle,
+          body10: s.taskReminder10(task.title),
+          body1: s.taskReminder1(task.title),
+        );
   }
 }
 

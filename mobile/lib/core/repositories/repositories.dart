@@ -115,11 +115,13 @@ class TaskRepository {
     required String title,
     required DateTime scheduledAt,
     String color = '#6C63FF',
+    String icon = 'task',
     required List<({String title, int durationMinutes, String color})> subtasks,
   }) async {
     final response = await _dio.post('/tasks/with-subtasks', data: {
       'title': title,
       'color': color,
+      'icon': icon,
       'scheduledAt': scheduledAt.toUtc().toIso8601String(),
       'subtasks': subtasks
           .map((s) => {

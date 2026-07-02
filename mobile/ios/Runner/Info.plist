@@ -66,6 +66,10 @@
 	<string>Takvim etkinliklerini görev olarak aktarmak için takvim erişimi gerekiyor.</string>
 	<key>NSCalendarsFullAccessUsageDescription</key>
 	<string>Takvim etkinliklerini görev olarak aktarmak için takvim erişimi gerekiyor.</string>
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>fetch</string>
+	</array>
 	<key>NSAppTransportSecurity</key>
 	<dict>
 		<key>NSAllowsLocalNetworking</key>

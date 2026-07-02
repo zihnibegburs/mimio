@@ -30,7 +30,7 @@ class FocusTabView extends ConsumerWidget {
           child: Column(
             children: [
               const SizedBox(height: 24),
-              FocusTimerWidget(session: session, size: 260),
+              FocusTimerWidget(session: session, size: 260, interactive: true),
               const SizedBox(height: 24),
               Text(
                 session.title,

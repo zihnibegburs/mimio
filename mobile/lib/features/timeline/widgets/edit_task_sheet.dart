@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mimio/core/l10n/app_strings.dart';
 import 'package:mimio/core/models/ai_models.dart';
 import 'package:mimio/core/models/models.dart';
+import 'package:mimio/core/platform/notification_service.dart';
 import 'package:mimio/core/repositories/ai_repository.dart';
 import 'package:mimio/core/theme/mimio_theme.dart';
 import 'package:mimio/features/providers.dart';
@@ -32,6 +33,10 @@ class _EditTaskSheetState extends ConsumerState<EditTaskSheet> {
   bool _loadingPreview = false;
   bool _submitting = false;
   bool _breakingDown = false;
+  bool _remind10Min = false;
+  bool _remind1Min = false;
+  bool _remindersLoaded = false;
+  late Map<String, int> _subtaskDurations;
   List<AiStepModel>? _previewSteps;
   String? _error;
 
@@ -50,6 +55,21 @@ class _EditTaskSheetState extends ConsumerState<EditTaskSheet> {
       _time = TimeOfDay(hour: local.hour, minute: local.minute);
     } else {
       _time = TimeOfDay.now();
+    }
+    _subtaskDurations = {
+      for (final sub in widget.task.subtasks) sub.id: sub.durationMinutes,
+    };
+    WidgetsBinding.instance.addPostFrameCallback((_) => _loadReminders());
+  }
+
+  Future<void> _loadReminders() async {
+    final settings = await ref.read(notificationServiceProvider).loadReminderSettings(widget.task.id);
+    if (mounted) {
+      setState(() {
+        _remind10Min = settings.remind10Min;
+        _remind1Min = settings.remind1Min;
+        _remindersLoaded = true;
+      });
     }
   }
 
@@ -111,7 +131,21 @@ class _EditTaskSheetState extends ConsumerState<EditTaskSheet> {
             durationMinutes: _isSubtask || !widget.task.hasSubtasks ? _duration : null,
             scheduledAt: _scheduledAt,
             reward: _isSubtask || widget.task.hasSubtasks ? null : _rewardController.text.trim(),
+            reminders: TaskReminderSettings(remind10Min: _remind10Min, remind1Min: _remind1Min),
           );
+
+      if (widget.task.hasSubtasks) {
+        for (final sub in widget.task.subtasks) {
+          final newDuration = _subtaskDurations[sub.id];
+          if (newDuration != null && newDuration != sub.durationMinutes) {
+            await ref.read(timelineProvider.notifier).updateTask(
+                  id: sub.id,
+                  durationMinutes: newDuration,
+                );
+          }
+        }
+      }
+
       if (mounted) Navigator.pop(context);
     } catch (e) {
       if (mounted) setState(() => _error = _friendlyError(e));
@@ -290,6 +324,57 @@ class _EditTaskSheetState extends ConsumerState<EditTaskSheet> {
                     selectedColor: MimioColors.primary.withValues(alpha: 0.2),
                   );
                 }).toList(),
+              ),
+            ] else if (widget.task.hasSubtasks) ...[
+              const SizedBox(height: 20),
+              Text(s.stepDurations, style: Theme.of(context).textTheme.labelLarge),
+              const SizedBox(height: 8),
+              ...widget.task.subtasks.map((sub) {
+                final duration = _subtaskDurations[sub.id] ?? sub.durationMinutes;
+                return Container(
+                  margin: const EdgeInsets.only(bottom: 10),
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF8F8FC),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(sub.title, style: const TextStyle(fontWeight: FontWeight.w600)),
+                      const SizedBox(height: 8),
+                      Wrap(
+                        spacing: 6,
+                        children: [5, 10, 15, 20, 30, 45].map((min) {
+                          final selected = duration == min;
+                          return ChoiceChip(
+                            label: Text(s.minutesShort(min)),
+                            selected: selected,
+                            onSelected: (_) => setState(() => _subtaskDurations[sub.id] = min),
+                            selectedColor: MimioColors.primary.withValues(alpha: 0.2),
+                          );
+                        }).toList(),
+                      ),
+                    ],
+                  ),
+                );
+              }),
+            ],
+            if (_remindersLoaded) ...[
+              const SizedBox(height: 16),
+              Text(s.taskReminders, style: Theme.of(context).textTheme.labelLarge),
+              const SizedBox(height: 8),
+              SwitchListTile(
+                contentPadding: EdgeInsets.zero,
+                title: Text(s.remind10Min, style: const TextStyle(fontWeight: FontWeight.w600)),
+                value: _remind10Min,
+                onChanged: busy ? null : (v) => setState(() => _remind10Min = v),
+              ),
+              SwitchListTile(
+                contentPadding: EdgeInsets.zero,
+                title: Text(s.remind1Min, style: const TextStyle(fontWeight: FontWeight.w600)),
+                value: _remind1Min,
+                onChanged: busy ? null : (v) => setState(() => _remind1Min = v),
               ),
             ],
             const SizedBox(height: 20),
