@@ -9,6 +9,7 @@ import 'package:mimio/core/platform/live_activity_service.dart';
 import 'package:mimio/core/platform/widget_sync_service.dart';
 import 'package:mimio/core/repositories/repositories.dart';
 import 'package:mimio/core/services/calendar_import_service.dart';
+import 'package:mimio/features/achievements/achievements_screen.dart';
 import 'package:mimio/core/storage/local_focus_storage.dart';
 import 'package:mimio/core/storage/settings_storage.dart';
 
@@ -240,6 +241,7 @@ class TimelineNotifier extends AsyncNotifier<TimelineModel> {
           recurrence: recurrence,
           reward: reward,
         );
+    await ref.read(achievementStatsProvider.notifier).recordTaskCreated();
     if (autoStart) {
       await ref.read(focusSessionProvider.notifier).startWithTask(task);
     }
@@ -262,6 +264,7 @@ class TimelineNotifier extends AsyncNotifier<TimelineModel> {
     }
 
     await ref.read(settingsStorageProvider).markCalendarEventsImported(importedIds);
+    await ref.read(achievementStatsProvider.notifier).recordCalendarImport(importedIds.length);
     await refresh(showLoading: false);
     return importedIds.length;
   }
@@ -279,6 +282,7 @@ class TimelineNotifier extends AsyncNotifier<TimelineModel> {
           color: color,
           subtasks: subtasks,
         );
+    await ref.read(achievementStatsProvider.notifier).recordTaskCreated();
     if (autoStart) {
       final firstSubtask = task.subtasks.isNotEmpty ? task.subtasks.first : task;
       await ref.read(focusSessionProvider.notifier).startWithTask(firstSubtask);
@@ -351,9 +355,25 @@ class TimelineNotifier extends AsyncNotifier<TimelineModel> {
   }
 
   Future<TaskModel> completeTask(String id) async {
+    final timeline = state.valueOrNull;
+    final task = timeline != null ? findTaskInTimeline(timeline, id) : null;
+    final perfectDay = timeline != null &&
+        timeline.tasks.isNotEmpty &&
+        timeline.tasks.where((t) => t.id != id).every((t) => t.isCompleted);
+
     await ref.read(focusSessionProvider.notifier).clearSession();
     final completed = await ref.read(taskRepositoryProvider).completeTask(id);
     await _refreshAfterAction();
+
+    if (task != null) {
+      await ref.read(achievementStatsProvider.notifier).recordTaskCompleted(
+            durationMinutes: task.durationMinutes,
+            hasReward: task.hasReward,
+            completedAt: DateTime.now(),
+            perfectDay: perfectDay,
+          );
+    }
+
     return completed;
   }
 

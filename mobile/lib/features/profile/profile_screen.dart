@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mimio/core/l10n/app_strings.dart';
+import 'package:mimio/core/models/achievement.dart';
 import 'package:mimio/core/theme/mimio_theme.dart';
+import 'package:mimio/features/achievements/achievements_screen.dart';
 import 'package:mimio/features/providers.dart';
 
 class ProfileScreen extends ConsumerStatefulWidget {
@@ -66,6 +68,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     final auth = ref.watch(authStateProvider).value;
     final s = ref.watch(stringsProvider);
     final lang = ref.watch(appLanguageProvider).valueOrNull ?? 'tr';
+    final stats = ref.watch(achievementStatsProvider).valueOrNull ?? const AchievementStats();
+    final unlockedCount = achievementDefinitions.where((a) => a.isUnlocked(stats)).length;
 
     if (auth == null) {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
@@ -187,6 +191,50 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               ),
             ),
           ],
+          const SizedBox(height: 24),
+          _SectionHeader(title: s.achievementsTitle),
+          Container(
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: const Color(0xFFE8E8F0)),
+            ),
+            child: ListTile(
+              leading: Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  color: MimioColors.primary.withValues(alpha: 0.12),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(Icons.emoji_events_rounded, color: MimioColors.primary),
+              ),
+              title: Text(s.achievementsTitle),
+              subtitle: Text(s.achievementsProfileSubtitle, style: const TextStyle(fontSize: 12)),
+              trailing: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: MimioColors.primary.withValues(alpha: 0.12),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Text(
+                      '$unlockedCount/${achievementDefinitions.length}',
+                      style: const TextStyle(
+                        fontWeight: FontWeight.w700,
+                        fontSize: 12,
+                        color: MimioColors.primary,
+                      ),
+                    ),
+                  ),
+                  const Icon(Icons.chevron_right_rounded),
+                ],
+              ),
+              onTap: () => context.push('/achievements'),
+            ),
+          ),
           const SizedBox(height: 24),
           _SectionHeader(title: s.integrations),
           Container(
