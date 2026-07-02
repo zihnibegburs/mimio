@@ -138,6 +138,31 @@ class TaskCard extends ConsumerWidget {
                                   decoration: task.isCompleted ? TextDecoration.lineThrough : null,
                                 ),
                               ),
+                              if (task.hasReward && !task.isCompleted) ...[
+                                const SizedBox(height: 6),
+                                Row(
+                                  children: [
+                                    Icon(
+                                      Icons.card_giftcard_rounded,
+                                      size: 14,
+                                      color: const Color(0xFFE6A800).withValues(alpha: 0.9),
+                                    ),
+                                    const SizedBox(width: 4),
+                                    Expanded(
+                                      child: Text(
+                                        task.reward!,
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: const TextStyle(
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.w600,
+                                          color: Color(0xFFB8860B),
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ],
                             ],
                           ),
                         ),

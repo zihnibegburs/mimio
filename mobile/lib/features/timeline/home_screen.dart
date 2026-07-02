@@ -7,7 +7,6 @@ import 'package:mimio/core/models/models.dart';
 import 'package:mimio/core/theme/mimio_theme.dart';
 import 'package:mimio/features/focus/focus_tab_view.dart';
 import 'package:mimio/features/focus/widgets/active_task_banner.dart';
-import 'package:mimio/features/focus/widgets/celebration_overlay.dart';
 import 'package:mimio/features/providers.dart';
 import 'package:mimio/features/timeline/home_tab.dart';
 import 'package:mimio/features/timeline/widgets/add_task_sheet.dart';
@@ -24,15 +23,11 @@ class HomeScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final tab = ref.watch(homeTabProvider);
-    final celebration = ref.watch(celebrationTriggerProvider);
     final auth = ref.watch(authStateProvider).value;
     final selectedDate = ref.watch(selectedDateProvider);
     final s = ref.watch(stringsProvider);
 
-    return CelebrationOverlay(
-      trigger: celebration,
-      onComplete: () => ref.read(celebrationTriggerProvider.notifier).state = false,
-      child: Scaffold(
+    return Scaffold(
         appBar: AppBar(
           title: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -127,7 +122,6 @@ class HomeScreen extends ConsumerWidget {
                 label: Text(s.addTask),
               )
             : null,
-      ),
     );
   }
 
@@ -221,11 +215,11 @@ class _TodayTab extends ConsumerWidget {
                               onTap: () => _showTaskActions(context, ref, task, selectedDate),
                               onStart: () => _startTask(context, ref, task.id),
                               onPause: () => ref.read(timelineProvider.notifier).pauseTask(task.id),
-                              onComplete: () => _completeTask(context, ref, task.id),
+                              onComplete: () => _completeTask(context, ref, task),
                               onSubtaskTap: (sub) => _showTaskActions(context, ref, sub, selectedDate),
                               onSubtaskStart: (sub) => _startTask(context, ref, sub.id),
                               onSubtaskPause: (sub) => ref.read(timelineProvider.notifier).pauseTask(sub.id),
-                              onSubtaskComplete: (sub) => _completeTask(context, ref, sub.id),
+                              onSubtaskComplete: (sub) => _completeTask(context, ref, sub),
                             );
                           },
                           childCount: timeline.tasks.length,
@@ -261,12 +255,12 @@ class _TodayTab extends ConsumerWidget {
     }
   }
 
-  Future<void> _completeTask(BuildContext context, WidgetRef ref, String id) async {
+  Future<void> _completeTask(BuildContext context, WidgetRef ref, TaskModel task) async {
     final s = ref.read(stringsProvider);
     try {
-      await ref.read(timelineProvider.notifier).completeTask(id);
+      final completed = await ref.read(timelineProvider.notifier).completeTask(task.id);
       ref.invalidate(focusSessionProvider);
-      ref.read(celebrationTriggerProvider.notifier).state = true;
+      showTaskCelebration(ref, completed);
     } catch (e) {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -292,7 +286,7 @@ class _TodayTab extends ConsumerWidget {
       selectedDate: date,
       onStart: () => _startTask(context, ref, task.id),
       onPause: () => ref.read(timelineProvider.notifier).pauseTask(task.id),
-      onComplete: () => _completeTask(context, ref, task.id),
+      onComplete: () => _completeTask(context, ref, task),
       onDelete: () => ref.read(timelineProvider.notifier).deleteTask(task.id),
       onFocus: (task.isActive || task.status == TaskStatus.paused)
           ? () => context.push('/focus')

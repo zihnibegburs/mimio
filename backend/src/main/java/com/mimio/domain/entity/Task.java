@@ -94,4 +94,7 @@ public class Task {
 
     @Column(name = "recurrence_series_id")
     private UUID recurrenceSeriesId;
+
+    @Column(length = 500)
+    private String reward;
 }

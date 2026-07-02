@@ -22,5 +22,6 @@ public record CreateTaskRequest(
         UUID parentTaskId,
         RecurrenceType recurrenceType,
         Integer recurrenceInterval,
-        RecurrenceUnit recurrenceUnit
+        RecurrenceUnit recurrenceUnit,
+        @Size(max = 500) String reward
 ) {}

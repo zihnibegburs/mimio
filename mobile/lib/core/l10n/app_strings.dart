@@ -91,6 +91,42 @@ class S {
       l10n(lang, _m(en: 'Edit step', tr: 'Adımı Düzenle', es: 'Editar paso', fr: 'Modifier l\'étape', de: 'Schritt bearbeiten'));
   String get taskNameHint =>
       l10n(lang, _m(en: 'Task name...', tr: 'Görev adı...', es: 'Nombre de la tarea...', fr: 'Nom de la tâche...', de: 'Aufgabenname...'));
+  String get rewardLabel =>
+      l10n(lang, _m(en: 'Reward', tr: 'Ödül', es: 'Recompensa', fr: 'Récompense', de: 'Belohnung'));
+  String get rewardHint => l10n(lang, _m(
+        en: 'What will you treat yourself to?',
+        tr: 'Kendine ne ödül vereceksin?',
+        es: '¿Con qué te recompensarás?',
+        fr: 'Comment allez-vous vous récompenser ?',
+        de: 'Womit belohnst du dich?',
+      ));
+  String get rewardOptionalHint => l10n(lang, _m(
+        en: 'Optional — a little motivation when you finish',
+        tr: 'İsteğe bağlı — bitirince seni motive etsin',
+        es: 'Opcional — un extra de motivación al terminar',
+        fr: 'Facultatif — une motivation à la fin',
+        de: 'Optional — Motivation nach dem Abschluss',
+      ));
+  String get taskCompletedTitle =>
+      l10n(lang, _m(en: 'Well done!', tr: 'Tebrikler!', es: '¡Bien hecho!', fr: 'Bravo !', de: 'Gut gemacht!'));
+  String taskCompletedSubtitle(String title) => l10n(lang, _m(
+        en: 'You completed "$title"',
+        tr: '"$title" görevini tamamladın',
+        es: 'Completaste "$title"',
+        fr: 'Vous avez terminé « $title »',
+        de: 'Du hast „$title“ abgeschlossen',
+      ));
+  String get yourReward =>
+      l10n(lang, _m(en: 'Your reward', tr: 'Ödülün', es: 'Tu recompensa', fr: 'Votre récompense', de: 'Deine Belohnung'));
+  String get rewardReminder => l10n(lang, _m(
+        en: 'Time to enjoy your reward!',
+        tr: 'Şimdi ödülünün tadını çıkarma zamanı!',
+        es: '¡Es hora de disfrutar tu recompensa!',
+        fr: 'Il est temps de profiter de votre récompense !',
+        de: 'Zeit, deine Belohnung zu genießen!',
+      ));
+  String get awesome =>
+      l10n(lang, _m(en: 'Awesome!', tr: 'Harika!', es: '¡Genial!', fr: 'Super !', de: 'Super!'));
   String get addTaskButton =>
       l10n(lang, _m(en: 'Add task', tr: 'Görevi Ekle', es: 'Añadir tarea', fr: 'Ajouter la tâche', de: 'Aufgabe hinzufügen'));
   String get addTaskAndSteps =>

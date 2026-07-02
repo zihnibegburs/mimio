@@ -25,6 +25,7 @@ class EditTaskSheet extends ConsumerStatefulWidget {
 
 class _EditTaskSheetState extends ConsumerState<EditTaskSheet> {
   late final TextEditingController _titleController;
+  late final TextEditingController _rewardController;
   late int _duration;
   late String _selectedColor;
   late TimeOfDay _time;
@@ -41,6 +42,7 @@ class _EditTaskSheetState extends ConsumerState<EditTaskSheet> {
   void initState() {
     super.initState();
     _titleController = TextEditingController(text: widget.task.title);
+    _rewardController = TextEditingController(text: widget.task.reward ?? '');
     _duration = widget.task.durationMinutes;
     _selectedColor = widget.task.color;
     if (widget.task.scheduledAt != null) {
@@ -54,6 +56,7 @@ class _EditTaskSheetState extends ConsumerState<EditTaskSheet> {
   @override
   void dispose() {
     _titleController.dispose();
+    _rewardController.dispose();
     super.dispose();
   }
 
@@ -107,6 +110,7 @@ class _EditTaskSheetState extends ConsumerState<EditTaskSheet> {
             color: _selectedColor,
             durationMinutes: _isSubtask || !widget.task.hasSubtasks ? _duration : null,
             scheduledAt: _scheduledAt,
+            reward: _isSubtask || widget.task.hasSubtasks ? null : _rewardController.text.trim(),
           );
       if (mounted) Navigator.pop(context);
     } catch (e) {
@@ -237,6 +241,24 @@ class _EditTaskSheetState extends ConsumerState<EditTaskSheet> {
                 if (_previewSteps != null) setState(() => _previewSteps = null);
               },
             ),
+            if (!_isSubtask && !widget.task.hasSubtasks) ...[
+              const SizedBox(height: 20),
+              Text(s.rewardLabel, style: Theme.of(context).textTheme.labelLarge),
+              const SizedBox(height: 4),
+              Text(
+                s.rewardOptionalHint,
+                style: const TextStyle(fontSize: 12, color: MimioColors.textSecondary),
+              ),
+              const SizedBox(height: 8),
+              TextField(
+                controller: _rewardController,
+                decoration: InputDecoration(
+                  hintText: s.rewardHint,
+                  prefixIcon: const Icon(Icons.card_giftcard_rounded, color: MimioColors.primary),
+                ),
+                textCapitalization: TextCapitalization.sentences,
+              ),
+            ],
             if (!_isSubtask && !widget.task.hasSubtasks) ...[
               const SizedBox(height: 20),
               Text(s.duration, style: Theme.of(context).textTheme.labelLarge),

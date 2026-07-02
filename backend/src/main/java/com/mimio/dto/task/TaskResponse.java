@@ -28,7 +28,8 @@ public record TaskResponse(
         RecurrenceType recurrenceType,
         Integer recurrenceInterval,
         RecurrenceUnit recurrenceUnit,
-        UUID recurrenceSeriesId
+        UUID recurrenceSeriesId,
+        String reward
 ) {
     public static TaskResponse from(Task task) {
         return from(task, List.of());
@@ -54,7 +55,8 @@ public record TaskResponse(
                 task.getRecurrenceType(),
                 task.getRecurrenceInterval(),
                 task.getRecurrenceUnit(),
-                task.getRecurrenceSeriesId()
+                task.getRecurrenceSeriesId(),
+                task.getReward()
         );
     }
 }

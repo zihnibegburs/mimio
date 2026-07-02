@@ -76,9 +76,9 @@ class FocusTabView extends ConsumerWidget {
                       onPressed: () async {
                         final s = ref.read(stringsProvider);
                         try {
-                          await ref.read(timelineProvider.notifier).completeTask(session.taskId);
+                          final completed = await ref.read(timelineProvider.notifier).completeTask(session.taskId);
                           ref.invalidate(focusSessionProvider);
-                          ref.read(celebrationTriggerProvider.notifier).state = true;
+                          showTaskCelebration(ref, completed);
                         } catch (e) {
                           if (context.mounted) {
                             ScaffoldMessenger.of(context).showSnackBar(

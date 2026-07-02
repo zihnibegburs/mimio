@@ -19,6 +19,7 @@ class AddTaskSheet extends ConsumerStatefulWidget {
 
 class _AddTaskSheetState extends ConsumerState<AddTaskSheet> {
   final _titleController = TextEditingController();
+  final _rewardController = TextEditingController();
   int _duration = 30;
   String _selectedColor = MimioColors.taskColors.first;
   TimeOfDay _time = TimeOfDay.now();
@@ -32,6 +33,7 @@ class _AddTaskSheetState extends ConsumerState<AddTaskSheet> {
   @override
   void dispose() {
     _titleController.dispose();
+    _rewardController.dispose();
     super.dispose();
   }
 
@@ -105,6 +107,7 @@ class _AddTaskSheetState extends ConsumerState<AddTaskSheet> {
               color: _selectedColor,
               scheduledAt: _scheduledAt,
               recurrence: _recurrence,
+              reward: _rewardController.text.trim().isEmpty ? null : _rewardController.text.trim(),
             );
       }
 
@@ -227,6 +230,24 @@ class _AddTaskSheetState extends ConsumerState<AddTaskSheet> {
                       ),
                     )),
               ],
+            ],
+            if (!_splitIntoSubtasks) ...[
+              const SizedBox(height: 20),
+              Text(s.rewardLabel, style: Theme.of(context).textTheme.labelLarge),
+              const SizedBox(height: 4),
+              Text(
+                s.rewardOptionalHint,
+                style: const TextStyle(fontSize: 12, color: MimioColors.textSecondary),
+              ),
+              const SizedBox(height: 8),
+              TextField(
+                controller: _rewardController,
+                decoration: InputDecoration(
+                  hintText: s.rewardHint,
+                  prefixIcon: const Icon(Icons.card_giftcard_rounded, color: MimioColors.primary),
+                ),
+                textCapitalization: TextCapitalization.sentences,
+              ),
             ],
             if (!_splitIntoSubtasks) ...[
               const SizedBox(height: 20),

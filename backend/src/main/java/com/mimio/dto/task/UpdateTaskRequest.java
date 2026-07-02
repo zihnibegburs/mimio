@@ -14,5 +14,6 @@ public record UpdateTaskRequest(
         Instant scheduledAt,
         TaskStatus status,
         Integer sortOrder,
-        Boolean isInbox
+        Boolean isInbox,
+        String reward
 ) {}

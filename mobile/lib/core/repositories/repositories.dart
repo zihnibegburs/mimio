@@ -95,6 +95,7 @@ class TaskRepository {
     DateTime? scheduledAt,
     bool isInbox = false,
     RecurrenceSelection recurrence = const RecurrenceSelection(),
+    String? reward,
   }) async {
     final response = await _dio.post('/tasks', data: {
       'title': title,
@@ -104,6 +105,7 @@ class TaskRepository {
       'durationMinutes': durationMinutes,
       if (scheduledAt != null) 'scheduledAt': scheduledAt.toUtc().toIso8601String(),
       'isInbox': isInbox,
+      if (reward != null && reward.trim().isNotEmpty) 'reward': reward.trim(),
       ...recurrence.toApiJson(),
     });
     return TaskModel.fromJson(response.data as Map<String, dynamic>);
@@ -137,6 +139,7 @@ class TaskRepository {
     String? color,
     int? durationMinutes,
     DateTime? scheduledAt,
+    String? reward,
   }) async {
     final response = await _dio.put('/tasks/$id', data: {
       if (title != null) 'title': title,
@@ -144,6 +147,7 @@ class TaskRepository {
       if (color != null) 'color': color,
       if (durationMinutes != null) 'durationMinutes': durationMinutes,
       if (scheduledAt != null) 'scheduledAt': scheduledAt.toUtc().toIso8601String(),
+      if (reward != null) 'reward': reward.trim().isEmpty ? '' : reward.trim(),
     });
     return TaskModel.fromJson(response.data as Map<String, dynamic>);
   }

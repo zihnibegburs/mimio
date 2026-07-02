@@ -70,7 +70,23 @@ enum TimelineViewMode { list, grid }
 
 final timelineViewModeProvider = StateProvider<TimelineViewMode>((ref) => TimelineViewMode.list);
 
-final celebrationTriggerProvider = StateProvider<bool>((ref) => false);
+final celebrationEventProvider = StateProvider<CelebrationEvent?>((ref) => null);
+
+class CelebrationEvent {
+  const CelebrationEvent({required this.taskTitle, this.reward});
+
+  final String taskTitle;
+  final String? reward;
+
+  bool get hasReward => reward != null && reward!.isNotEmpty;
+}
+
+void showTaskCelebration(WidgetRef ref, TaskModel task) {
+  ref.read(celebrationEventProvider.notifier).state = CelebrationEvent(
+    taskTitle: task.title,
+    reward: task.reward,
+  );
+}
 
 final focusSessionProvider =
     AsyncNotifierProvider<FocusSessionNotifier, FocusSessionModel?>(FocusSessionNotifier.new);
@@ -166,6 +182,7 @@ class TimelineNotifier extends AsyncNotifier<TimelineModel> {
     String color = '#6C63FF',
     DateTime? scheduledAt,
     RecurrenceSelection recurrence = const RecurrenceSelection(),
+    String? reward,
   }) async {
     await ref.read(taskRepositoryProvider).createTask(
           title: title,
@@ -173,6 +190,7 @@ class TimelineNotifier extends AsyncNotifier<TimelineModel> {
           color: color,
           scheduledAt: scheduledAt,
           recurrence: recurrence,
+          reward: reward,
         );
     await refresh();
   }
@@ -199,6 +217,7 @@ class TimelineNotifier extends AsyncNotifier<TimelineModel> {
     String? color,
     int? durationMinutes,
     DateTime? scheduledAt,
+    String? reward,
   }) async {
     await ref.read(taskRepositoryProvider).updateTask(
           id: id,
@@ -207,6 +226,7 @@ class TimelineNotifier extends AsyncNotifier<TimelineModel> {
           color: color,
           durationMinutes: durationMinutes,
           scheduledAt: scheduledAt,
+          reward: reward,
         );
     await refresh();
   }
@@ -239,15 +259,15 @@ class TimelineNotifier extends AsyncNotifier<TimelineModel> {
     await _refreshAfterAction();
   }
 
-  Future<bool> completeTask(String id) async {
-    await ref.read(taskRepositoryProvider).completeTask(id);
+  Future<TaskModel> completeTask(String id) async {
+    final completed = await ref.read(taskRepositoryProvider).completeTask(id);
     try {
       await ref.read(liveActivityServiceProvider).endActivity();
     } catch (e) {
       debugPrint('Live activity end skipped: $e');
     }
     await _refreshAfterAction();
-    return true;
+    return completed;
   }
 
   Future<void> deleteTask(String id) async {

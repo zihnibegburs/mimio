@@ -97,6 +97,7 @@ public class TaskService {
                 .recurrenceType(recurrenceType)
                 .recurrenceInterval(recurrenceInterval)
                 .recurrenceUnit(recurrenceUnit)
+                .reward(normalizeReward(request.reward()))
                 .build();
 
         if (request.parentTaskId() != null) {
@@ -343,5 +344,12 @@ public class TaskService {
         if (request.status() != null) task.setStatus(request.status());
         if (request.sortOrder() != null) task.setSortOrder(request.sortOrder());
         if (request.isInbox() != null) task.setIsInbox(request.isInbox());
+        if (request.reward() != null) task.setReward(normalizeReward(request.reward()));
+    }
+
+    private static String normalizeReward(String reward) {
+        if (reward == null) return null;
+        String trimmed = reward.trim();
+        return trimmed.isEmpty() ? null : trimmed;
     }
 }

@@ -54,6 +54,7 @@ class TaskModel {
   final DateTime? completedAt;
   final String? parentTaskId;
   final List<TaskModel> subtasks;
+  final String? reward;
 
   const TaskModel({
     required this.id,
@@ -70,6 +71,7 @@ class TaskModel {
     this.completedAt,
     this.parentTaskId,
     this.subtasks = const [],
+    this.reward,
   });
 
   factory TaskModel.fromJson(Map<String, dynamic> json) => TaskModel(
@@ -97,6 +99,7 @@ class TaskModel {
                 .map((t) => TaskModel.fromJson(t as Map<String, dynamic>))
                 .toList()
             : const [],
+        reward: json['reward'] as String?,
       );
 
   static TaskStatus _parseStatus(String status) => switch (status) {
@@ -111,6 +114,7 @@ class TaskModel {
   bool get isActive => status == TaskStatus.inProgress;
   bool get isCompleted => status == TaskStatus.completed;
   bool get hasSubtasks => subtasks.isNotEmpty;
+  bool get hasReward => reward != null && reward!.isNotEmpty;
 
   int get completedSubtaskCount => subtasks.where((s) => s.isCompleted).length;
 
