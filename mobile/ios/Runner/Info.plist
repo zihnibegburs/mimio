@@ -62,6 +62,10 @@
 	<string>Görevlerinizi sesle yazabilmeniz için mikrofon erişimi gerekiyor.</string>
 	<key>NSSpeechRecognitionUsageDescription</key>
 	<string>Konuşmanızı metne çevirmek için ses tanıma erişimi gerekiyor.</string>
+	<key>NSCalendarsUsageDescription</key>
+	<string>Takvim etkinliklerini görev olarak aktarmak için takvim erişimi gerekiyor.</string>
+	<key>NSCalendarsFullAccessUsageDescription</key>
+	<string>Takvim etkinliklerini görev olarak aktarmak için takvim erişimi gerekiyor.</string>
 	<key>NSAppTransportSecurity</key>
 	<dict>
 		<key>NSAllowsLocalNetworking</key>
