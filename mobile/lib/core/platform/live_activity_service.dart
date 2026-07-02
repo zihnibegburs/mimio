@@ -3,7 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:live_activities/live_activities.dart';
 import 'package:mimio/core/config/platform_config.dart';
 import 'package:mimio/core/l10n/app_strings.dart';
-import 'package:mimio/core/models/models.dart';
+import 'package:mimio/core/storage/local_focus_storage.dart';
 
 class LiveActivityService {
   LiveActivityService._();
@@ -18,6 +18,7 @@ class LiveActivityService {
     try {
       await _plugin.init(
         appGroupId: PlatformConfig.appGroupId,
+        urlScheme: 'mimio',
         requestAndroidNotificationPermission: false,
       );
       _initialized = true;
@@ -30,28 +31,44 @@ class LiveActivityService {
     }
   }
 
-  Future<void> syncFocusSession(FocusSessionModel? session, {String language = 'tr'}) async {
-    if (!_initialized || session == null) return;
+  Future<void> syncSession(LocalFocusSessionData data, {String language = 'tr'}) async {
+    if (!_initialized) return;
 
+    final session = data.toFocusSessionModel();
     final s = S(language);
-    final data = <String, dynamic>{
-      'taskTitle': session.title,
+    final now = DateTime.now();
+    final timerEndDate = data.isPaused
+        ? now.add(Duration(seconds: session.remainingSeconds))
+        : data.timerEndDate;
+
+    final payload = <String, dynamic>{
+      'taskTitle': data.title,
       'remaining': session.remainingFormatted,
       'progress': session.progressPercent,
-      'color': session.color,
-      'paused': session.isPaused,
-      'statusLabel': session.isPaused ? s.paused : s.focus,
+      'color': data.color,
+      'paused': data.isPaused ? 1 : 0,
+      'statusLabel': data.isPaused ? s.paused : s.focus,
+      'timerStartDate': data.startedAt.millisecondsSinceEpoch,
+      'timerEndDate': timerEndDate.millisecondsSinceEpoch,
     };
 
-    final activityId = session.taskId;
-
     try {
+      final enabled = await _plugin.areActivitiesEnabled();
+      if (!enabled) return;
+
+      if (_activityId != null && _activityId != data.taskId) {
+        await endActivity();
+      }
+
       if (_activityId == null) {
-        final enabled = await _plugin.areActivitiesEnabled();
-        if (!enabled) return;
-        _activityId = await _plugin.createActivity(activityId, data, activityTag: 'mimio_focus');
+        _activityId = await _plugin.createActivity(
+          data.taskId,
+          payload,
+          activityTag: 'mimio_focus',
+          removeWhenAppIsKilled: false,
+        );
       } else {
-        await _plugin.updateActivity(_activityId!, data, activityTag: 'mimio_focus');
+        await _plugin.updateActivity(_activityId!, payload, activityTag: 'mimio_focus');
       }
     } on PlatformException catch (e) {
       debugPrint('Live Activity sync skipped: ${e.message}');
@@ -72,4 +89,7 @@ class LiveActivityService {
       _activityId = null;
     }
   }
+
+  LiveActivities get plugin => _plugin;
+  bool get isInitialized => _initialized;
 }

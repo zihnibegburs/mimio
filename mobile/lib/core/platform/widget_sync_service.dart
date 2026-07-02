@@ -52,7 +52,7 @@ class WidgetSyncService {
       final next = pending.isEmpty
           ? null
           : pending.firstWhere(
-              (t) => !t.isActive && t.status != TaskStatus.paused,
+              (t) => session == null || t.id != session.taskId,
               orElse: () => pending.first,
             );
 
@@ -60,10 +60,10 @@ class WidgetSyncService {
       String subtitle;
       String title;
 
-      if (timeline.activeTask != null) {
-        title = timeline.activeTask!.title;
-        final remaining = session?.remainingFormatted ?? s.minutesShort(timeline.activeTask!.durationMinutes);
-        subtitle = session?.isPaused == true
+      if (session != null && (session.isActive || session.isPaused)) {
+        title = session.title;
+        final remaining = session.remainingFormatted;
+        subtitle = session.isPaused
             ? s.widgetPausedSubtitle(remaining)
             : s.widgetActiveSubtitle(remaining);
         await HomeWidget.saveWidgetData<String>(_activeTitle, title);

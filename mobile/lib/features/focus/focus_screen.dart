@@ -65,7 +65,6 @@ class FocusScreen extends ConsumerWidget {
                                 final s = ref.read(stringsProvider);
                                 try {
                                   await ref.read(timelineProvider.notifier).pauseTask(session.taskId);
-                                  ref.invalidate(focusSessionProvider);
                                 } catch (e) {
                                   if (context.mounted) {
                                     ScaffoldMessenger.of(context).showSnackBar(
@@ -80,8 +79,7 @@ class FocusScreen extends ConsumerWidget {
                             : () async {
                                 final s = ref.read(stringsProvider);
                                 try {
-                                  await ref.read(timelineProvider.notifier).startTask(session.taskId);
-                                  ref.invalidate(focusSessionProvider);
+                                  await ref.read(timelineProvider.notifier).resumeTask(session.taskId);
                                 } catch (e) {
                                   if (context.mounted) {
                                     ScaffoldMessenger.of(context).showSnackBar(
@@ -109,7 +107,6 @@ class FocusScreen extends ConsumerWidget {
                           final s = ref.read(stringsProvider);
                           try {
                             final completed = await ref.read(timelineProvider.notifier).completeTask(session.taskId);
-                            ref.invalidate(focusSessionProvider);
                             showTaskCelebration(ref, completed);
                             if (context.mounted) context.pop();
                           } catch (e) {

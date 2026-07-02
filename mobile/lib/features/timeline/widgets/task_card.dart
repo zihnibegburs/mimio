@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 import 'package:mimio/core/l10n/app_strings.dart';
 import 'package:mimio/core/models/models.dart';
 import 'package:mimio/core/theme/mimio_theme.dart';
+import 'package:mimio/features/providers.dart';
 
 typedef SubtaskAction = void Function(TaskModel subtask);
 
@@ -34,6 +35,10 @@ class TaskCard extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final s = ref.watch(stringsProvider);
+    final session = ref.watch(focusSessionProvider).valueOrNull;
+    final isFocused = session?.taskId == task.id;
+    final isActive = isFocused && (session?.isActive ?? false);
+    final isPaused = isFocused && (session?.isPaused ?? false);
     final color = MimioColors.fromHex(task.color);
     final timeFormat = DateFormat('HH:mm');
     final startTime = task.scheduledAt != null ? timeFormat.format(task.scheduledAt!.toLocal()) : '--:--';
@@ -44,11 +49,11 @@ class TaskCard extends ConsumerWidget {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(20),
-        border: task.isActive
+        border: isActive || isPaused
             ? Border.all(color: color, width: 2)
             : Border.all(color: const Color(0xFFE8E8F0)),
         boxShadow: [
-          if (task.isActive)
+          if (isActive || isPaused)
             BoxShadow(color: color.withValues(alpha: 0.2), blurRadius: 12, offset: const Offset(0, 4)),
         ],
       ),
@@ -174,21 +179,22 @@ class TaskCard extends ConsumerWidget {
                             subtask: sub,
                             parentColor: color,
                             s: s,
+                            focusSession: session,
                             onTap: onSubtaskTap != null ? () => onSubtaskTap!(sub) : null,
                             onStart: onSubtaskStart != null ? () => onSubtaskStart!(sub) : null,
                             onPause: onSubtaskPause != null ? () => onSubtaskPause!(sub) : null,
                             onComplete: onSubtaskComplete != null ? () => onSubtaskComplete!(sub) : null,
                           )),
                     ],
-                    if (task.isActive && !task.hasSubtasks) ...[
+                    if ((isActive || isPaused) && !task.hasSubtasks) ...[
                       const SizedBox(height: 12),
                       _ActiveControls(
-                        pauseLabel: s.pause,
+                        pauseLabel: isPaused ? s.continueLabel : s.pause,
                         finishLabel: s.finish,
                         onPause: onPause,
                         onComplete: onComplete,
                       ),
-                    ] else if (!task.isCompleted && !task.hasSubtasks) ...[
+                    ] else if (!task.isCompleted && !task.hasSubtasks && !isFocused) ...[
                       const SizedBox(height: 12),
                       Row(
                         children: [
@@ -224,6 +230,7 @@ class _SubtaskRow extends StatelessWidget {
     required this.subtask,
     required this.parentColor,
     required this.s,
+    this.focusSession,
     this.onTap,
     this.onStart,
     this.onPause,
@@ -233,6 +240,7 @@ class _SubtaskRow extends StatelessWidget {
   final TaskModel subtask;
   final Color parentColor;
   final S s;
+  final FocusSessionModel? focusSession;
   final VoidCallback? onTap;
   final VoidCallback? onStart;
   final VoidCallback? onPause;
@@ -241,6 +249,9 @@ class _SubtaskRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final subColor = MimioColors.fromHex(subtask.color);
+    final isFocused = focusSession?.taskId == subtask.id;
+    final isActive = isFocused && (focusSession?.isActive ?? false);
+    final isPaused = isFocused && (focusSession?.isPaused ?? false);
     final timeFormat = DateFormat('HH:mm');
     final timeLabel = subtask.scheduledAt != null
         ? timeFormat.format(subtask.scheduledAt!.toLocal())
@@ -252,20 +263,20 @@ class _SubtaskRow extends StatelessWidget {
       decoration: BoxDecoration(
         color: const Color(0xFFF8F8FC),
         borderRadius: BorderRadius.circular(12),
-        border: subtask.isActive ? Border.all(color: subColor, width: 1.5) : null,
+        border: isActive || isPaused ? Border.all(color: subColor, width: 1.5) : null,
       ),
       child: Row(
         children: [
           Icon(
             subtask.isCompleted
                 ? Icons.check_circle_rounded
-                : subtask.isActive
+                : isActive || isPaused
                     ? Icons.play_circle_rounded
                     : Icons.circle_outlined,
             size: 18,
             color: subtask.isCompleted
                 ? MimioColors.success
-                : subtask.isActive
+                : isActive || isPaused
                     ? subColor
                     : MimioColors.textSecondary,
           ),
@@ -301,11 +312,11 @@ class _SubtaskRow extends StatelessWidget {
               ),
             ),
           ),
-          if (subtask.isActive) ...[
+          if (isActive || isPaused) ...[
             _MiniAction(icon: Icons.pause_rounded, color: MimioColors.warning, onTap: onPause),
             const SizedBox(width: 4),
             _MiniAction(icon: Icons.check_rounded, color: MimioColors.success, onTap: onComplete),
-          ] else if (!subtask.isCompleted) ...[
+          ] else if (!subtask.isCompleted && !isFocused) ...[
             _MiniAction(icon: Icons.play_arrow_rounded, color: parentColor, onTap: onStart),
             const SizedBox(width: 4),
             _MiniAction(icon: Icons.check_rounded, color: MimioColors.success, onTap: onComplete),

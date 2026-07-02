@@ -8,6 +8,9 @@ import 'package:mimio/core/models/recurrence.dart';
 import 'package:mimio/core/platform/live_activity_service.dart';
 import 'package:mimio/core/platform/widget_sync_service.dart';
 import 'package:mimio/core/repositories/repositories.dart';
+import 'package:mimio/core/storage/local_focus_storage.dart';
+
+final localFocusStorageProvider = Provider<LocalFocusStorage>((ref) => LocalFocusStorage());
 
 final liveActivityServiceProvider = Provider<LiveActivityService>((ref) => LiveActivityService.instance);
 
@@ -42,6 +45,7 @@ class AuthNotifier extends AsyncNotifier<AuthResponse?> {
   }
 
   Future<void> logout() async {
+    await ref.read(focusSessionProvider.notifier).clearSession();
     await ref.read(authRepositoryProvider).logout();
     state = const AsyncData(null);
   }
@@ -88,35 +92,93 @@ void showTaskCelebration(WidgetRef ref, TaskModel task) {
   );
 }
 
+TaskModel? findTaskInTimeline(TimelineModel timeline, String id) {
+  for (final task in timeline.tasks) {
+    if (task.id == id) return task;
+    for (final sub in task.subtasks) {
+      if (sub.id == id) return sub;
+    }
+  }
+  return null;
+}
+
 final focusSessionProvider =
     AsyncNotifierProvider<FocusSessionNotifier, FocusSessionModel?>(FocusSessionNotifier.new);
 
 class FocusSessionNotifier extends AsyncNotifier<FocusSessionModel?> {
-  Timer? _pollTimer;
+  Timer? _tickTimer;
+  LocalFocusSessionData? _session;
 
   @override
   Future<FocusSessionModel?> build() async {
-    ref.onDispose(() => _pollTimer?.cancel());
+    ref.onDispose(() => _tickTimer?.cancel());
 
-    final session = await ref.read(taskRepositoryProvider).getFocusSession();
-
-    if (session != null && session.isActive) {
+    _session = await ref.read(localFocusStorageProvider).load();
+    _syncTickTimer();
+    if (_session != null) {
       final lang = ref.read(appLanguageProvider).valueOrNull ?? 'tr';
-      await ref.read(liveActivityServiceProvider).syncFocusSession(session, language: lang);
+      await ref.read(liveActivityServiceProvider).syncSession(_session!, language: lang);
     }
-
-    _pollTimer?.cancel();
-    if (session != null && session.isActive) {
-      _pollTimer = Timer.periodic(const Duration(seconds: 1), (_) {
-        ref.invalidateSelf();
-      });
-    }
-
-    return session;
+    return _session?.toFocusSessionModel();
   }
 
-  Future<void> refresh() async {
-    ref.invalidateSelf();
+  Future<void> startWithTask(TaskModel task) async {
+    _session = LocalFocusSessionData.fromTask(task);
+    await _persistAndSync();
+    _syncTickTimer();
+  }
+
+  Future<void> pause() async {
+    final session = _session;
+    if (session == null || session.isPaused) return;
+    _session = session.copyWith(pausedAt: DateTime.now());
+    await _persistAndSync();
+    _tickTimer?.cancel();
+  }
+
+  Future<void> resume() async {
+    final session = _session;
+    if (session == null || !session.isPaused || session.pausedAt == null) return;
+    final pauseMs = DateTime.now().difference(session.pausedAt!).inMilliseconds;
+    _session = session.copyWith(
+      accumulatedPauseMs: session.accumulatedPauseMs + pauseMs,
+      clearPausedAt: true,
+    );
+    await _persistAndSync();
+    _syncTickTimer();
+  }
+
+  Future<void> clearSession() async {
+    _tickTimer?.cancel();
+    _session = null;
+    state = const AsyncData(null);
+    await ref.read(localFocusStorageProvider).clear();
+    try {
+      await ref.read(liveActivityServiceProvider).endActivity();
+    } catch (e) {
+      debugPrint('Live activity end skipped: $e');
+    }
+  }
+
+  Future<void> _persistAndSync() async {
+    final session = _session;
+    if (session == null) return;
+    await ref.read(localFocusStorageProvider).save(session);
+    state = AsyncData(session.toFocusSessionModel());
+    final lang = ref.read(appLanguageProvider).valueOrNull ?? 'tr';
+    await ref.read(liveActivityServiceProvider).syncSession(session, language: lang);
+    ref.invalidate(timelineProvider);
+  }
+
+  void _syncTickTimer() {
+    _tickTimer?.cancel();
+    final session = _session;
+    if (session == null || session.isPaused) return;
+    _tickTimer = Timer.periodic(const Duration(seconds: 1), (_) {
+      final current = _session;
+      if (current == null) return;
+      state = AsyncData(current.toFocusSessionModel());
+    });
   }
 }
 
@@ -138,7 +200,6 @@ class TimelineNotifier extends AsyncNotifier<TimelineModel> {
     state = await AsyncValue.guard(() async {
       return ref.read(taskRepositoryProvider).getTimeline(date);
     });
-    ref.invalidate(focusSessionProvider);
     final timeline = state.valueOrNull;
     if (timeline != null) await _syncPlatform(timeline);
   }
@@ -149,7 +210,6 @@ class TimelineNotifier extends AsyncNotifier<TimelineModel> {
     try {
       final timeline = await ref.read(taskRepositoryProvider).getTimeline(date);
       state = AsyncData(timeline);
-      ref.invalidate(focusSessionProvider);
       await _syncPlatform(timeline);
     } catch (e, st) {
       debugPrint('Refresh after task action failed: $e\n$st');
@@ -160,17 +220,9 @@ class TimelineNotifier extends AsyncNotifier<TimelineModel> {
 
   Future<void> _syncPlatform(TimelineModel timeline) async {
     try {
-      FocusSessionModel? session;
-      try {
-        session = await ref.read(taskRepositoryProvider).getFocusSession();
-      } catch (_) {}
+      final session = ref.read(focusSessionProvider).valueOrNull;
       final lang = ref.read(appLanguageProvider).valueOrNull ?? 'tr';
       await WidgetSyncService.syncTimeline(timeline, session: session, language: lang);
-      if (session != null && session.isActive) {
-        await ref.read(liveActivityServiceProvider).syncFocusSession(session, language: lang);
-      } else if (timeline.activeTask == null) {
-        await ref.read(liveActivityServiceProvider).endActivity();
-      }
     } catch (e) {
       debugPrint('Platform sync skipped: $e');
     }
@@ -183,8 +235,9 @@ class TimelineNotifier extends AsyncNotifier<TimelineModel> {
     DateTime? scheduledAt,
     RecurrenceSelection recurrence = const RecurrenceSelection(),
     String? reward,
+    bool autoStart = true,
   }) async {
-    await ref.read(taskRepositoryProvider).createTask(
+    final task = await ref.read(taskRepositoryProvider).createTask(
           title: title,
           durationMinutes: durationMinutes,
           color: color,
@@ -192,7 +245,10 @@ class TimelineNotifier extends AsyncNotifier<TimelineModel> {
           recurrence: recurrence,
           reward: reward,
         );
-    await refresh();
+    if (autoStart) {
+      await ref.read(focusSessionProvider.notifier).startWithTask(task);
+    }
+    await refresh(showLoading: false);
   }
 
   Future<void> createTaskWithSubtasks({
@@ -200,14 +256,19 @@ class TimelineNotifier extends AsyncNotifier<TimelineModel> {
     required DateTime scheduledAt,
     String color = '#6C63FF',
     required List<({String title, int durationMinutes, String color})> subtasks,
+    bool autoStart = true,
   }) async {
-    await ref.read(taskRepositoryProvider).createTaskWithSubtasks(
+    final task = await ref.read(taskRepositoryProvider).createTaskWithSubtasks(
           title: title,
           scheduledAt: scheduledAt,
           color: color,
           subtasks: subtasks,
         );
-    await refresh();
+    if (autoStart) {
+      final firstSubtask = task.subtasks.isNotEmpty ? task.subtasks.first : task;
+      await ref.read(focusSessionProvider.notifier).startWithTask(firstSubtask);
+    }
+    await refresh(showLoading: false);
   }
 
   Future<void> updateTask({
@@ -228,7 +289,7 @@ class TimelineNotifier extends AsyncNotifier<TimelineModel> {
           scheduledAt: scheduledAt,
           reward: reward,
         );
-    await refresh();
+    await refresh(showLoading: false);
   }
 
   Future<void> addSubtasksToTask({
@@ -239,40 +300,55 @@ class TimelineNotifier extends AsyncNotifier<TimelineModel> {
           parentId: parentId,
           subtasks: subtasks,
         );
-    await refresh();
+    await refresh(showLoading: false);
   }
 
   Future<void> startTask(String id) async {
-    await ref.read(taskRepositoryProvider).startTask(id);
-    await _refreshAfterAction();
-    try {
-      final session = await ref.read(taskRepositoryProvider).getFocusSession();
-      final lang = ref.read(appLanguageProvider).valueOrNull ?? 'tr';
-      await ref.read(liveActivityServiceProvider).syncFocusSession(session, language: lang);
-    } catch (e) {
-      debugPrint('Focus sync after start skipped: $e');
+    final timeline = state.valueOrNull;
+    if (timeline == null) {
+      await refresh(showLoading: false);
     }
+    final current = state.valueOrNull;
+    if (current == null) return;
+
+    final task = findTaskInTimeline(current, id);
+    if (task == null) {
+      throw StateError('Task not found');
+    }
+    await ref.read(focusSessionProvider.notifier).startWithTask(task);
+    await _syncPlatform(current);
   }
 
   Future<void> pauseTask(String id) async {
-    await ref.read(taskRepositoryProvider).pauseTask(id);
-    await _refreshAfterAction();
+    final session = ref.read(focusSessionProvider).valueOrNull;
+    if (session?.taskId != id) return;
+    await ref.read(focusSessionProvider.notifier).pause();
+    final timeline = state.valueOrNull;
+    if (timeline != null) await _syncPlatform(timeline);
+  }
+
+  Future<void> resumeTask(String id) async {
+    final session = ref.read(focusSessionProvider).valueOrNull;
+    if (session?.taskId != id) return;
+    await ref.read(focusSessionProvider.notifier).resume();
+    final timeline = state.valueOrNull;
+    if (timeline != null) await _syncPlatform(timeline);
   }
 
   Future<TaskModel> completeTask(String id) async {
+    await ref.read(focusSessionProvider.notifier).clearSession();
     final completed = await ref.read(taskRepositoryProvider).completeTask(id);
-    try {
-      await ref.read(liveActivityServiceProvider).endActivity();
-    } catch (e) {
-      debugPrint('Live activity end skipped: $e');
-    }
     await _refreshAfterAction();
     return completed;
   }
 
   Future<void> deleteTask(String id) async {
+    final session = ref.read(focusSessionProvider).valueOrNull;
+    if (session?.taskId == id) {
+      await ref.read(focusSessionProvider.notifier).clearSession();
+    }
     await ref.read(taskRepositoryProvider).deleteTask(id);
-    await refresh();
+    await refresh(showLoading: false);
   }
 }
 

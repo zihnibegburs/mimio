@@ -151,6 +151,7 @@ class _TodayTab extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final timelineAsync = ref.watch(timelineProvider);
+    final session = ref.watch(focusSessionProvider).valueOrNull;
     final viewMode = ref.watch(timelineViewModeProvider);
     final selectedDate = ref.watch(selectedDateProvider);
     final s = ref.watch(stringsProvider);
@@ -167,8 +168,8 @@ class _TodayTab extends ConsumerWidget {
               onRefresh: () => ref.read(timelineProvider.notifier).refresh(),
               child: CustomScrollView(
                 slivers: [
-                  if (timeline.activeTask != null)
-                    SliverToBoxAdapter(child: ActiveTaskBanner(task: timeline.activeTask!)),
+                  if (session != null)
+                    SliverToBoxAdapter(child: ActiveTaskBanner(session: session)),
                   SliverToBoxAdapter(child: DayProgressCard(tasks: timeline.tasks)),
                   SliverToBoxAdapter(
                     child: Padding(
@@ -214,11 +215,11 @@ class _TodayTab extends ConsumerWidget {
                               task: task,
                               onTap: () => _showTaskActions(context, ref, task, selectedDate),
                               onStart: () => _startTask(context, ref, task.id),
-                              onPause: () => ref.read(timelineProvider.notifier).pauseTask(task.id),
+                              onPause: () => _togglePause(ref, task.id),
                               onComplete: () => _completeTask(context, ref, task),
                               onSubtaskTap: (sub) => _showTaskActions(context, ref, sub, selectedDate),
                               onSubtaskStart: (sub) => _startTask(context, ref, sub.id),
-                              onSubtaskPause: (sub) => ref.read(timelineProvider.notifier).pauseTask(sub.id),
+                              onSubtaskPause: (sub) => _togglePause(ref, sub.id),
                               onSubtaskComplete: (sub) => _completeTask(context, ref, sub),
                             );
                           },
@@ -241,7 +242,6 @@ class _TodayTab extends ConsumerWidget {
     try {
       await ref.read(timelineProvider.notifier).startTask(id);
       ref.read(homeTabProvider.notifier).state = HomeTab.focus;
-      ref.invalidate(focusSessionProvider);
       if (context.mounted) context.push('/focus');
     } catch (e) {
       if (context.mounted) {
@@ -255,11 +255,19 @@ class _TodayTab extends ConsumerWidget {
     }
   }
 
+  Future<void> _togglePause(WidgetRef ref, String id) async {
+    final session = ref.read(focusSessionProvider).valueOrNull;
+    if (session?.taskId == id && session!.isPaused) {
+      await ref.read(timelineProvider.notifier).resumeTask(id);
+    } else {
+      await ref.read(timelineProvider.notifier).pauseTask(id);
+    }
+  }
+
   Future<void> _completeTask(BuildContext context, WidgetRef ref, TaskModel task) async {
     final s = ref.read(stringsProvider);
     try {
       final completed = await ref.read(timelineProvider.notifier).completeTask(task.id);
-      ref.invalidate(focusSessionProvider);
       showTaskCelebration(ref, completed);
     } catch (e) {
       if (context.mounted) {
@@ -279,18 +287,17 @@ class _TodayTab extends ConsumerWidget {
   }
 
   void _showTaskActions(BuildContext context, WidgetRef ref, TaskModel task, DateTime date) {
+    final session = ref.read(focusSessionProvider).valueOrNull;
     showTaskActionSheet(
       context: context,
       ref: ref,
       task: task,
       selectedDate: date,
       onStart: () => _startTask(context, ref, task.id),
-      onPause: () => ref.read(timelineProvider.notifier).pauseTask(task.id),
+      onPause: () => _togglePause(ref, task.id),
       onComplete: () => _completeTask(context, ref, task),
       onDelete: () => ref.read(timelineProvider.notifier).deleteTask(task.id),
-      onFocus: (task.isActive || task.status == TaskStatus.paused)
-          ? () => context.push('/focus')
-          : null,
+      onFocus: session?.taskId == task.id ? () => context.push('/focus') : null,
     );
   }
 

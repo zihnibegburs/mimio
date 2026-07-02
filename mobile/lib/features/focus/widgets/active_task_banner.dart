@@ -5,18 +5,16 @@ import 'package:mimio/core/l10n/app_strings.dart';
 import 'package:mimio/core/models/models.dart';
 import 'package:mimio/core/theme/mimio_theme.dart';
 import 'package:mimio/features/focus/widgets/focus_timer_widget.dart';
-import 'package:mimio/features/providers.dart';
 
 class ActiveTaskBanner extends ConsumerWidget {
-  const ActiveTaskBanner({super.key, required this.task});
+  const ActiveTaskBanner({super.key, required this.session});
 
-  final TaskModel task;
+  final FocusSessionModel session;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final sessionAsync = ref.watch(focusSessionProvider);
     final s = ref.watch(stringsProvider);
-    final color = MimioColors.fromHex(task.color);
+    final color = MimioColors.fromHex(session.color);
 
     return GestureDetector(
       onTap: () => context.push('/focus'),
@@ -32,38 +30,24 @@ class ActiveTaskBanner extends ConsumerWidget {
         ),
         child: Row(
           children: [
-            sessionAsync.when(
-              loading: () => const SizedBox(
-                width: 56,
-                height: 56,
-                child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
-              ),
-              error: (_, __) => const Icon(Icons.play_circle_filled_rounded, color: Colors.white, size: 48),
-              data: (session) {
-                if (session == null) {
-                  return const Icon(Icons.play_circle_filled_rounded, color: Colors.white, size: 48);
-                }
-                return FocusTimerWidget(session: session, size: 72, showLabel: false, inverted: true);
-              },
-            ),
+            FocusTimerWidget(session: session, size: 72, showLabel: false, inverted: true),
             const SizedBox(width: 12),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    task.isActive ? s.currentlyActive : s.paused,
+                    session.isActive ? s.currentlyActive : s.paused,
                     style: const TextStyle(color: Colors.white70, fontSize: 12),
                   ),
                   Text(
-                    task.title,
+                    session.title,
                     style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w700),
                   ),
-                  if (sessionAsync.valueOrNull != null)
-                    Text(
-                      s.remainingLabel(sessionAsync.value!.remainingFormatted),
-                      style: const TextStyle(color: Colors.white70, fontSize: 13),
-                    ),
+                  Text(
+                    s.remainingLabel(session.remainingFormatted),
+                    style: const TextStyle(color: Colors.white70, fontSize: 13),
+                  ),
                 ],
               ),
             ),

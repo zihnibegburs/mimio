@@ -52,9 +52,8 @@ class FocusTabView extends ConsumerWidget {
                           if (session.isActive) {
                             await ref.read(timelineProvider.notifier).pauseTask(session.taskId);
                           } else {
-                            await ref.read(timelineProvider.notifier).startTask(session.taskId);
+                            await ref.read(timelineProvider.notifier).resumeTask(session.taskId);
                           }
-                          ref.invalidate(focusSessionProvider);
                         } catch (e) {
                           if (context.mounted) {
                             ScaffoldMessenger.of(context).showSnackBar(
@@ -77,7 +76,6 @@ class FocusTabView extends ConsumerWidget {
                         final s = ref.read(stringsProvider);
                         try {
                           final completed = await ref.read(timelineProvider.notifier).completeTask(session.taskId);
-                          ref.invalidate(focusSessionProvider);
                           showTaskCelebration(ref, completed);
                         } catch (e) {
                           if (context.mounted) {
@@ -113,7 +111,8 @@ class _NoActiveFocus extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final pending = tasks.where((t) => !t.isCompleted && !t.isActive).toList();
+    final activeId = ref.watch(focusSessionProvider).valueOrNull?.taskId;
+    final pending = tasks.where((t) => !t.isCompleted && t.id != activeId).toList();
 
     return Center(
       child: Padding(
@@ -153,7 +152,6 @@ class _NoActiveFocus extends ConsumerWidget {
                     try {
                       await ref.read(timelineProvider.notifier).startTask(task.id);
                       ref.read(homeTabProvider.notifier).state = HomeTab.focus;
-                      ref.invalidate(focusSessionProvider);
                     } catch (e) {
                       if (context.mounted) {
                         ScaffoldMessenger.of(context).showSnackBar(

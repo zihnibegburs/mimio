@@ -84,6 +84,7 @@ class _AiPlanScreenState extends ConsumerState<AiPlanScreen> {
             durationMinutes: task.durationMinutes,
             color: task.color,
             scheduledAt: task.scheduledAt(_plan!.date),
+            autoStart: false,
           );
     }
     if (mounted) {

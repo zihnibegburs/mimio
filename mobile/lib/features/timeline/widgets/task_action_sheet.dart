@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mimio/core/l10n/app_strings.dart';
 import 'package:mimio/core/models/models.dart';
 import 'package:mimio/core/theme/mimio_theme.dart';
+import 'package:mimio/features/providers.dart';
 import 'package:mimio/features/timeline/widgets/edit_task_sheet.dart';
 import 'package:mimio/features/timeline/widgets/subtask_breakdown_sheet.dart';
 
@@ -18,6 +19,10 @@ void showTaskActionSheet({
   VoidCallback? onFocus,
 }) {
   final s = ref.read(stringsProvider);
+  final session = ref.read(focusSessionProvider).valueOrNull;
+  final isFocused = session?.taskId == task.id;
+  final isActive = isFocused && (session?.isActive ?? false);
+  final isPaused = isFocused && (session?.isPaused ?? false);
   final isSubtask = task.parentTaskId != null;
   final canBreakdown = !isSubtask && !task.hasSubtasks && !task.isCompleted;
 
@@ -81,7 +86,7 @@ void showTaskActionSheet({
               ),
             ),
             const Divider(height: 1),
-            if (!task.isCompleted && !task.isActive && task.status != TaskStatus.paused)
+            if (!task.isCompleted && !isFocused)
               _ActionTile(
                 icon: Icons.play_arrow_rounded,
                 label: s.startTask,
@@ -91,7 +96,7 @@ void showTaskActionSheet({
                   await onStart();
                 },
               ),
-            if (task.isActive || task.status == TaskStatus.paused) ...[
+            if (isActive || isPaused) ...[
               if (onFocus != null)
                 _ActionTile(
                   icon: Icons.timer_rounded,
@@ -102,7 +107,7 @@ void showTaskActionSheet({
                     onFocus();
                   },
                 ),
-              if (task.isActive)
+              if (isActive)
                 _ActionTile(
                   icon: Icons.pause_rounded,
                   label: s.pause,
@@ -112,14 +117,14 @@ void showTaskActionSheet({
                     await onPause();
                   },
                 ),
-              if (task.status == TaskStatus.paused)
+              if (isPaused)
                 _ActionTile(
                   icon: Icons.play_arrow_rounded,
                   label: s.resume,
                   color: MimioColors.fromHex(task.color),
                   onTap: () async {
                     Navigator.pop(ctx);
-                    await onStart();
+                    await onPause();
                   },
                 ),
             ],
