@@ -8,7 +8,9 @@ import 'package:mimio/core/models/recurrence.dart';
 import 'package:mimio/core/platform/live_activity_service.dart';
 import 'package:mimio/core/platform/widget_sync_service.dart';
 import 'package:mimio/core/repositories/repositories.dart';
+import 'package:mimio/core/services/calendar_import_service.dart';
 import 'package:mimio/core/storage/local_focus_storage.dart';
+import 'package:mimio/core/storage/settings_storage.dart';
 
 final localFocusStorageProvider = Provider<LocalFocusStorage>((ref) => LocalFocusStorage());
 
@@ -221,6 +223,7 @@ class TimelineNotifier extends AsyncNotifier<TimelineModel> {
 
   Future<void> createTask({
     required String title,
+    String? description,
     int durationMinutes = 30,
     String color = '#6C63FF',
     DateTime? scheduledAt,
@@ -230,6 +233,7 @@ class TimelineNotifier extends AsyncNotifier<TimelineModel> {
   }) async {
     final task = await ref.read(taskRepositoryProvider).createTask(
           title: title,
+          description: description,
           durationMinutes: durationMinutes,
           color: color,
           scheduledAt: scheduledAt,
@@ -240,6 +244,26 @@ class TimelineNotifier extends AsyncNotifier<TimelineModel> {
       await ref.read(focusSessionProvider.notifier).startWithTask(task);
     }
     await refresh(showLoading: false);
+  }
+
+  Future<int> importCalendarEvents(List<CalendarImportEvent> events) async {
+    if (events.isEmpty) return 0;
+
+    final importedIds = <String>[];
+    for (final event in events) {
+      await ref.read(taskRepositoryProvider).createTask(
+            title: event.title,
+            description: event.description,
+            durationMinutes: event.durationMinutes,
+            color: event.color,
+            scheduledAt: event.scheduledAt,
+          );
+      importedIds.add(event.id);
+    }
+
+    await ref.read(settingsStorageProvider).markCalendarEventsImported(importedIds);
+    await refresh(showLoading: false);
+    return importedIds.length;
   }
 
   Future<void> createTaskWithSubtasks({

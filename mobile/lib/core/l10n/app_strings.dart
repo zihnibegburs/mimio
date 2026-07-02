@@ -60,6 +60,94 @@ class S {
       l10n(lang, _m(en: 'Coming soon', tr: 'Yakında', es: 'Próximamente', fr: 'Bientôt disponible', de: 'Demnächst'));
   String get profileUpdated =>
       l10n(lang, _m(en: 'Profile updated', tr: 'Profil güncellendi', es: 'Perfil actualizado', fr: 'Profil mis à jour', de: 'Profil aktualisiert'));
+  String get integrations =>
+      l10n(lang, _m(en: 'Integrations', tr: 'Entegrasyonlar', es: 'Integraciones', fr: 'Intégrations', de: 'Integrationen'));
+  String get calendarImport =>
+      l10n(lang, _m(en: 'Import from calendar', tr: 'Takvimden aktar', es: 'Importar del calendario', fr: 'Importer du calendrier', de: 'Aus Kalender importieren'));
+  String get calendarImportSubtitle => l10n(lang, _m(
+        en: 'Turn calendar events into Mimio tasks for your daily plan.',
+        tr: 'Takvim etkinliklerini günlük planına görev olarak ekle.',
+        es: 'Convierte eventos del calendario en tareas de Mimio.',
+        fr: 'Transformez les événements du calendrier en tâches Mimio.',
+        de: 'Kalendertermine als Mimio-Aufgaben in deinen Tagesplan übernehmen.',
+      ));
+  String get calendarImportTitle =>
+      l10n(lang, _m(en: 'Calendar import', tr: 'Takvim aktarma', es: 'Importar calendario', fr: 'Import calendrier', de: 'Kalenderimport'));
+  String get calendarImportPermissionDenied => l10n(lang, _m(
+        en: 'Calendar access is required to import events.',
+        tr: 'Etkinlikleri aktarmak için takvim erişimi gerekiyor.',
+        es: 'Se necesita acceso al calendario para importar eventos.',
+        fr: 'L\'accès au calendrier est requis pour importer les événements.',
+        de: 'Kalenderzugriff ist erforderlich, um Termine zu importieren.',
+      ));
+  String get calendarImportSelectCalendars => l10n(lang, _m(
+        en: 'Select calendars',
+        tr: 'Takvimleri seç',
+        es: 'Seleccionar calendarios',
+        fr: 'Sélectionner les calendriers',
+        de: 'Kalender auswählen',
+      ));
+  String get calendarImportDateRange =>
+      l10n(lang, _m(en: 'Date range', tr: 'Tarih aralığı', es: 'Rango de fechas', fr: 'Période', de: 'Zeitraum'));
+  String get calendarImportToday =>
+      l10n(lang, _m(en: 'Today', tr: 'Bugün', es: 'Hoy', fr: 'Aujourd\'hui', de: 'Heute'));
+  String get calendarImportThisWeek =>
+      l10n(lang, _m(en: 'This week', tr: 'Bu hafta', es: 'Esta semana', fr: 'Cette semaine', de: 'Diese Woche'));
+  String get calendarImportNext7Days => l10n(lang, _m(
+        en: 'Next 7 days',
+        tr: 'Sonraki 7 gün',
+        es: 'Próximos 7 días',
+        fr: '7 prochains jours',
+        de: 'Nächste 7 Tage',
+      ));
+  String get calendarImportPreview =>
+      l10n(lang, _m(en: 'Events to import', tr: 'Aktarılacak etkinlikler', es: 'Eventos a importar', fr: 'Événements à importer', de: 'Zu importierende Termine'));
+  String get calendarImportNoEvents => l10n(lang, _m(
+        en: 'No new events found in this range.',
+        tr: 'Bu aralıkta aktarılacak yeni etkinlik bulunamadı.',
+        es: 'No hay eventos nuevos en este rango.',
+        fr: 'Aucun nouvel événement dans cette période.',
+        de: 'Keine neuen Termine in diesem Zeitraum.',
+      ));
+  String get calendarImportNoCalendars => l10n(lang, _m(
+        en: 'No calendars found on this device.',
+        tr: 'Bu cihazda takvim bulunamadı.',
+        es: 'No se encontraron calendarios en este dispositivo.',
+        fr: 'Aucun calendrier trouvé sur cet appareil.',
+        de: 'Keine Kalender auf diesem Gerät gefunden.',
+      ));
+  String calendarImportButton(int count) => l10n(lang, _m(
+        en: 'Import $count events',
+        tr: '$count etkinliği aktar',
+        es: 'Importar $count eventos',
+        fr: 'Importer $count événements',
+        de: '$count Termine importieren',
+      ));
+  String calendarImportSuccess(int count) => l10n(lang, _m(
+        en: '$count calendar events imported ✨',
+        tr: '$count takvim etkinliği aktarıldı ✨',
+        es: '$count eventos del calendario importados ✨',
+        fr: '$count événements importés ✨',
+        de: '$count Kalendertermine importiert ✨',
+      ));
+  String get calendarImportUnavailable => l10n(lang, _m(
+        en: 'Calendar import is available on iOS and Android only.',
+        tr: 'Takvim aktarma yalnızca iOS ve Android\'de kullanılabilir.',
+        es: 'La importación del calendario solo está disponible en iOS y Android.',
+        fr: 'L\'import calendrier est disponible uniquement sur iOS et Android.',
+        de: 'Kalenderimport ist nur auf iOS und Android verfügbar.',
+      ));
+  String get calendarImportSelectAll =>
+      l10n(lang, _m(en: 'Select all', tr: 'Tümünü seç', es: 'Seleccionar todo', fr: 'Tout sélectionner', de: 'Alle auswählen'));
+  String get calendarImportDeselectAll => l10n(lang, _m(
+        en: 'Deselect all',
+        tr: 'Seçimi kaldır',
+        es: 'Deseleccionar todo',
+        fr: 'Tout désélectionner',
+        de: 'Auswahl aufheben',
+      ));
+  String get calendarImportAllDay =>
+      l10n(lang, _m(en: 'All day', tr: 'Tüm gün', es: 'Todo el día', fr: 'Journée entière', de: 'Ganztägig'));
 
   // Tasks
   String get taskOptions =>

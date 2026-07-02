@@ -188,6 +188,22 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             ),
           ],
           const SizedBox(height: 24),
+          _SectionHeader(title: s.integrations),
+          Container(
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: const Color(0xFFE8E8F0)),
+            ),
+            child: ListTile(
+              leading: const Icon(Icons.calendar_month_rounded, color: MimioColors.primary),
+              title: Text(s.calendarImport),
+              subtitle: Text(s.calendarImportSubtitle, style: const TextStyle(fontSize: 12)),
+              trailing: const Icon(Icons.chevron_right_rounded),
+              onTap: () => context.push('/calendar-import'),
+            ),
+          ),
+          const SizedBox(height: 24),
           _SectionHeader(title: s.preferences),
           Container(
             decoration: BoxDecoration(
