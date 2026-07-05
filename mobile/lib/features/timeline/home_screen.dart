@@ -5,6 +5,15 @@ import 'package:intl/intl.dart';
 import 'package:mimio/core/l10n/app_strings.dart';
 import 'package:mimio/core/models/models.dart';
 import 'package:mimio/core/theme/mimio_theme.dart';
+import 'package:mimio/features/achievements/achievement_unlock_listener.dart';
+import 'package:mimio/features/inbox/inbox_section.dart';
+import 'package:mimio/features/onboarding/onboarding_screen.dart';
+import 'package:mimio/features/timeline/task_completion_helper.dart';
+import 'package:mimio/features/timeline/widgets/now_mode_view.dart';
+import 'package:mimio/features/timeline/widgets/routine_templates_sheet.dart';
+import 'package:mimio/features/timeline/widgets/schedule_warning_banner.dart';
+import 'package:mimio/core/storage/adhd_settings_storage.dart';
+import 'package:mimio/core/utils/schedule_utils.dart';
 import 'package:mimio/features/achievements/achievements_screen.dart';
 import 'package:mimio/features/focus/focus_tab_view.dart';
 import 'package:mimio/features/focus/widgets/celebration_dialog.dart';
@@ -13,6 +22,7 @@ import 'package:mimio/features/providers.dart';
 import 'package:mimio/features/timeline/home_tab.dart';
 import 'package:mimio/features/timeline/widgets/add_task_sheet.dart';
 import 'package:mimio/features/timeline/widgets/day_progress_card.dart';
+import 'package:mimio/features/timeline/widgets/delete_task_dialog.dart';
 import 'package:mimio/features/timeline/widgets/task_action_sheet.dart';
 import 'package:mimio/features/timeline/widgets/modern_bottom_bar.dart';
 import 'package:mimio/features/timeline/widgets/task_card.dart';
@@ -30,7 +40,8 @@ class HomeScreen extends ConsumerWidget {
     final selectedDate = ref.watch(selectedDateProvider);
     final s = ref.watch(stringsProvider);
 
-    return Scaffold(
+    return AchievementUnlockListener(
+      child: Scaffold(
         extendBody: true,
         appBar: AppBar(
           title: Column(
@@ -39,15 +50,33 @@ class HomeScreen extends ConsumerWidget {
               Text(s.hello(auth?.displayName ?? '')),
               Text(
                 _tabSubtitle(tab, selectedDate, ref, s),
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 13,
-                  color: MimioColors.textSecondary,
+                  color: context.palette.textSecondary,
                   fontWeight: FontWeight.w500,
                 ),
               ),
             ],
           ),
           actions: [
+            if (tab == HomeTab.today)
+              Consumer(
+                builder: (context, ref, _) {
+                  final overwhelm = ref.watch(adhdPreferencesProvider).valueOrNull?.overwhelmMode ?? false;
+                  return IconButton(
+                    icon: Icon(overwhelm ? Icons.visibility_rounded : Icons.visibility_outlined),
+                    tooltip: s.overwhelmMode,
+                    onPressed: () => ref.read(adhdPreferencesProvider.notifier).patch(
+                          (p) => p.copyWith(overwhelmMode: !p.overwhelmMode),
+                        ),
+                  );
+                },
+              ),
+            IconButton(
+              icon: const Icon(Icons.psychology_rounded),
+              tooltip: s.brainDump,
+              onPressed: () => context.push('/brain-dump'),
+            ),
             IconButton(
               icon: const Icon(Icons.auto_awesome_rounded),
               tooltip: s.aiPlanner,
@@ -125,6 +154,7 @@ class HomeScreen extends ConsumerWidget {
             ),
           ],
         ),
+      ),
     );
   }
 
@@ -171,16 +201,39 @@ class _AchievementsTab extends ConsumerWidget {
   }
 }
 
-class _TodayTab extends ConsumerWidget {
+class _TodayTab extends ConsumerStatefulWidget {
   const _TodayTab();
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<_TodayTab> createState() => _TodayTabState();
+}
+
+class _TodayTabState extends ConsumerState<_TodayTab> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) => _maybeShowOnboarding());
+  }
+
+  Future<void> _maybeShowOnboarding() async {
+    final prefs = ref.read(adhdPreferencesProvider).valueOrNull ??
+        await ref.read(adhdSettingsStorageProvider).load();
+    if (!prefs.onboardingCompleted && mounted) {
+      await Navigator.of(context).push(
+        MaterialPageRoute(builder: (_) => const OnboardingScreen()),
+      );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final timelineAsync = ref.watch(timelineProvider);
     final session = ref.watch(focusSessionProvider).valueOrNull;
     final viewMode = ref.watch(timelineViewModeProvider);
     final selectedDate = ref.watch(selectedDateProvider);
     final s = ref.watch(stringsProvider);
+
+    final overwhelm = ref.watch(adhdPreferencesProvider).valueOrNull?.overwhelmMode ?? false;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -190,12 +243,18 @@ class _TodayTab extends ConsumerWidget {
           child: timelineAsync.when(
             loading: () => const Center(child: CircularProgressIndicator()),
             error: (e, _) => _ErrorView(error: '$e', onRetry: () => ref.invalidate(timelineProvider), s: s),
-            data: (timeline) => RefreshIndicator(
+            data: (timeline) {
+              final dailyEnergy = ref.watch(adhdPreferencesProvider).valueOrNull?.dailyEnergyLevel;
+              final tasks = filterByEnergy(timeline.tasks, dailyEnergy);
+
+              return RefreshIndicator(
               onRefresh: () => ref.read(timelineProvider.notifier).refresh(),
               child: CustomScrollView(
                 slivers: [
                   if (session != null)
                     SliverToBoxAdapter(child: ActiveTaskBanner(session: session)),
+                  const SliverToBoxAdapter(child: InboxSection()),
+                  SliverToBoxAdapter(child: ScheduleWarningBanner(tasks: timeline.tasks)),
                   SliverToBoxAdapter(child: DayProgressCard(tasks: timeline.tasks)),
                   SliverToBoxAdapter(
                     child: Padding(
@@ -203,19 +262,24 @@ class _TodayTab extends ConsumerWidget {
                       child: Row(
                         children: [
                           Text(
-                            s.todaysPlan,
+                            overwhelm ? s.overwhelmMode : s.todaysPlan,
                             style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800),
                           ),
                           const Spacer(),
+                          IconButton(
+                            icon: const Icon(Icons.playlist_add_rounded, size: 20),
+                            tooltip: s.routineTemplates,
+                            onPressed: () => showRoutineTemplatesSheet(context, ref, selectedDate),
+                          ),
                           Text(
-                            s.taskCount(timeline.tasks.length),
-                            style: const TextStyle(color: MimioColors.textSecondary),
+                            s.taskCount(tasks.length),
+                            style: TextStyle(color: context.palette.textSecondary),
                           ),
                         ],
                       ),
                     ),
                   ),
-                  if (timeline.tasks.isEmpty)
+                  if (tasks.isEmpty)
                     SliverFillRemaining(
                       hasScrollBody: false,
                       child: _EmptyTimeline(
@@ -223,10 +287,19 @@ class _TodayTab extends ConsumerWidget {
                         s: s,
                       ),
                     )
+                  else if (overwhelm)
+                    SliverToBoxAdapter(
+                      child: NowModeView(
+                        tasks: tasks,
+                        onTaskTap: (task) => _showTaskActions(context, ref, task, selectedDate),
+                        onStart: (task) => _startTask(context, ref, task.id),
+                        onComplete: (task) => _completeTask(context, ref, task),
+                      ),
+                    )
                   else if (viewMode == TimelineViewMode.grid)
                     SliverToBoxAdapter(
                       child: TimelineHourGrid(
-                        tasks: timeline.tasks,
+                        tasks: tasks,
                         onTaskTap: (task) => _handleTaskTap(context, ref, task),
                       ),
                     )
@@ -236,7 +309,7 @@ class _TodayTab extends ConsumerWidget {
                       sliver: SliverList(
                         delegate: SliverChildBuilderDelegate(
                           (context, index) {
-                            final task = timeline.tasks[index];
+                            final task = tasks[index];
                             return TaskCard(
                               task: task,
                               onTap: () => _showTaskActions(context, ref, task, selectedDate),
@@ -250,14 +323,15 @@ class _TodayTab extends ConsumerWidget {
                               onSubtaskComplete: (sub) => _completeTask(context, ref, sub),
                             );
                           },
-                          childCount: timeline.tasks.length,
+                          childCount: tasks.length,
                         ),
                       ),
                     ),
                   const SliverToBoxAdapter(child: SizedBox(height: 88)),
                 ],
               ),
-            ),
+            );
+            },
           ),
         ),
       ],
@@ -296,33 +370,7 @@ class _TodayTab extends ConsumerWidget {
     try {
       final completed = await ref.read(timelineProvider.notifier).completeTask(task.id);
       if (!context.mounted) return;
-      if (completed.hasReward) {
-        await showTaskCelebration(ref, completed, context);
-      }
-      if (!context.mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(s.taskCompletedUndo),
-          duration: const Duration(seconds: 5),
-          action: SnackBarAction(
-            label: s.undo,
-            onPressed: () async {
-              try {
-                await ref.read(timelineProvider.notifier).uncompleteTask(task.id);
-              } catch (e) {
-                if (context.mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text(s.friendlyTaskActionError(e)),
-                      backgroundColor: Colors.red.shade400,
-                    ),
-                  );
-                }
-              }
-            },
-          ),
-        ),
-      );
+      await handleTaskCompleted(context, ref, task, completed);
     } catch (e) {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -353,28 +401,11 @@ class _TodayTab extends ConsumerWidget {
 
   Future<void> _deleteTask(BuildContext context, WidgetRef ref, TaskModel task) async {
     final s = ref.read(stringsProvider);
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (dialogCtx) => AlertDialog(
-        title: Text(s.deleteTask),
-        content: Text('“${task.title}” — ${s.deleteConfirm}'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(dialogCtx, false),
-            child: Text(s.cancel),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(dialogCtx, true),
-            style: TextButton.styleFrom(foregroundColor: Colors.red),
-            child: Text(s.delete),
-          ),
-        ],
-      ),
-    );
-    if (confirmed != true) return;
+    final scope = await showDeleteTaskDialog(context: context, s: s, task: task);
+    if (scope == null) return;
 
     try {
-      await ref.read(timelineProvider.notifier).deleteTask(task.id);
+      await ref.read(timelineProvider.notifier).deleteTask(task.id, scope: scope);
     } catch (e) {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -403,7 +434,7 @@ class _TodayTab extends ConsumerWidget {
       onPause: () => _togglePause(ref, task.id),
       onComplete: () => _completeTask(context, ref, task),
       onUncomplete: () => _uncompleteTask(context, ref, task),
-      onDelete: () => ref.read(timelineProvider.notifier).deleteTask(task.id),
+      onDelete: (scope) => ref.read(timelineProvider.notifier).deleteTask(task.id, scope: scope),
       onFocus: session?.taskId == task.id ? () => context.push('/focus') : null,
     );
   }
@@ -431,11 +462,11 @@ class _ErrorView extends StatelessWidget {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          const Icon(Icons.cloud_off_rounded, size: 48, color: MimioColors.textSecondary),
+          Icon(Icons.cloud_off_rounded, size: 48, color: context.palette.textSecondary),
           const SizedBox(height: 16),
           Text(s.connectionError, style: Theme.of(context).textTheme.titleMedium),
           const SizedBox(height: 8),
-          Text(error, textAlign: TextAlign.center, style: const TextStyle(color: MimioColors.textSecondary)),
+          Text(error, textAlign: TextAlign.center, style: TextStyle(color: context.palette.textSecondary)),
           const SizedBox(height: 16),
           ElevatedButton(onPressed: onRetry, child: Text(s.retry)),
         ],
@@ -477,7 +508,7 @@ class _EmptyTimeline extends StatelessWidget {
             Text(
               s.emptyPlanHint,
               textAlign: TextAlign.center,
-              style: const TextStyle(color: MimioColors.textSecondary, height: 1.5),
+              style: TextStyle(color: context.palette.textSecondary, height: 1.5),
             ),
             const SizedBox(height: 28),
             Material(

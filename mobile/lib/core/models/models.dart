@@ -1,3 +1,6 @@
+import 'package:mimio/core/models/adhd_models.dart';
+import 'package:mimio/core/models/recurrence.dart';
+
 enum TaskStatus { pending, inProgress, paused, completed, skipped }
 
 class AuthResponse {
@@ -55,6 +58,11 @@ class TaskModel {
   final String? parentTaskId;
   final List<TaskModel> subtasks;
   final String? reward;
+  final EnergyLevel? energyLevel;
+  final String? motivation;
+  final int transitionBufferMinutes;
+  final RecurrenceType recurrenceType;
+  final String? recurrenceSeriesId;
 
   const TaskModel({
     required this.id,
@@ -72,6 +80,11 @@ class TaskModel {
     this.parentTaskId,
     this.subtasks = const [],
     this.reward,
+    this.energyLevel,
+    this.motivation,
+    this.transitionBufferMinutes = 0,
+    this.recurrenceType = RecurrenceType.none,
+    this.recurrenceSeriesId,
   });
 
   factory TaskModel.fromJson(Map<String, dynamic> json) => TaskModel(
@@ -100,7 +113,21 @@ class TaskModel {
                 .toList()
             : const [],
         reward: json['reward'] as String?,
+        energyLevel: EnergyLevelX.fromApiNullable(json['energyLevel'] as String?),
+        motivation: json['motivation'] as String?,
+        transitionBufferMinutes: json['transitionBufferMinutes'] as int? ?? 0,
+        recurrenceType: _parseRecurrenceType(json['recurrenceType'] as String?),
+        recurrenceSeriesId: json['recurrenceSeriesId'] as String?,
       );
+
+  static RecurrenceType _parseRecurrenceType(String? value) => switch (value) {
+        'DAILY' => RecurrenceType.daily,
+        'WEEKLY' => RecurrenceType.weekly,
+        'MONTHLY' => RecurrenceType.monthly,
+        'YEARLY' => RecurrenceType.yearly,
+        'CUSTOM' => RecurrenceType.custom,
+        _ => RecurrenceType.none,
+      };
 
   static TaskStatus _parseStatus(String status) => switch (status) {
         'PENDING' => TaskStatus.pending,
@@ -115,10 +142,18 @@ class TaskModel {
   bool get isCompleted => status == TaskStatus.completed;
   bool get hasSubtasks => subtasks.isNotEmpty;
   bool get hasReward => reward != null && reward!.isNotEmpty;
+  bool get hasMotivation => motivation != null && motivation!.isNotEmpty;
+  bool get isRecurring =>
+      recurrenceSeriesId != null || recurrenceType != RecurrenceType.none;
 
   int get completedSubtaskCount => subtasks.where((s) => s.isCompleted).length;
 
   DateTime get endTime {
+    final start = scheduledAt ?? DateTime.now();
+    return start.add(Duration(minutes: durationMinutes + transitionBufferMinutes));
+  }
+
+  DateTime get taskEndTime {
     final start = scheduledAt ?? DateTime.now();
     return start.add(Duration(minutes: durationMinutes));
   }

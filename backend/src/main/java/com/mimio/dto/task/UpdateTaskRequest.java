@@ -15,5 +15,8 @@ public record UpdateTaskRequest(
         TaskStatus status,
         Integer sortOrder,
         Boolean isInbox,
-        String reward
+        String reward,
+        String energyLevel,
+        String motivation,
+        Integer transitionBufferMinutes
 ) {}

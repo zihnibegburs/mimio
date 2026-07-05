@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mimio/core/l10n/app_strings.dart';
+import 'package:mimio/core/models/adhd_models.dart';
 import 'package:mimio/core/models/models.dart';
 import 'package:mimio/core/models/recurrence.dart';
 import 'package:mimio/core/platform/live_activity_service.dart';
@@ -12,6 +13,7 @@ import 'package:mimio/core/repositories/repositories.dart';
 import 'package:mimio/core/services/calendar_import_service.dart';
 import 'package:mimio/features/achievements/achievements_screen.dart';
 import 'package:mimio/core/utils/task_icons.dart';
+import 'package:mimio/core/storage/adhd_settings_storage.dart';
 import 'package:mimio/core/storage/local_focus_storage.dart';
 import 'package:mimio/core/storage/settings_storage.dart';
 
@@ -98,6 +100,37 @@ TaskModel? findTaskInTimeline(TimelineModel timeline, String id) {
   return null;
 }
 
+Set<String> _taskIdsAffectedByDelete(
+  TimelineModel timeline,
+  TaskModel task,
+  DeleteRecurrenceScope scope,
+) {
+  final ids = <String>{task.id};
+  if (scope == DeleteRecurrenceScope.thisOccurrence || task.recurrenceSeriesId == null) {
+    return ids;
+  }
+
+  final seriesId = task.recurrenceSeriesId!;
+  final cutoff = task.scheduledAt;
+
+  void collect(List<TaskModel> tasks) {
+    for (final candidate in tasks) {
+      final inSeries = candidate.recurrenceSeriesId == seriesId;
+      final matchesScope = scope == DeleteRecurrenceScope.all ||
+          (cutoff != null &&
+              candidate.scheduledAt != null &&
+              !candidate.scheduledAt!.isBefore(cutoff));
+      if (inSeries && matchesScope) {
+        ids.add(candidate.id);
+      }
+      collect(candidate.subtasks);
+    }
+  }
+
+  collect(timeline.tasks);
+  return ids;
+}
+
 final focusSessionProvider =
     AsyncNotifierProvider<FocusSessionNotifier, FocusSessionModel?>(FocusSessionNotifier.new);
 
@@ -147,21 +180,41 @@ class FocusSessionNotifier extends AsyncNotifier<FocusSessionModel?> {
   Future<void> seekBySeconds(int seconds) async {
     final session = _session;
     if (session == null) return;
-    _session = session.copyWith(
-      startedAt: session.startedAt.subtract(Duration(seconds: seconds)),
-    );
+    final total = session.durationMinutes * 60;
+    final targetElapsed = session.toFocusSessionModel().elapsedSeconds + seconds;
+    _applyElapsedSeconds(targetElapsed.clamp(0, total));
     await _persistAndSync();
   }
 
-  Future<void> seekToProgress(double progress) async {
+  void seekToProgress(double progress, {bool persist = true}) {
     final session = _session;
     if (session == null) return;
     final total = session.durationMinutes * 60;
     final targetElapsed = (progress.clamp(0.0, 1.0) * total).round();
+    _applyElapsedSeconds(targetElapsed);
+    if (persist) {
+      _persistAndSync();
+    }
+  }
+
+  Future<void> persistSession() => _persistAndSync();
+
+  void _applyElapsedSeconds(int targetElapsed) {
+    final session = _session;
+    if (session == null) return;
+    final total = session.durationMinutes * 60;
+    final clamped = targetElapsed.clamp(0, total);
     final currentElapsed = session.toFocusSessionModel().elapsedSeconds;
-    final int delta = targetElapsed - currentElapsed;
-    if (delta == 0) return;
-    await seekBySeconds(delta);
+    if (clamped == currentElapsed) return;
+
+    final now = DateTime.now();
+    var pauseMs = session.accumulatedPauseMs;
+    if (session.pausedAt != null) {
+      pauseMs += now.difference(session.pausedAt!).inMilliseconds;
+    }
+    final newStartedAt = now.subtract(Duration(milliseconds: pauseMs + clamped * 1000));
+    _session = session.copyWith(startedAt: newStartedAt);
+    state = AsyncData(_session!.toFocusSessionModel());
   }
 
   Future<void> clearSession() async {
@@ -249,12 +302,16 @@ class TimelineNotifier extends AsyncNotifier<TimelineModel> {
     String? description,
     String? icon,
     int durationMinutes = 30,
-    String color = '#6C63FF',
+    String color = '#3D9B87',
     DateTime? scheduledAt,
     RecurrenceSelection recurrence = const RecurrenceSelection(),
     String? reward,
     bool autoStart = false,
+    bool isInbox = false,
     TaskReminderSettings reminders = const TaskReminderSettings(),
+    EnergyLevel? energyLevel,
+    String? motivation,
+    int transitionBufferMinutes = 0,
   }) async {
     final taskIcon = icon ?? TaskIcons.inferName(title);
     final task = await ref.read(taskRepositoryProvider).createTask(
@@ -264,15 +321,23 @@ class TimelineNotifier extends AsyncNotifier<TimelineModel> {
           color: color,
           icon: taskIcon,
           scheduledAt: scheduledAt,
+          isInbox: isInbox,
           recurrence: recurrence,
           reward: reward,
+          energyLevel: energyLevel,
+          motivation: motivation,
+          transitionBufferMinutes: transitionBufferMinutes,
         );
     await ref.read(achievementStatsProvider.notifier).recordTaskCreated();
     if (autoStart) {
       await ref.read(focusSessionProvider.notifier).startWithTask(task);
     }
     await refresh(showLoading: false);
-    await _scheduleReminders(task, reminders);
+    if (!isInbox) {
+      await _scheduleReminders(task, reminders);
+    } else {
+      ref.invalidate(inboxProvider);
+    }
   }
 
   Future<int> importCalendarEvents(List<CalendarImportEvent> events) async {
@@ -299,7 +364,7 @@ class TimelineNotifier extends AsyncNotifier<TimelineModel> {
   Future<void> createTaskWithSubtasks({
     required String title,
     required DateTime scheduledAt,
-    String color = '#6C63FF',
+    String color = '#3D9B87',
     required List<({String title, int durationMinutes, String color})> subtasks,
     bool autoStart = false,
   }) async {
@@ -327,6 +392,10 @@ class TimelineNotifier extends AsyncNotifier<TimelineModel> {
     DateTime? scheduledAt,
     String? reward,
     TaskReminderSettings? reminders,
+    EnergyLevel? energyLevel,
+    String? motivation,
+    int? transitionBufferMinutes,
+    bool? isInbox,
   }) async {
     final task = await ref.read(taskRepositoryProvider).updateTask(
           id: id,
@@ -336,8 +405,13 @@ class TimelineNotifier extends AsyncNotifier<TimelineModel> {
           durationMinutes: durationMinutes,
           scheduledAt: scheduledAt,
           reward: reward,
+          energyLevel: energyLevel,
+          motivation: motivation,
+          transitionBufferMinutes: transitionBufferMinutes,
+          isInbox: isInbox,
         );
     await refresh(showLoading: false);
+    ref.invalidate(inboxProvider);
     if (reminders != null) {
       await _scheduleReminders(task, reminders);
     } else if (scheduledAt != null) {
@@ -420,13 +494,24 @@ class TimelineNotifier extends AsyncNotifier<TimelineModel> {
     return task;
   }
 
-  Future<void> deleteTask(String id) async {
+  Future<void> deleteTask(
+    String id, {
+    DeleteRecurrenceScope scope = DeleteRecurrenceScope.thisOccurrence,
+  }) async {
+    final timeline = state.valueOrNull;
+    final task = timeline != null ? findTaskInTimeline(timeline, id) : null;
+    final idsToCancel = task != null && timeline != null
+        ? _taskIdsAffectedByDelete(timeline, task, scope)
+        : {id};
+
     final session = ref.read(focusSessionProvider).valueOrNull;
-    if (session?.taskId == id) {
+    if (session != null && idsToCancel.contains(session.taskId)) {
       await ref.read(focusSessionProvider.notifier).clearSession();
     }
-    await ref.read(notificationServiceProvider).cancelTaskReminders(id);
-    await ref.read(taskRepositoryProvider).deleteTask(id);
+    for (final taskId in idsToCancel) {
+      await ref.read(notificationServiceProvider).cancelTaskReminders(taskId);
+    }
+    await ref.read(taskRepositoryProvider).deleteTask(id, scope: scope);
     await refresh(showLoading: false);
   }
 
@@ -436,13 +521,18 @@ class TimelineNotifier extends AsyncNotifier<TimelineModel> {
       return;
     }
     final s = ref.read(stringsProvider);
+    final prefs = ref.read(adhdPreferencesProvider).valueOrNull ?? const AdhdPreferences();
     await ref.read(notificationServiceProvider).requestPermission();
     await ref.read(notificationServiceProvider).scheduleTaskReminders(
           task,
           settings: reminders,
           titlePrefix: s.taskReminderTitle,
-          body10: s.taskReminder10(task.title),
-          body1: s.taskReminder1(task.title),
+          body10: s.taskReminder10('{title}'),
+          body5: s.taskReminder5('{title}'),
+          body1: s.taskReminder1('{title}'),
+          bodyTransition: s.taskReminderTransition('{title}', ''),
+          bodyEnd: s.taskReminderEnd('{title}'),
+          scheduleTransition: prefs.transitionAlerts,
         );
   }
 }
@@ -455,3 +545,54 @@ final weeklyTimelineProvider =
   final futures = List.generate(7, (i) => repo.getTimeline(monday.add(Duration(days: i))));
   return Future.wait(futures);
 });
+
+final inboxProvider = AsyncNotifierProvider<InboxNotifier, List<TaskModel>>(InboxNotifier.new);
+
+class InboxNotifier extends AsyncNotifier<List<TaskModel>> {
+  @override
+  Future<List<TaskModel>> build() async {
+    try {
+      return await ref.read(taskRepositoryProvider).getInbox();
+    } catch (_) {
+      return [];
+    }
+  }
+
+  Future<void> refresh() async {
+    state = const AsyncLoading();
+    state = await AsyncValue.guard(() => ref.read(taskRepositoryProvider).getInbox());
+  }
+
+  Future<void> addToInbox({
+    required String title,
+    int durationMinutes = 30,
+    String color = '#3D9B87',
+    String? icon,
+    EnergyLevel? energyLevel,
+    String? motivation,
+  }) async {
+    await ref.read(taskRepositoryProvider).createTask(
+          title: title,
+          durationMinutes: durationMinutes,
+          color: color,
+          icon: icon ?? TaskIcons.inferName(title),
+          isInbox: true,
+          energyLevel: energyLevel,
+          motivation: motivation,
+        );
+    await refresh();
+  }
+
+  Future<void> scheduleTask(String id, DateTime scheduledAt) async {
+    await ref.read(taskRepositoryProvider).scheduleFromInbox(id, scheduledAt);
+    await refresh();
+  }
+
+  Future<void> deleteTask(
+    String id, {
+    DeleteRecurrenceScope scope = DeleteRecurrenceScope.thisOccurrence,
+  }) async {
+    await ref.read(taskRepositoryProvider).deleteTask(id, scope: scope);
+    await refresh();
+  }
+}

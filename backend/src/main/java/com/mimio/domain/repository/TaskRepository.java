@@ -37,4 +37,12 @@ public interface TaskRepository extends JpaRepository<Task, UUID> {
     List<Task> findByUserAndParentTaskIdOrderBySortOrderAsc(User user, UUID parentTaskId);
 
     List<Task> findByUserAndParentTaskIdInOrderBySortOrderAsc(User user, List<UUID> parentTaskIds);
+
+    List<Task> findByUserAndRecurrenceSeriesId(User user, UUID recurrenceSeriesId);
+
+    List<Task> findByUserAndRecurrenceSeriesIdAndScheduledAtGreaterThanEqual(
+            User user,
+            UUID recurrenceSeriesId,
+            Instant scheduledAt
+    );
 }

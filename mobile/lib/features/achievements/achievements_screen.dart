@@ -152,7 +152,7 @@ class _AchievementsBody extends StatelessWidget {
                     const SizedBox(height: 6),
                     Text(
                       strings.achievementsSubtitle,
-                      style: const TextStyle(color: MimioColors.textSecondary, height: 1.4),
+                      style: TextStyle(color: context.palette.textSecondary, height: 1.4),
                     ),
                   ],
                 ),
@@ -205,9 +205,9 @@ class _StatTile extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: context.palette.surface,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFFE8E8F0)),
+        border: Border.all(color: context.palette.border),
       ),
       child: Column(
         children: [
@@ -220,7 +220,7 @@ class _StatTile extends StatelessWidget {
             textAlign: TextAlign.center,
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
-            style: const TextStyle(fontSize: 11, color: MimioColors.textSecondary, height: 1.2),
+            style: TextStyle(fontSize: 11, color: context.palette.textSecondary, height: 1.2),
           ),
         ],
       ),
@@ -248,10 +248,10 @@ class _AchievementCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: context.palette.surface,
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
-          color: unlocked ? achievement.color.withValues(alpha: 0.45) : const Color(0xFFE8E8F0),
+          color: unlocked ? achievement.color.withValues(alpha: 0.45) : context.palette.border,
           width: unlocked ? 1.5 : 1,
         ),
         boxShadow: unlocked
@@ -275,12 +275,12 @@ class _AchievementCard extends StatelessWidget {
                 decoration: BoxDecoration(
                   color: unlocked
                       ? achievement.color.withValues(alpha: 0.18)
-                      : MimioColors.background,
+                      : context.palette.background,
                   shape: BoxShape.circle,
                 ),
                 child: Icon(
                   achievement.icon,
-                  color: unlocked ? achievement.color : MimioColors.textSecondary.withValues(alpha: 0.5),
+                  color: unlocked ? achievement.color : context.palette.textSecondary.withValues(alpha: 0.5),
                   size: 22,
                 ),
               ),
@@ -290,7 +290,7 @@ class _AchievementCard extends StatelessWidget {
               else
                 Text(
                   '$current/${achievement.target}',
-                  style: const TextStyle(fontSize: 12, color: MimioColors.textSecondary, fontWeight: FontWeight.w600),
+                  style: TextStyle(fontSize: 12, color: context.palette.textSecondary, fontWeight: FontWeight.w600),
                 ),
             ],
           ),
@@ -302,7 +302,7 @@ class _AchievementCard extends StatelessWidget {
             style: TextStyle(
               fontWeight: FontWeight.w800,
               fontSize: 14,
-              color: unlocked ? MimioColors.textPrimary : MimioColors.textSecondary,
+              color: unlocked ? context.palette.textPrimary : context.palette.textSecondary,
             ),
           ),
           const SizedBox(height: 4),
@@ -314,7 +314,7 @@ class _AchievementCard extends StatelessWidget {
               style: TextStyle(
                 fontSize: 12,
                 height: 1.3,
-                color: unlocked ? MimioColors.textSecondary : MimioColors.textSecondary.withValues(alpha: 0.7),
+                color: unlocked ? context.palette.textSecondary : context.palette.textSecondary.withValues(alpha: 0.7),
               ),
             ),
           ),

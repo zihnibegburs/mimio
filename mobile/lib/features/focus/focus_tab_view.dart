@@ -4,7 +4,8 @@ import 'package:mimio/core/l10n/app_strings.dart';
 import 'package:mimio/core/models/models.dart';
 import 'package:mimio/core/theme/mimio_theme.dart';
 import 'package:mimio/features/focus/widgets/focus_timer_widget.dart';
-import 'package:mimio/features/focus/widgets/celebration_dialog.dart';
+import 'package:mimio/features/focus/widgets/body_doubling_panel.dart';
+import 'package:mimio/features/timeline/task_completion_helper.dart';
 import 'package:mimio/features/providers.dart';
 import 'package:mimio/features/timeline/home_tab.dart';
 
@@ -29,7 +30,8 @@ class FocusTabView extends ConsumerWidget {
           padding: const EdgeInsets.all(24),
           child: Column(
             children: [
-              const SizedBox(height: 24),
+              const BodyDoublingPanel(),
+              const SizedBox(height: 8),
               FocusTimerWidget(session: session, size: 260, interactive: true),
               const SizedBox(height: 24),
               Text(
@@ -40,7 +42,7 @@ class FocusTabView extends ConsumerWidget {
               const SizedBox(height: 8),
               Text(
                 session.isPaused ? s.paused : s.focusModeOn,
-                style: const TextStyle(color: MimioColors.textSecondary),
+                style: TextStyle(color: context.palette.textSecondary),
               ),
               const Spacer(),
               Row(
@@ -74,38 +76,11 @@ class FocusTabView extends ConsumerWidget {
                   Expanded(
                     child: ElevatedButton.icon(
                       onPressed: () async {
-                        final s = ref.read(stringsProvider);
                         final taskId = session.taskId;
                         try {
                           final completed = await ref.read(timelineProvider.notifier).completeTask(taskId);
                           if (!context.mounted) return;
-                          if (completed.hasReward) {
-                            await showTaskCelebration(ref, completed, context);
-                          }
-                          if (!context.mounted) return;
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text(s.taskCompletedUndo),
-                              duration: const Duration(seconds: 5),
-                              action: SnackBarAction(
-                                label: s.undo,
-                                onPressed: () async {
-                                  try {
-                                    await ref.read(timelineProvider.notifier).uncompleteTask(taskId);
-                                  } catch (e) {
-                                    if (context.mounted) {
-                                      ScaffoldMessenger.of(context).showSnackBar(
-                                        SnackBar(
-                                          content: Text(s.friendlyTaskActionError(e)),
-                                          backgroundColor: Colors.red.shade400,
-                                        ),
-                                      );
-                                    }
-                                  }
-                                },
-                              ),
-                            ),
-                          );
+                          await handleTaskCompleted(context, ref, completed, completed);
                         } catch (e) {
                           if (context.mounted) {
                             ScaffoldMessenger.of(context).showSnackBar(
@@ -159,7 +134,7 @@ class _NoActiveFocus extends ConsumerWidget {
             Text(
               s.focusModeHint,
               textAlign: TextAlign.center,
-              style: const TextStyle(color: MimioColors.textSecondary, height: 1.5),
+              style: TextStyle(color: context.palette.textSecondary, height: 1.5),
             ),
             if (pending.isNotEmpty) ...[
               const SizedBox(height: 32),
@@ -169,7 +144,7 @@ class _NoActiveFocus extends ConsumerWidget {
                 final color = MimioColors.fromHex(task.color);
                 return ListTile(
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                  tileColor: Colors.white,
+                  tileColor: context.palette.surface,
                   leading: CircleAvatar(
                     backgroundColor: color.withValues(alpha: 0.2),
                     child: Icon(Icons.play_arrow_rounded, color: color),

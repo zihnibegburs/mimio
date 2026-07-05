@@ -29,6 +29,7 @@ class FocusTimerWidget extends ConsumerStatefulWidget {
 
 class _FocusTimerWidgetState extends ConsumerState<FocusTimerWidget> {
   bool _dragging = false;
+  double? _dragProgress;
 
   double get _strokeWidth => widget.size * 0.06;
 
@@ -41,17 +42,42 @@ class _FocusTimerWidgetState extends ConsumerState<FocusTimerWidget> {
     return progress.clamp(0.0, 1.0);
   }
 
-  bool _isOnRing(Offset local) {
+  bool _isSeekable(Offset local, double progress) {
     final center = Offset(widget.size / 2, widget.size / 2);
     final dist = (local - center).distance;
     final radius = (widget.size - _strokeWidth) / 2;
-    return (dist - radius).abs() <= _strokeWidth * 1.4;
+    final onRing = (dist - radius).abs() <= _strokeWidth * 2.2;
+
+    final knobAngle = -pi / 2 + 2 * pi * progress;
+    final knobCenter = center + Offset(radius * cos(knobAngle), radius * sin(knobAngle));
+    final onKnob = (local - knobCenter).distance <= 22;
+
+    final innerDeadZone = widget.size * 0.22;
+    return (onRing || onKnob) && dist >= innerDeadZone;
   }
 
-  void _handleSeek(Offset local) {
+  void _handleSeek(Offset local, {required bool persist}) {
     if (!widget.interactive) return;
     final progress = _progressFromOffset(local);
-    ref.read(focusSessionProvider.notifier).seekToProgress(progress);
+    setState(() => _dragProgress = progress);
+    ref.read(focusSessionProvider.notifier).seekToProgress(progress, persist: persist);
+  }
+
+  void _endDrag() {
+    if (!_dragging) return;
+    setState(() {
+      _dragging = false;
+      _dragProgress = null;
+    });
+    ref.read(focusSessionProvider.notifier).persistSession();
+  }
+
+  String _remainingFormatted(FocusSessionModel session, double progress) {
+    final total = session.durationMinutes * 60;
+    final remaining = ((1 - progress) * total).round().clamp(0, total);
+    final minutes = remaining ~/ 60;
+    final seconds = remaining % 60;
+    return '${minutes.toString().padLeft(2, '0')}:${seconds.toString().padLeft(2, '0')}';
   }
 
   @override
@@ -62,9 +88,12 @@ class _FocusTimerWidgetState extends ConsumerState<FocusTimerWidget> {
     final trackColor = widget.inverted
         ? Colors.white.withValues(alpha: 0.25)
         : MimioColors.fromHex(session.color).withValues(alpha: 0.15);
-    final textColor = widget.inverted ? Colors.white : MimioColors.textPrimary;
-    final subtextColor = widget.inverted ? Colors.white70 : MimioColors.textSecondary;
-    final progress = session.progressPercent / 100;
+    final textColor = widget.inverted ? Colors.white : context.palette.textPrimary;
+    final subtextColor = widget.inverted ? Colors.white70 : context.palette.textSecondary;
+    final progress = _dragProgress ?? session.progressPercent / 100;
+    final displayRemaining = _dragging
+        ? _remainingFormatted(session, progress)
+        : session.remainingFormatted;
     final knobAngle = -pi / 2 + 2 * pi * progress;
     final radius = (widget.size - _strokeWidth) / 2;
     final knobX = widget.size / 2 + radius * cos(knobAngle);
@@ -76,19 +105,19 @@ class _FocusTimerWidgetState extends ConsumerState<FocusTimerWidget> {
       child: GestureDetector(
         onPanStart: widget.interactive
             ? (details) {
-                if (_isOnRing(details.localPosition)) {
+                if (_isSeekable(details.localPosition, progress)) {
                   setState(() => _dragging = true);
-                  _handleSeek(details.localPosition);
+                  _handleSeek(details.localPosition, persist: false);
                 }
               }
             : null,
         onPanUpdate: widget.interactive
             ? (details) {
-                if (_dragging) _handleSeek(details.localPosition);
+                if (_dragging) _handleSeek(details.localPosition, persist: false);
               }
             : null,
-        onPanEnd: widget.interactive ? (_) => setState(() => _dragging = false) : null,
-        onPanCancel: widget.interactive ? () => setState(() => _dragging = false) : null,
+        onPanEnd: widget.interactive ? (_) => _endDrag() : null,
+        onPanCancel: widget.interactive ? () => _endDrag() : null,
         child: Stack(
           alignment: Alignment.center,
           children: [
@@ -148,7 +177,7 @@ class _FocusTimerWidgetState extends ConsumerState<FocusTimerWidget> {
                   ),
                 if (session.isPaused) const SizedBox(height: 8),
                 Text(
-                  session.remainingFormatted,
+                  displayRemaining,
                   style: TextStyle(
                     fontSize: widget.size * 0.18,
                     fontWeight: FontWeight.w800,

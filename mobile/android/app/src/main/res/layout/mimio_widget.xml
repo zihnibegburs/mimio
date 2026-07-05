@@ -12,7 +12,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="Mimio"
-        android:textColor="#6C63FF"
+        android:textColor="#3D9B87"
         android:textSize="12sp"
         android:textStyle="bold" />
 
@@ -24,7 +24,7 @@
         android:ellipsize="end"
         android:maxLines="2"
         android:text="Bugün plan yok"
-        android:textColor="#1A1A2E"
+        android:textColor="#1C2826"
         android:textSize="16sp"
         android:textStyle="bold" />
 
@@ -36,7 +36,7 @@
         android:ellipsize="end"
         android:maxLines="1"
         android:text="Günlük planlayıcın"
-        android:textColor="#6B6B8D"
+        android:textColor="#5F7A76"
         android:textSize="12sp" />
 
     <TextView
@@ -45,7 +45,7 @@
         android:layout_height="wrap_content"
         android:layout_marginTop="12dp"
         android:text="0 görev"
-        android:textColor="#6C63FF"
+        android:textColor="#3D9B87"
         android:textSize="11sp"
         android:textStyle="bold" />
 </LinearLayout>

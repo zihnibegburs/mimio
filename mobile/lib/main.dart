@@ -19,6 +19,8 @@ import 'package:mimio/features/auth/register_screen.dart';
 import 'package:mimio/features/providers.dart';
 import 'package:mimio/features/ai/ai_plan_screen.dart';
 import 'package:mimio/features/achievements/achievements_screen.dart';
+import 'package:mimio/features/brain_dump/brain_dump_screen.dart';
+import 'package:mimio/features/weekly/weekly_retrospective_screen.dart';
 import 'package:mimio/features/integrations/calendar_import_screen.dart';
 import 'package:mimio/features/focus/focus_screen.dart';
 import 'package:mimio/features/profile/profile_screen.dart';
@@ -46,11 +48,14 @@ class MimioApp extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final router = ref.watch(routerProvider);
     final lang = ref.watch(appLanguageProvider).valueOrNull ?? 'tr';
+    final themeMode = ref.watch(appThemeModeProvider).valueOrNull ?? ThemeMode.system;
 
     return LiveActivityDeepLinkListener(
       child: MaterialApp.router(
         title: 'Mimio',
         theme: MimioTheme.light,
+        darkTheme: MimioTheme.dark,
+        themeMode: themeMode,
         locale: Locale(lang),
         routerConfig: router,
         debugShowCheckedModeBanner: false,
@@ -126,6 +131,8 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(path: '/profile', builder: (_, __) => const ProfileScreen()),
       GoRoute(path: '/calendar-import', builder: (_, __) => const CalendarImportScreen()),
       GoRoute(path: '/achievements', builder: (_, __) => const AchievementsScreen()),
+      GoRoute(path: '/brain-dump', builder: (_, __) => const BrainDumpScreen()),
+      GoRoute(path: '/weekly-retro', builder: (_, __) => const WeeklyRetrospectiveScreen()),
     ],
   );
 });

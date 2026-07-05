@@ -1,5 +1,6 @@
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:mimio/core/models/adhd_models.dart';
 import 'package:mimio/core/models/models.dart';
 import 'package:mimio/core/models/recurrence.dart';
 import 'package:mimio/core/network/dio_provider.dart';
@@ -79,6 +80,21 @@ class TaskRepository {
 
   final Dio _dio;
 
+  Future<List<TaskModel>> getInbox() async {
+    final response = await _dio.get('/inbox');
+    return (response.data as List)
+        .map((t) => TaskModel.fromJson(t as Map<String, dynamic>))
+        .toList();
+  }
+
+  Future<TaskModel> scheduleFromInbox(String id, DateTime scheduledAt) async {
+    final response = await _dio.post(
+      '/inbox/$id/schedule',
+      queryParameters: {'scheduledAt': scheduledAt.toUtc().toIso8601String()},
+    );
+    return TaskModel.fromJson(response.data as Map<String, dynamic>);
+  }
+
   Future<TimelineModel> getTimeline(DateTime date) async {
     final dateStr =
         '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
@@ -89,13 +105,16 @@ class TaskRepository {
   Future<TaskModel> createTask({
     required String title,
     String? description,
-    String color = '#6C63FF',
+    String color = '#3D9B87',
     String icon = 'task',
     int durationMinutes = 30,
     DateTime? scheduledAt,
     bool isInbox = false,
     RecurrenceSelection recurrence = const RecurrenceSelection(),
     String? reward,
+    EnergyLevel? energyLevel,
+    String? motivation,
+    int transitionBufferMinutes = 0,
   }) async {
     final response = await _dio.post('/tasks', data: {
       'title': title,
@@ -106,6 +125,9 @@ class TaskRepository {
       if (scheduledAt != null) 'scheduledAt': scheduledAt.toUtc().toIso8601String(),
       'isInbox': isInbox,
       if (reward != null && reward.trim().isNotEmpty) 'reward': reward.trim(),
+      if (energyLevel != null) 'energyLevel': energyLevel.apiValue,
+      if (motivation != null && motivation.trim().isNotEmpty) 'motivation': motivation.trim(),
+      if (transitionBufferMinutes > 0) 'transitionBufferMinutes': transitionBufferMinutes,
       ...recurrence.toApiJson(),
     });
     return TaskModel.fromJson(response.data as Map<String, dynamic>);
@@ -114,7 +136,7 @@ class TaskRepository {
   Future<TaskModel> createTaskWithSubtasks({
     required String title,
     required DateTime scheduledAt,
-    String color = '#6C63FF',
+    String color = '#3D9B87',
     String icon = 'task',
     required List<({String title, int durationMinutes, String color})> subtasks,
   }) async {
@@ -142,6 +164,10 @@ class TaskRepository {
     int? durationMinutes,
     DateTime? scheduledAt,
     String? reward,
+    EnergyLevel? energyLevel,
+    String? motivation,
+    int? transitionBufferMinutes,
+    bool? isInbox,
   }) async {
     final response = await _dio.put('/tasks/$id', data: {
       if (title != null) 'title': title,
@@ -150,6 +176,10 @@ class TaskRepository {
       if (durationMinutes != null) 'durationMinutes': durationMinutes,
       if (scheduledAt != null) 'scheduledAt': scheduledAt.toUtc().toIso8601String(),
       if (reward != null) 'reward': reward.trim().isEmpty ? '' : reward.trim(),
+      if (energyLevel != null) 'energyLevel': energyLevel.apiValue,
+      if (motivation != null) 'motivation': motivation.trim().isEmpty ? '' : motivation.trim(),
+      if (transitionBufferMinutes != null) 'transitionBufferMinutes': transitionBufferMinutes,
+      if (isInbox != null) 'isInbox': isInbox,
     });
     return TaskModel.fromJson(response.data as Map<String, dynamic>);
   }
@@ -190,8 +220,14 @@ class TaskRepository {
     return TaskModel.fromJson(response.data as Map<String, dynamic>);
   }
 
-  Future<void> deleteTask(String id) async {
-    await _dio.delete('/tasks/$id');
+  Future<void> deleteTask(
+    String id, {
+    DeleteRecurrenceScope scope = DeleteRecurrenceScope.thisOccurrence,
+  }) async {
+    await _dio.delete(
+      '/tasks/$id',
+      queryParameters: {'scope': scope.apiValue()},
+    );
   }
 
   Future<FocusSessionModel?> getFocusSession() async {

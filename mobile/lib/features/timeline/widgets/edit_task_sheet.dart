@@ -7,6 +7,8 @@ import 'package:mimio/core/platform/notification_service.dart';
 import 'package:mimio/core/repositories/ai_repository.dart';
 import 'package:mimio/core/theme/mimio_theme.dart';
 import 'package:mimio/features/providers.dart';
+import 'package:mimio/features/timeline/widgets/delete_task_dialog.dart';
+import 'package:mimio/features/timeline/widgets/inline_time_picker.dart';
 
 class EditTaskSheet extends ConsumerStatefulWidget {
   const EditTaskSheet({
@@ -78,11 +80,6 @@ class _EditTaskSheetState extends ConsumerState<EditTaskSheet> {
     _titleController.dispose();
     _rewardController.dispose();
     super.dispose();
-  }
-
-  Future<void> _pickTime() async {
-    final picked = await showTimePicker(context: context, initialTime: _time);
-    if (picked != null) setState(() => _time = picked);
   }
 
   DateTime get _scheduledAt => DateTime(
@@ -191,27 +188,17 @@ class _EditTaskSheetState extends ConsumerState<EditTaskSheet> {
 
   Future<void> _delete() async {
     final s = ref.read(stringsProvider);
-    final confirmed = await showDialog<bool>(
+    final scope = await showDeleteTaskDialog(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: Text(s.deleteTask),
-        content: Text(s.deleteTaskConfirm(widget.task.title)),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text(s.cancel)),
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, true),
-            style: TextButton.styleFrom(foregroundColor: Colors.red),
-            child: Text(s.delete),
-          ),
-        ],
-      ),
+      s: s,
+      task: widget.task,
     );
 
-    if (confirmed != true || !mounted) return;
+    if (scope == null || !mounted) return;
 
     setState(() => _submitting = true);
     try {
-      await ref.read(timelineProvider.notifier).deleteTask(widget.task.id);
+      await ref.read(timelineProvider.notifier).deleteTask(widget.task.id, scope: scope);
       if (mounted) Navigator.pop(context);
     } catch (e) {
       if (mounted) setState(() => _error = _friendlyError(e));
@@ -226,8 +213,8 @@ class _EditTaskSheetState extends ConsumerState<EditTaskSheet> {
     final s = ref.watch(stringsProvider);
 
     return Container(
-      decoration: const BoxDecoration(
-        color: Colors.white,
+      decoration: BoxDecoration(
+        color: context.palette.surface,
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
       padding: EdgeInsets.only(
@@ -281,7 +268,7 @@ class _EditTaskSheetState extends ConsumerState<EditTaskSheet> {
               const SizedBox(height: 4),
               Text(
                 s.rewardOptionalHint,
-                style: const TextStyle(fontSize: 12, color: MimioColors.textSecondary),
+                style: TextStyle(fontSize: 12, color: context.palette.textSecondary),
               ),
               const SizedBox(height: 8),
               TextField(
@@ -380,26 +367,9 @@ class _EditTaskSheetState extends ConsumerState<EditTaskSheet> {
             const SizedBox(height: 20),
             Text(s.time, style: Theme.of(context).textTheme.labelLarge),
             const SizedBox(height: 8),
-            InkWell(
-              onTap: _pickTime,
-              borderRadius: BorderRadius.circular(16),
-              child: Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  border: Border.all(color: const Color(0xFFE8E8F0)),
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                child: Row(
-                  children: [
-                    const Icon(Icons.access_time_rounded, color: MimioColors.primary),
-                    const SizedBox(width: 12),
-                    Text(
-                      _time.format(context),
-                      style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-                    ),
-                  ],
-                ),
-              ),
+            InlineTimePicker(
+              value: _time,
+              onChanged: (time) => setState(() => _time = time),
             ),
             const SizedBox(height: 20),
             Text(s.color, style: Theme.of(context).textTheme.labelLarge),
@@ -418,7 +388,7 @@ class _EditTaskSheetState extends ConsumerState<EditTaskSheet> {
                     decoration: BoxDecoration(
                       color: color,
                       shape: BoxShape.circle,
-                      border: selected ? Border.all(color: MimioColors.textPrimary, width: 3) : null,
+                      border: selected ? Border.all(color: context.palette.textPrimary, width: 3) : null,
                     ),
                     child: selected ? const Icon(Icons.check, color: Colors.white, size: 18) : null,
                   ),
@@ -442,7 +412,7 @@ class _EditTaskSheetState extends ConsumerState<EditTaskSheet> {
               const SizedBox(height: 8),
               Text(
                 s.aiBreakdownHint,
-                style: const TextStyle(fontSize: 13, color: MimioColors.textSecondary),
+                style: TextStyle(fontSize: 13, color: context.palette.textSecondary),
               ),
               const SizedBox(height: 12),
               SizedBox(
@@ -472,7 +442,7 @@ class _EditTaskSheetState extends ConsumerState<EditTaskSheet> {
                         children: [
                           Text(
                             '${e.key + 1}.',
-                            style: const TextStyle(fontWeight: FontWeight.w700, color: MimioColors.textSecondary),
+                            style: TextStyle(fontWeight: FontWeight.w700, color: context.palette.textSecondary),
                           ),
                           const SizedBox(width: 8),
                           Expanded(child: Text(e.value.title, style: const TextStyle(fontWeight: FontWeight.w600))),

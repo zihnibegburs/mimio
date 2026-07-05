@@ -89,8 +89,8 @@ class _SubtaskBreakdownSheetState extends ConsumerState<SubtaskBreakdownSheet> {
     final busy = _loadingPreview || _applying;
 
     return Container(
-      decoration: const BoxDecoration(
-        color: Colors.white,
+      decoration: BoxDecoration(
+        color: context.palette.surface,
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
       padding: EdgeInsets.only(
@@ -130,7 +130,7 @@ class _SubtaskBreakdownSheetState extends ConsumerState<SubtaskBreakdownSheet> {
             const SizedBox(height: 8),
             Text(
               s.aiBreakdownHint,
-              style: const TextStyle(color: MimioColors.textSecondary, fontSize: 13),
+              style: TextStyle(color: context.palette.textSecondary, fontSize: 13),
             ),
             const SizedBox(height: 12),
             Container(
@@ -170,7 +170,7 @@ class _SubtaskBreakdownSheetState extends ConsumerState<SubtaskBreakdownSheet> {
                       children: [
                         Text(
                           '${e.key + 1}.',
-                          style: const TextStyle(fontWeight: FontWeight.w700, color: MimioColors.textSecondary),
+                          style: TextStyle(fontWeight: FontWeight.w700, color: context.palette.textSecondary),
                         ),
                         const SizedBox(width: 8),
                         Expanded(child: Text(e.value.title, style: const TextStyle(fontWeight: FontWeight.w600))),

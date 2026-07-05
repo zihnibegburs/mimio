@@ -67,7 +67,7 @@ class DayProgressCard extends ConsumerWidget {
                       : total == 0
                           ? s.addFirstTaskHint
                           : s.tasksRemaining(total - completed),
-                  style: const TextStyle(color: MimioColors.textSecondary, fontSize: 13),
+                  style: TextStyle(color: context.palette.textSecondary, fontSize: 13),
                 ),
               ],
             ),

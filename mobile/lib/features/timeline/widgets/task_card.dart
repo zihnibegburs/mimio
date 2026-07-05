@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:mimio/core/l10n/app_strings.dart';
+import 'package:mimio/core/models/adhd_models.dart';
 import 'package:mimio/core/models/models.dart';
 import 'package:mimio/core/utils/task_icons.dart';
 import 'package:mimio/core/theme/mimio_theme.dart';
@@ -54,11 +55,11 @@ class TaskCard extends ConsumerWidget {
         deleteLabel: s.delete,
         child: Container(
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: context.palette.surface,
             borderRadius: BorderRadius.circular(20),
             border: isActive || isPaused
                 ? Border.all(color: color, width: 2)
-                : Border.all(color: const Color(0xFFE8E8F0)),
+                : Border.all(color: context.palette.border),
             boxShadow: [
               if (isActive || isPaused)
                 BoxShadow(color: color.withValues(alpha: 0.2), blurRadius: 12, offset: const Offset(0, 4)),
@@ -110,11 +111,25 @@ class TaskCard extends ConsumerWidget {
                                       const SizedBox(width: 8),
                                       Text(
                                         s.minutesShort(task.durationMinutes),
-                                        style: const TextStyle(
+                                        style: TextStyle(
                                           fontSize: 12,
-                                          color: MimioColors.textSecondary,
+                                          color: context.palette.textSecondary,
                                         ),
                                       ),
+                                      if (task.energyLevel != null) ...[
+                                        const SizedBox(width: 8),
+                                        Container(
+                                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                          decoration: BoxDecoration(
+                                            color: MimioColors.warning.withValues(alpha: 0.12),
+                                            borderRadius: BorderRadius.circular(6),
+                                          ),
+                                          child: Text(
+                                            s.energyLabel(task.energyLevel!),
+                                            style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: MimioColors.warning),
+                                          ),
+                                        ),
+                                      ],
                                       if (task.hasSubtasks) ...[
                                         const SizedBox(width: 8),
                                         Container(
@@ -137,7 +152,7 @@ class TaskCard extends ConsumerWidget {
                                       if (task.isCompleted)
                                         Icon(Icons.check_circle_rounded, color: MimioColors.success, size: 20),
                                       if (onTap != null)
-                                        Icon(Icons.more_horiz_rounded, size: 18, color: MimioColors.textSecondary.withValues(alpha: 0.6)),
+                                        Icon(Icons.more_horiz_rounded, size: 18, color: context.palette.textSecondary.withValues(alpha: 0.6)),
                                     ],
                                   ),
                                   const SizedBox(height: 8),
@@ -164,13 +179,30 @@ class TaskCard extends ConsumerWidget {
                                           style: TextStyle(
                                             fontSize: 16,
                                             fontWeight: FontWeight.w700,
-                                            color: task.isCompleted ? MimioColors.textSecondary : MimioColors.textPrimary,
+                                            color: task.isCompleted ? context.palette.textSecondary : context.palette.textPrimary,
                                             decoration: task.isCompleted ? TextDecoration.lineThrough : null,
                                           ),
                                         ),
                                       ),
                                     ],
                                   ),
+                                  if (task.hasMotivation && !task.isCompleted) ...[
+                                    const SizedBox(height: 6),
+                                    Row(
+                                      children: [
+                                        Icon(Icons.lightbulb_outline_rounded, size: 14, color: context.palette.textSecondary),
+                                        const SizedBox(width: 4),
+                                        Expanded(
+                                          child: Text(
+                                            task.motivation!,
+                                            maxLines: 2,
+                                            overflow: TextOverflow.ellipsis,
+                                            style: TextStyle(fontSize: 12, color: context.palette.textSecondary, fontStyle: FontStyle.italic),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ],
                                   if (task.hasReward && !task.isCompleted) ...[
                                     const SizedBox(height: 6),
                                     Row(
@@ -308,7 +340,7 @@ class _SubtaskRow extends StatelessWidget {
                 ? MimioColors.success
                 : isActive || isPaused
                     ? subColor
-                    : MimioColors.textSecondary,
+                    : context.palette.textSecondary,
           ),
           const SizedBox(width: 8),
           Expanded(
@@ -328,13 +360,13 @@ class _SubtaskRow extends StatelessWidget {
                           fontSize: 13,
                           fontWeight: FontWeight.w600,
                           decoration: subtask.isCompleted ? TextDecoration.lineThrough : null,
-                          color: subtask.isCompleted ? MimioColors.textSecondary : MimioColors.textPrimary,
+                          color: subtask.isCompleted ? context.palette.textSecondary : context.palette.textPrimary,
                         ),
                       ),
                       if (timeLabel.isNotEmpty)
                         Text(
                           '$timeLabel · ${s.minutesShort(subtask.durationMinutes)}',
-                          style: const TextStyle(fontSize: 11, color: MimioColors.textSecondary),
+                          style: TextStyle(fontSize: 11, color: context.palette.textSecondary),
                         ),
                     ],
                   ),
@@ -355,7 +387,7 @@ class _SubtaskRow extends StatelessWidget {
             const SizedBox(width: 4),
             GestureDetector(
               onTap: onTap,
-              child: Icon(Icons.more_horiz_rounded, size: 16, color: MimioColors.textSecondary.withValues(alpha: 0.5)),
+              child: Icon(Icons.more_horiz_rounded, size: 16, color: context.palette.textSecondary.withValues(alpha: 0.5)),
             ),
           ],
         ],

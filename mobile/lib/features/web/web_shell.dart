@@ -15,13 +15,14 @@ class WebShell extends ConsumerWidget {
     if (!PlatformConfig.isWeb) return child;
 
     final s = ref.watch(stringsProvider);
+    final palette = context.palette;
 
     return Scaffold(
       body: Row(
         children: [
           NavigationRail(
             extended: MediaQuery.sizeOf(context).width > 1100,
-            backgroundColor: Colors.white,
+            backgroundColor: palette.surface,
             selectedIndex: 0,
             labelType: NavigationRailLabelType.none,
             leading: Padding(

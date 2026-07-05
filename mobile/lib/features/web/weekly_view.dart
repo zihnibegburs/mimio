@@ -94,10 +94,10 @@ class _DayColumn extends StatelessWidget {
         margin: expanded ? EdgeInsets.zero : const EdgeInsets.symmetric(horizontal: 4),
         padding: EdgeInsets.all(expanded ? 16 : 12),
         decoration: BoxDecoration(
-          color: isSelected ? MimioColors.primary.withValues(alpha: 0.06) : Colors.white,
+          color: isSelected ? MimioColors.primary.withValues(alpha: 0.06) : context.palette.surface,
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
-            color: isSelected ? MimioColors.primary : const Color(0xFFE8E8F0),
+            color: isSelected ? MimioColors.primary : context.palette.border,
             width: isSelected ? 2 : 1,
           ),
         ),
@@ -115,7 +115,7 @@ class _DayColumn extends StatelessWidget {
                         style: TextStyle(
                           fontSize: expanded ? 16 : 11,
                           fontWeight: FontWeight.w700,
-                          color: isSelected ? MimioColors.primary : MimioColors.textSecondary,
+                          color: isSelected ? MimioColors.primary : context.palette.textSecondary,
                         ),
                       ),
                       Text(
@@ -123,7 +123,7 @@ class _DayColumn extends StatelessWidget {
                         style: TextStyle(
                           fontSize: expanded ? 14 : 22,
                           fontWeight: FontWeight.w800,
-                          color: isSelected ? MimioColors.primary : MimioColors.textPrimary,
+                          color: isSelected ? MimioColors.primary : context.palette.textPrimary,
                         ),
                       ),
                     ],
@@ -176,7 +176,7 @@ class _DayColumn extends StatelessWidget {
                         style: TextStyle(
                           fontSize: 13,
                           fontWeight: FontWeight.w600,
-                          color: task.isCompleted ? MimioColors.textSecondary : MimioColors.textPrimary,
+                          color: task.isCompleted ? context.palette.textSecondary : context.palette.textPrimary,
                           decoration: task.isCompleted ? TextDecoration.lineThrough : null,
                         ),
                       ),
@@ -191,9 +191,9 @@ class _DayColumn extends StatelessWidget {
               );
             }),
             if (day.tasks.isEmpty)
-              const Padding(
-                padding: EdgeInsets.symmetric(vertical: 8),
-                child: Text('Plan yok', style: TextStyle(color: MimioColors.textSecondary, fontSize: 13)),
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 8),
+                child: Text('Plan yok', style: TextStyle(color: context.palette.textSecondary, fontSize: 13)),
               ),
           ],
         ),

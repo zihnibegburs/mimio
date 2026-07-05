@@ -1,5 +1,6 @@
 package com.mimio.controller;
 
+import com.mimio.domain.enums.DeleteRecurrenceScope;
 import com.mimio.dto.task.*;
 import com.mimio.security.CurrentUserService;
 import com.mimio.service.TaskService;
@@ -65,8 +66,11 @@ public class TaskController {
 
     @DeleteMapping("/tasks/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void deleteTask(@PathVariable UUID id) {
-        taskService.deleteTask(currentUserService.getCurrentUser(), id);
+    public void deleteTask(
+            @PathVariable UUID id,
+            @RequestParam(defaultValue = "THIS") DeleteRecurrenceScope scope
+    ) {
+        taskService.deleteTask(currentUserService.getCurrentUser(), id, scope);
     }
 
     @PostMapping("/tasks/{id}/start")

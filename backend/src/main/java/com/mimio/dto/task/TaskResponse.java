@@ -29,7 +29,10 @@ public record TaskResponse(
         Integer recurrenceInterval,
         RecurrenceUnit recurrenceUnit,
         UUID recurrenceSeriesId,
-        String reward
+        String reward,
+        String energyLevel,
+        String motivation,
+        Integer transitionBufferMinutes
 ) {
     public static TaskResponse from(Task task) {
         return from(task, List.of());
@@ -56,7 +59,10 @@ public record TaskResponse(
                 task.getRecurrenceInterval(),
                 task.getRecurrenceUnit(),
                 task.getRecurrenceSeriesId(),
-                task.getReward()
+                task.getReward(),
+                task.getEnergyLevel(),
+                task.getMotivation(),
+                task.getTransitionBufferMinutes()
         );
     }
 }

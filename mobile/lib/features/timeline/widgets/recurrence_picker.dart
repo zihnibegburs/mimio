@@ -29,7 +29,7 @@ class RecurrencePicker extends ConsumerWidget {
           child: Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              border: Border.all(color: const Color(0xFFE8E8F0)),
+              border: Border.all(color: context.palette.border),
               borderRadius: BorderRadius.circular(16),
             ),
             child: Row(
@@ -42,7 +42,7 @@ class RecurrencePicker extends ConsumerWidget {
                     style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
                   ),
                 ),
-                const Icon(Icons.chevron_right_rounded, color: MimioColors.textSecondary),
+                Icon(Icons.chevron_right_rounded, color: context.palette.textSecondary),
               ],
             ),
           ),
@@ -114,7 +114,7 @@ class RecurrencePicker extends ConsumerWidget {
               (type) => ListTile(
                 leading: Icon(
                   _iconFor(type),
-                  color: value.type == type ? MimioColors.primary : MimioColors.textSecondary,
+                  color: value.type == type ? MimioColors.primary : context.palette.textSecondary,
                 ),
                 title: Text(
                   s.recurrenceTypeLabel(type),
@@ -163,7 +163,7 @@ class _IntervalStepper extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        border: Border.all(color: const Color(0xFFE8E8F0)),
+        border: Border.all(color: context.palette.border),
         borderRadius: BorderRadius.circular(12),
       ),
       child: Row(

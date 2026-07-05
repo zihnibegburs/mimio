@@ -79,7 +79,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                 Text(
                   s.registerSubtitle,
                   style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                        color: MimioColors.textSecondary,
+                        color: context.palette.textSecondary,
                       ),
                 ),
                 const SizedBox(height: 32),

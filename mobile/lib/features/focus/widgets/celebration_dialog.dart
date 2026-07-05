@@ -101,11 +101,11 @@ class _CelebrationDialogState extends State<_CelebrationDialog> {
                 numberOfParticles: 20,
                 gravity: 0.12,
                 colors: const [
-                  Color(0xFF6C63FF),
-                  Color(0xFFFF6B9D),
-                  Color(0xFF4ECDC4),
-                  Color(0xFFFFE66D),
-                  Color(0xFF2ECC71),
+                  Color(0xFF3D9B87),
+                  Color(0xFFE07A5F),
+                  Color(0xFF6BBFB0),
+                  Color(0xFFF4C542),
+                  Color(0xFF48A67C),
                 ],
               ),
             ),
@@ -143,7 +143,7 @@ class _CelebrationCard extends StatelessWidget {
       width: min(MediaQuery.sizeOf(context).width - 48, 360),
       padding: const EdgeInsets.fromLTRB(28, 32, 28, 24),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: context.palette.surface,
         borderRadius: BorderRadius.circular(28),
         boxShadow: [
           BoxShadow(
@@ -182,16 +182,16 @@ class _CelebrationCard extends StatelessWidget {
             textAlign: TextAlign.center,
             style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                   fontWeight: FontWeight.w800,
-                  color: MimioColors.textPrimary,
+                  color: context.palette.textPrimary,
                 ),
           ),
           const SizedBox(height: 8),
           Text(
             strings.taskCompletedSubtitle(event.taskTitle),
             textAlign: TextAlign.center,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 15,
-              color: MimioColors.textSecondary,
+              color: context.palette.textSecondary,
               height: 1.4,
             ),
           ),
@@ -236,7 +236,7 @@ class _CelebrationCard extends StatelessWidget {
                     textAlign: TextAlign.center,
                     style: Theme.of(context).textTheme.titleMedium?.copyWith(
                           fontWeight: FontWeight.w800,
-                          color: MimioColors.textPrimary,
+                          color: context.palette.textPrimary,
                           height: 1.35,
                         ),
                   ),
@@ -247,9 +247,9 @@ class _CelebrationCard extends StatelessWidget {
             Text(
               strings.rewardReminder,
               textAlign: TextAlign.center,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 13,
-                color: MimioColors.textSecondary,
+                color: context.palette.textSecondary,
                 fontStyle: FontStyle.italic,
               ),
             ),

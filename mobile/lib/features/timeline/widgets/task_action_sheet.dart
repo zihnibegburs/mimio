@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mimio/core/l10n/app_strings.dart';
 import 'package:mimio/core/models/models.dart';
+import 'package:mimio/core/models/recurrence.dart';
 import 'package:mimio/core/theme/mimio_theme.dart';
 import 'package:mimio/features/providers.dart';
+import 'package:mimio/features/timeline/widgets/delete_task_dialog.dart';
 import 'package:mimio/features/timeline/widgets/edit_task_sheet.dart';
 import 'package:mimio/features/timeline/widgets/subtask_breakdown_sheet.dart';
 
@@ -15,7 +17,7 @@ void showTaskActionSheet({
   required Future<void> Function() onStart,
   required Future<void> Function() onPause,
   required Future<void> Function() onComplete,
-  required Future<void> Function() onDelete,
+  required Future<void> Function(DeleteRecurrenceScope scope) onDelete,
   Future<void> Function()? onUncomplete,
   VoidCallback? onFocus,
 }) {
@@ -31,8 +33,8 @@ void showTaskActionSheet({
     context: context,
     backgroundColor: Colors.transparent,
     builder: (ctx) => Container(
-      decoration: const BoxDecoration(
-        color: Colors.white,
+      decoration: BoxDecoration(
+        color: context.palette.surface,
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
       child: SafeArea(
@@ -67,10 +69,10 @@ void showTaskActionSheet({
                       children: [
                         Text(
                           s.taskOptions,
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 12,
                             fontWeight: FontWeight.w600,
-                            color: MimioColors.textSecondary,
+                            color: context.palette.textSecondary,
                           ),
                         ),
                         const SizedBox(height: 2),
@@ -191,25 +193,8 @@ void showTaskActionSheet({
               destructive: true,
               onTap: () async {
                 Navigator.pop(ctx);
-                final confirmed = await showDialog<bool>(
-                  context: context,
-                  builder: (dialogCtx) => AlertDialog(
-                    title: Text(s.deleteTask),
-                    content: Text('“${task.title}” — ${s.deleteConfirm}'),
-                    actions: [
-                      TextButton(
-                        onPressed: () => Navigator.pop(dialogCtx, false),
-                        child: Text(s.cancel),
-                      ),
-                      TextButton(
-                        onPressed: () => Navigator.pop(dialogCtx, true),
-                        style: TextButton.styleFrom(foregroundColor: Colors.red),
-                        child: Text(s.delete),
-                      ),
-                    ],
-                  ),
-                );
-                if (confirmed == true) await onDelete();
+                final scope = await showDeleteTaskDialog(context: context, s: s, task: task);
+                if (scope != null) await onDelete(scope);
               },
             ),
             const SizedBox(height: 8),
@@ -237,7 +222,7 @@ class _ActionTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final iconColor = color ?? MimioColors.textPrimary;
+    final iconColor = color ?? context.palette.textPrimary;
 
     return ListTile(
       leading: Icon(icon, color: iconColor),
@@ -245,7 +230,7 @@ class _ActionTile extends StatelessWidget {
         label,
         style: TextStyle(
           fontWeight: FontWeight.w600,
-          color: destructive ? Colors.red.shade400 : MimioColors.textPrimary,
+          color: destructive ? Colors.red.shade400 : context.palette.textPrimary,
         ),
       ),
       onTap: onTap,

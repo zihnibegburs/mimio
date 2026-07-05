@@ -2,6 +2,16 @@ enum RecurrenceType { none, daily, weekly, monthly, yearly, custom }
 
 enum RecurrenceUnit { days, weeks, months }
 
+enum DeleteRecurrenceScope { thisOccurrence, all, future }
+
+extension DeleteRecurrenceScopeX on DeleteRecurrenceScope {
+  String apiValue() => switch (this) {
+        DeleteRecurrenceScope.thisOccurrence => 'THIS',
+        DeleteRecurrenceScope.all => 'ALL',
+        DeleteRecurrenceScope.future => 'FUTURE',
+      };
+}
+
 class RecurrenceSelection {
   const RecurrenceSelection({
     this.type = RecurrenceType.none,

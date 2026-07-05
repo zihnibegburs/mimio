@@ -222,7 +222,7 @@ class _CalendarImportScreenState extends ConsumerState<CalendarImportScreen> {
       children: [
         Text(
           s.calendarImportSubtitle,
-          style: const TextStyle(color: MimioColors.textSecondary, height: 1.5),
+          style: TextStyle(color: context.palette.textSecondary, height: 1.5),
         ),
         const SizedBox(height: 20),
         Text(s.calendarImportSelectCalendars, style: Theme.of(context).textTheme.titleMedium),
@@ -392,14 +392,14 @@ class _EmptyCard extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: context.palette.surface,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFFE8E8F0)),
+        border: Border.all(color: context.palette.border),
       ),
       child: Text(
         message,
         textAlign: TextAlign.center,
-        style: const TextStyle(color: MimioColors.textSecondary),
+        style: TextStyle(color: context.palette.textSecondary),
       ),
     );
   }
@@ -426,7 +426,7 @@ class _MessageView extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(icon, size: 56, color: MimioColors.textSecondary),
+            Icon(icon, size: 56, color: context.palette.textSecondary),
             const SizedBox(height: 16),
             Text(title, textAlign: TextAlign.center, style: Theme.of(context).textTheme.titleMedium),
             if (actionLabel != null && onAction != null) ...[

@@ -2,6 +2,7 @@ package com.mimio.service;
 
 import com.mimio.domain.entity.Task;
 import com.mimio.domain.entity.User;
+import com.mimio.domain.enums.DeleteRecurrenceScope;
 import com.mimio.domain.enums.RecurrenceType;
 import com.mimio.domain.enums.RecurrenceUnit;
 import com.mimio.domain.enums.TaskStatus;
@@ -98,6 +99,11 @@ public class TaskService {
                 .recurrenceInterval(recurrenceInterval)
                 .recurrenceUnit(recurrenceUnit)
                 .reward(normalizeReward(request.reward()))
+                .energyLevel(normalizeEnergyLevel(request.energyLevel()))
+                .motivation(normalizeMotivation(request.motivation()))
+                .transitionBufferMinutes(request.transitionBufferMinutes() != null
+                        ? request.transitionBufferMinutes()
+                        : 0)
                 .build();
 
         if (request.parentTaskId() != null) {
@@ -245,8 +251,38 @@ public class TaskService {
     }
 
     @Transactional
-    public void deleteTask(User user, UUID taskId) {
+    public void deleteTask(User user, UUID taskId, DeleteRecurrenceScope scope) {
         Task task = findTaskOrThrow(user, taskId);
+        DeleteRecurrenceScope effectiveScope = scope != null ? scope : DeleteRecurrenceScope.THIS;
+        UUID seriesId = task.getRecurrenceSeriesId();
+
+        if (effectiveScope == DeleteRecurrenceScope.THIS || seriesId == null) {
+            deleteSingleTask(user, task);
+            return;
+        }
+
+        List<Task> toDelete = switch (effectiveScope) {
+            case ALL -> taskRepository.findByUserAndRecurrenceSeriesId(user, seriesId);
+            case FUTURE -> {
+                Instant cutoff = task.getScheduledAt();
+                if (cutoff == null) {
+                    yield List.of(task);
+                }
+                yield taskRepository.findByUserAndRecurrenceSeriesIdAndScheduledAtGreaterThanEqual(
+                        user,
+                        seriesId,
+                        cutoff
+                );
+            }
+            case THIS -> List.of(task);
+        };
+
+        for (Task candidate : toDelete) {
+            deleteSingleTask(user, candidate);
+        }
+    }
+
+    private void deleteSingleTask(User user, Task task) {
         if (task.getStatus() == TaskStatus.IN_PROGRESS || task.getStatus() == TaskStatus.PAUSED) {
             focusSessionService.clearSession(user.getId());
         }
@@ -369,6 +405,27 @@ public class TaskService {
         if (request.sortOrder() != null) task.setSortOrder(request.sortOrder());
         if (request.isInbox() != null) task.setIsInbox(request.isInbox());
         if (request.reward() != null) task.setReward(normalizeReward(request.reward()));
+        if (request.energyLevel() != null) task.setEnergyLevel(normalizeEnergyLevel(request.energyLevel()));
+        if (request.motivation() != null) task.setMotivation(normalizeMotivation(request.motivation()));
+        if (request.transitionBufferMinutes() != null) {
+            task.setTransitionBufferMinutes(request.transitionBufferMinutes());
+        }
+    }
+
+    private static String normalizeEnergyLevel(String energyLevel) {
+        if (energyLevel == null) return null;
+        String trimmed = energyLevel.trim().toLowerCase();
+        return switch (trimmed) {
+            case "low", "medium", "high" -> trimmed;
+            case "" -> null;
+            default -> null;
+        };
+    }
+
+    private static String normalizeMotivation(String motivation) {
+        if (motivation == null) return null;
+        String trimmed = motivation.trim();
+        return trimmed.isEmpty() ? null : trimmed;
     }
 
     private static String normalizeReward(String reward) {

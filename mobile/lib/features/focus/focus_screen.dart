@@ -19,7 +19,7 @@ class FocusScreen extends ConsumerWidget {
         : MimioColors.primary;
 
     return Scaffold(
-      backgroundColor: MimioColors.background,
+      backgroundColor: context.palette.background,
       appBar: AppBar(
         leading: IconButton(
           icon: const Icon(Icons.close_rounded),
@@ -33,7 +33,7 @@ class FocusScreen extends ConsumerWidget {
         data: (session) {
           if (session == null) {
             return Center(
-              child: Text(s.noActiveTask, style: const TextStyle(color: MimioColors.textSecondary)),
+              child: Text(s.noActiveTask, style: TextStyle(color: context.palette.textSecondary)),
             );
           }
 
@@ -54,7 +54,7 @@ class FocusScreen extends ConsumerWidget {
                 const SizedBox(height: 8),
                 Text(
                   s.durationTask(session.durationMinutes),
-                  style: const TextStyle(color: MimioColors.textSecondary),
+                  style: TextStyle(color: context.palette.textSecondary),
                 ),
                 const Spacer(),
                 Row(

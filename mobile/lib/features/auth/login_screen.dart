@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mimio/core/l10n/app_strings.dart';
 import 'package:mimio/core/theme/mimio_theme.dart';
+import 'package:mimio/core/widgets/mimio_logo.dart';
 import 'package:mimio/features/providers.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
@@ -62,17 +63,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const SizedBox(height: 48),
-                Center(
-                  child: Container(
-                    width: 80,
-                    height: 80,
-                    decoration: BoxDecoration(
-                      color: MimioColors.primary,
-                      borderRadius: BorderRadius.circular(24),
-                    ),
-                    child: const Icon(Icons.schedule_rounded, color: Colors.white, size: 44),
-                  ),
-                ),
+                const Center(child: MimioLogo()),
                 const SizedBox(height: 24),
                 Center(
                   child: Text(
@@ -88,7 +79,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   child: Text(
                     s.loginTagline,
                     style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                          color: MimioColors.textSecondary,
+                          color: context.palette.textSecondary,
                         ),
                   ),
                 ),

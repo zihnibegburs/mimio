@@ -23,5 +23,8 @@ public record CreateTaskRequest(
         RecurrenceType recurrenceType,
         Integer recurrenceInterval,
         RecurrenceUnit recurrenceUnit,
-        @Size(max = 500) String reward
+        @Size(max = 500) String reward,
+        String energyLevel,
+        @Size(max = 500) String motivation,
+        Integer transitionBufferMinutes
 ) {}

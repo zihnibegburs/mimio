@@ -12,7 +12,7 @@ class AiStepModel {
   factory AiStepModel.fromJson(Map<String, dynamic> json) => AiStepModel(
         title: json['title'] as String,
         durationMinutes: json['durationMinutes'] as int,
-        color: json['color'] as String? ?? '#6C63FF',
+        color: json['color'] as String? ?? '#3D9B87',
       );
 }
 
@@ -53,7 +53,7 @@ class AiPlannedTaskModel {
         title: json['title'] as String,
         durationMinutes: json['durationMinutes'] as int,
         suggestedTime: json['suggestedTime'] as String,
-        color: json['color'] as String? ?? '#6C63FF',
+        color: json['color'] as String? ?? '#3D9B87',
       );
 
   DateTime scheduledAt(DateTime date) {

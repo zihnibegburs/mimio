@@ -31,9 +31,9 @@ class ModernBottomBar extends StatelessWidget {
       margin: const EdgeInsets.fromLTRB(16, 0, 16, 20),
       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 8),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: context.palette.surface,
         borderRadius: BorderRadius.circular(28),
-        border: Border.all(color: const Color(0xFFE8E8F0)),
+        border: Border.all(color: context.palette.border),
         boxShadow: [
           BoxShadow(
             color: MimioColors.primary.withValues(alpha: 0.08),
@@ -82,7 +82,7 @@ class _NavButton extends StatelessWidget {
               Icon(
                 selected ? item.selectedIcon : item.icon,
                 size: 22,
-                color: selected ? MimioColors.primary : MimioColors.textSecondary,
+                color: selected ? MimioColors.primary : context.palette.textSecondary,
               ),
               const SizedBox(height: 2),
               Text(
@@ -92,7 +92,7 @@ class _NavButton extends StatelessWidget {
                 style: TextStyle(
                   fontSize: 10,
                   fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
-                  color: selected ? MimioColors.primary : MimioColors.textSecondary,
+                  color: selected ? MimioColors.primary : context.palette.textSecondary,
                 ),
               ),
             ],

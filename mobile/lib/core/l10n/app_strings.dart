@@ -1,8 +1,10 @@
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mimio/core/models/achievement.dart';
+import 'package:mimio/core/models/adhd_models.dart';
 import 'package:mimio/core/models/recurrence.dart';
 import 'package:mimio/core/storage/settings_storage.dart';
+import 'package:mimio/core/theme/mimio_theme.dart';
 
 const supportedLanguageCodes = ['en', 'tr', 'es', 'fr', 'de'];
 
@@ -48,6 +50,19 @@ class S {
   String get avatarColor =>
       l10n(lang, _m(en: 'Avatar color', tr: 'Avatar rengi', es: 'Color del avatar', fr: 'Couleur de l\'avatar', de: 'Avatar-Farbe'));
   String get language => l10n(lang, _m(en: 'Language', tr: 'Dil', es: 'Idioma', fr: 'Langue', de: 'Sprache'));
+  String get appearance =>
+      l10n(lang, _m(en: 'Appearance', tr: 'Görünüm', es: 'Apariencia', fr: 'Apparence', de: 'Erscheinungsbild'));
+  String get themeSystem =>
+      l10n(lang, _m(en: 'System', tr: 'Sistem', es: 'Sistema', fr: 'Système', de: 'System'));
+  String get themeLight =>
+      l10n(lang, _m(en: 'Light', tr: 'Açık', es: 'Claro', fr: 'Clair', de: 'Hell'));
+  String get themeDark =>
+      l10n(lang, _m(en: 'Dark', tr: 'Koyu', es: 'Oscuro', fr: 'Sombre', de: 'Dunkel'));
+  String themeModeLabel(AppThemePreference pref) => switch (pref) {
+        AppThemePreference.system => themeSystem,
+        AppThemePreference.light => themeLight,
+        AppThemePreference.dark => themeDark,
+      };
   String get preferences =>
       l10n(lang, _m(en: 'Preferences', tr: 'Tercihler', es: 'Preferencias', fr: 'Préférences', de: 'Einstellungen'));
   String get account => l10n(lang, _m(en: 'Account', tr: 'Hesap', es: 'Cuenta', fr: 'Compte', de: 'Konto'));
@@ -352,6 +367,21 @@ class S {
       l10n(lang, _m(en: 'Delete task', tr: 'Görevi sil', es: 'Eliminar tarea', fr: 'Supprimer la tâche', de: 'Aufgabe löschen'));
   String get deleteConfirm =>
       l10n(lang, _m(en: 'Delete this task?', tr: 'Bu görev silinsin mi?', es: '¿Eliminar esta tarea?', fr: 'Supprimer cette tâche ?', de: 'Diese Aufgabe löschen?'));
+  String get deleteRecurringTask =>
+      l10n(lang, _m(en: 'Delete recurring task', tr: 'Tekrarlayan görevi sil', es: 'Eliminar tarea recurrente', fr: 'Supprimer la tâche récurrente', de: 'Wiederkehrende Aufgabe löschen'));
+  String deleteRecurringTaskPrompt(String title) => l10n(lang, _m(
+        en: '“$title” is part of a recurring series. What should be deleted?',
+        tr: '“$title” tekrarlayan bir serinin parçası. Ne silinsin?',
+        es: '“$title” forma parte de una serie recurrente. ¿Qué deseas eliminar?',
+        fr: '« $title » fait partie d\'une série récurrente. Que supprimer ?',
+        de: '„$title“ ist Teil einer wiederkehrenden Serie. Was soll gelöscht werden?',
+      ));
+  String get deleteRecurringThis =>
+      l10n(lang, _m(en: 'Only this occurrence', tr: 'Sadece bunu', es: 'Solo esta ocurrencia', fr: 'Seulement celle-ci', de: 'Nur dieses Vorkommen'));
+  String get deleteRecurringFuture =>
+      l10n(lang, _m(en: 'This and future occurrences', tr: 'Bunu ve sonrakileri', es: 'Esta y las futuras', fr: 'Celle-ci et les suivantes', de: 'Dieses und zukünftige'));
+  String get deleteRecurringAll =>
+      l10n(lang, _m(en: 'All occurrences', tr: 'Hepsini', es: 'Todas las ocurrencias', fr: 'Toutes les occurrences', de: 'Alle Vorkommen'));
   String get addTask =>
       l10n(lang, _m(en: 'Add task', tr: 'Görev Ekle', es: 'Añadir tarea', fr: 'Ajouter une tâche', de: 'Aufgabe hinzufügen'));
   String get newTask =>
@@ -416,6 +446,36 @@ class S {
       l10n(lang, _m(en: '10 minutes before', tr: '10 dk önce', es: '10 min antes', fr: '10 min avant', de: '10 Min. vorher'));
   String get remind1Min =>
       l10n(lang, _m(en: '1 minute before', tr: '1 dk önce', es: '1 min antes', fr: '1 min avant', de: '1 Min. vorher'));
+  String get remind5Min =>
+      l10n(lang, _m(en: '5 minutes before', tr: '5 dk önce', es: '5 min antes', fr: '5 min avant', de: '5 Min. vorher'));
+  String get remindTransitionEnd => l10n(lang, _m(
+        en: 'When task ends',
+        tr: 'Görev bitince',
+        es: 'Al terminar la tarea',
+        fr: 'À la fin de la tâche',
+        de: 'Wenn die Aufgabe endet',
+      ));
+  String taskReminder5(String title) => l10n(lang, _m(
+        en: '$title starts in 5 minutes — get ready',
+        tr: '$title 5 dakika içinde başlıyor — hazırlan',
+        es: '$title empieza en 5 minutos — prepárate',
+        fr: '« $title » commence dans 5 minutes — préparez-vous',
+        de: '„$title“ beginnt in 5 Minuten — mach dich bereit',
+      ));
+  String taskReminderTransition(String title, String next) => l10n(lang, _m(
+        en: '$title is ending — switch to $next',
+        tr: '$title bitiyor — $next görevine geç',
+        es: '$title termina — pasa a $next',
+        fr: '« $title » se termine — passez à « $next »',
+        de: '„$title“ endet — wechsle zu „$next“',
+      ));
+  String taskReminderEnd(String title) => l10n(lang, _m(
+        en: '$title is done — time to transition',
+        tr: '$title bitti — geçiş zamanı',
+        es: '$title terminó — hora de cambiar',
+        fr: '« $title » est terminé — temps de transition',
+        de: '„$title“ ist fertig — Zeit zum Wechseln',
+      ));
   String get taskReminderTitle =>
       l10n(lang, _m(en: 'Upcoming task', tr: 'Yaklaşan görev', es: 'Tarea próxima', fr: 'Tâche à venir', de: 'Anstehende Aufgabe'));
   String taskReminder10(String title) => l10n(lang, _m(
@@ -939,6 +999,145 @@ class S {
         fr: 'Impossible d\'ajouter la tâche. Réessayez plus tard.',
         de: 'Aufgabe konnte nicht hinzugefügt werden. Später erneut versuchen.',
       ));
+
+  // ADHD features
+  String get overwhelmMode => l10n(lang, _m(en: 'Now mode', tr: 'Şimdi modu', es: 'Modo ahora', fr: 'Mode maintenant', de: 'Jetzt-Modus'));
+  String get overwhelmModeHint => l10n(lang, _m(
+        en: 'Show only current and next task',
+        tr: 'Sadece şu anki ve sonraki görevi göster',
+        es: 'Mostrar solo la tarea actual y la siguiente',
+        fr: 'Afficher seulement la tâche actuelle et la suivante',
+        de: 'Nur aktuelle und nächste Aufgabe anzeigen',
+      ));
+  String get nowLabel => l10n(lang, _m(en: 'Now', tr: 'Şimdi', es: 'Ahora', fr: 'Maintenant', de: 'Jetzt'));
+  String get upNext => l10n(lang, _m(en: 'Up next', tr: 'Sırada', es: 'Siguiente', fr: 'À suivre', de: 'Als Nächstes'));
+  String get brainDump => l10n(lang, _m(en: 'Brain dump', tr: 'Beyin dökümü', es: 'Volcado mental', fr: 'Décharge mentale', de: 'Gedanken abladen'));
+  String get brainDumpHint => l10n(lang, _m(
+        en: 'Pour everything out — AI will organize it',
+        tr: 'Kafandaki her şeyi yaz — AI düzenlesin',
+        es: 'Suelta todo — la IA lo organizará',
+        fr: 'Déversez tout — l\'IA organisera',
+        de: 'Schreib alles auf — die KI sortiert es',
+      ));
+  String get inboxTitle => l10n(lang, _m(en: 'Inbox', tr: 'Gelen kutusu', es: 'Bandeja', fr: 'Boîte de réception', de: 'Eingang'));
+  String get inboxHint => l10n(lang, _m(
+        en: 'Capture now, schedule later',
+        tr: 'Şimdi kaydet, sonra planla',
+        es: 'Captura ahora, planifica después',
+        fr: 'Capturez maintenant, planifiez plus tard',
+        de: 'Jetzt erfassen, später planen',
+      ));
+  String get addToInbox => l10n(lang, _m(en: 'Add to inbox', tr: 'Gelen kutusuna ekle', es: 'Añadir a bandeja', fr: 'Ajouter à la boîte', de: 'Zum Eingang hinzufügen'));
+  String get scheduleTask => l10n(lang, _m(en: 'Schedule', tr: 'Planla', es: 'Programar', fr: 'Planifier', de: 'Planen'));
+  String get energyLevel => l10n(lang, _m(en: 'Energy needed', tr: 'Gerekli enerji', es: 'Energía necesaria', fr: 'Énergie requise', de: 'Benötigte Energie'));
+  String get energyLow => l10n(lang, _m(en: 'Low', tr: 'Düşük', es: 'Baja', fr: 'Faible', de: 'Niedrig'));
+  String get energyMedium => l10n(lang, _m(en: 'Medium', tr: 'Orta', es: 'Media', fr: 'Moyenne', de: 'Mittel'));
+  String get energyHigh => l10n(lang, _m(en: 'High', tr: 'Yüksek', es: 'Alta', fr: 'Élevée', de: 'Hoch'));
+  String get dailyEnergy => l10n(lang, _m(en: 'Today\'s energy', tr: 'Bugünkü enerjin', es: 'Energía de hoy', fr: 'Énergie du jour', de: 'Heutige Energie'));
+  String get motivationWhy => l10n(lang, _m(en: 'Why does this matter?', tr: 'Bu neden önemli?', es: '¿Por qué importa?', fr: 'Pourquoi c\'est important ?', de: 'Warum ist das wichtig?'));
+  String get transitionBuffer => l10n(lang, _m(en: 'Transition buffer', tr: 'Geçiş süresi', es: 'Tiempo de transición', fr: 'Tampon de transition', de: 'Übergangspuffer'));
+  String get routineTemplates => l10n(lang, _m(en: 'Routine templates', tr: 'Rutin şablonları', es: 'Plantillas de rutina', fr: 'Modèles de routine', de: 'Routine-Vorlagen'));
+  String get quickPresets => l10n(lang, _m(en: 'Quick presets', tr: 'Hızlı ekle', es: 'Accesos rápidos', fr: 'Raccourcis', de: 'Schnellvorlagen'));
+  String get breakTime => l10n(lang, _m(en: 'Break time', tr: 'Mola zamanı', es: 'Descanso', fr: 'Pause', de: 'Pause'));
+  String get breakHint => l10n(lang, _m(
+        en: 'Great job! Take a breather before the next task.',
+        tr: 'Harika! Sonraki göreve geçmeden önce dinlen.',
+        es: '¡Bien hecho! Descansa antes de la siguiente tarea.',
+        fr: 'Bravo ! Reposez-vous avant la prochaine tâche.',
+        de: 'Super! Mach eine Pause vor der nächsten Aufgabe.',
+      ));
+  String get skipBreak => l10n(lang, _m(en: 'Skip break', tr: 'Molayı atla', es: 'Saltar descanso', fr: 'Passer la pause', de: 'Pause überspringen'));
+  String get bodyDoubling => l10n(lang, _m(en: 'Body doubling', tr: 'Birlikte çalış', es: 'Compañía virtual', fr: 'Travail en duo', de: 'Gemeinsam fokussieren'));
+  String get bodyDoublingHint => l10n(lang, _m(
+        en: 'You\'re not alone — others are focusing right now too',
+        tr: 'Yalnız değilsin — başkaları da şu an odaklanıyor',
+        es: 'No estás solo — otros también se concentran ahora',
+        fr: 'Vous n\'êtes pas seul — d\'autres se concentrent aussi',
+        de: 'Du bist nicht allein — andere fokussieren sich gerade auch',
+      ));
+  String get scheduleWarning => l10n(lang, _m(en: 'Schedule check', tr: 'Plan kontrolü', es: 'Revisión del plan', fr: 'Vérification du planning', de: 'Planprüfung'));
+  String scheduleOverlap(String a, String b, int min) => l10n(lang, _m(
+        en: '$a and $b overlap by $min min',
+        tr: '$a ve $b $min dk çakışıyor',
+        es: '$a y $b se solapan $min min',
+        fr: '« $a » et « $b » se chevauchent de $min min',
+        de: '„$a“ und „$b“ überlappen um $min Min.',
+      ));
+  String scheduleTight(String a, String b) => l10n(lang, _m(
+        en: 'Only a few minutes between $a and $b',
+        tr: '$a ile $b arasında çok az süre var',
+        es: 'Pocos minutos entre $a y $b',
+        fr: 'Peu de temps entre « $a » et « $b »',
+        de: 'Wenig Zeit zwischen „$a“ und „$b“',
+      ));
+  String get weeklyRetro => l10n(lang, _m(en: 'Weekly review', tr: 'Haftalık özet', es: 'Resumen semanal', fr: 'Bilan hebdomadaire', de: 'Wochenrückblick'));
+  String weeklyRetroSummary(int tasks, int perfect, String peak) => l10n(lang, _m(
+        en: '$tasks tasks done · $perfect great days · peak focus: $peak',
+        tr: '$tasks görev tamamlandı · $perfect harika gün · en odaklı saat: $peak',
+        es: '$tasks tareas · $perfect días geniales · pico: $peak',
+        fr: '$tasks tâches · $perfect super jours · pic : $peak',
+        de: '$tasks Aufgaben · $perfect starke Tage · Fokus-Spitze: $peak',
+      ));
+  String get onboardingWelcome => l10n(lang, _m(en: 'Welcome to Mimio', tr: 'Mimio\'ya hoş geldin', es: 'Bienvenido a Mimio', fr: 'Bienvenue sur Mimio', de: 'Willkommen bei Mimio'));
+  String get onboardingSubtitle => l10n(lang, _m(
+        en: 'A gentle planner built for neurodivergent minds',
+        tr: 'Nöroçeşitli zihinler için nazik bir planlayıcı',
+        es: 'Un planificador amable para mentes neurodivergentes',
+        fr: 'Un planificateur bienveillant pour les esprits neurodivergents',
+        de: 'Ein sanfter Planer für neurodivergente Köpfe',
+      ));
+  String get onboardingThemePref => l10n(lang, _m(
+        en: 'Light or dark mode?',
+        tr: 'Açık mı koyu mod mu?',
+        es: '¿Modo claro u oscuro?',
+        fr: 'Mode clair ou sombre ?',
+        de: 'Hell- oder Dunkelmodus?',
+      ));
+  String get onboardingThemeSubtitle => l10n(lang, _m(
+        en: 'Pick what feels easiest on your eyes. You can change this anytime in settings.',
+        tr: 'Gözüne en rahat geleni seç. İstediğin zaman ayarlardan değiştirebilirsin.',
+        es: 'Elige lo que sea más cómodo para tus ojos. Puedes cambiarlo en ajustes.',
+        fr: 'Choisissez ce qui repose le plus vos yeux. Modifiable à tout moment dans les réglages.',
+        de: 'Wähle, was sich am angenehmsten anfühlt. Jederzeit in den Einstellungen änderbar.',
+      ));
+  String get onboardingViewPref => l10n(lang, _m(en: 'How do you like to see your day?', tr: 'Gününü nasıl görmek istersin?', es: '¿Cómo prefieres ver tu día?', fr: 'Comment voir votre journée ?', de: 'Wie möchtest du deinen Tag sehen?'));
+  String get onboardingReminderPref => l10n(lang, _m(en: 'Reminder style', tr: 'Hatırlatıcı tercihi', es: 'Estilo de recordatorio', fr: 'Style de rappel', de: 'Erinnerungsstil'));
+  String get onboardingRewardsPref => l10n(lang, _m(en: 'Enable rewards & celebrations?', tr: 'Ödül ve kutlamalar açık olsun mu?', es: '¿Activar recompensas?', fr: 'Activer récompenses et fêtes ?', de: 'Belohnungen aktivieren?'));
+  String get getStarted => l10n(lang, _m(en: 'Get started', tr: 'Başla', es: 'Empezar', fr: 'Commencer', de: 'Los geht\'s'));
+  String get nextStep => l10n(lang, _m(en: 'Next', tr: 'İleri', es: 'Siguiente', fr: 'Suivant', de: 'Weiter'));
+  String get focusBlocking => l10n(lang, _m(en: 'Distraction blocking', tr: 'Dikkat engelleme', es: 'Bloqueo de distracciones', fr: 'Blocage des distractions', de: 'Ablenkungssperre'));
+  String get focusBlockingHint => l10n(lang, _m(
+        en: 'Before focusing, enable Do Not Disturb or app limits on your device.',
+        tr: 'Odaklanmadan önce cihazında Rahatsız Etmeyin veya uygulama sınırını aç.',
+        es: 'Antes de enfocarte, activa No molestar o límites de apps.',
+        fr: 'Avant de vous concentrer, activez Ne pas déranger ou les limites d\'apps.',
+        de: 'Vor dem Fokus: Bitte nicht stören oder App-Limits aktivieren.',
+      ));
+  String get openSettings => l10n(lang, _m(en: 'Open device settings', tr: 'Cihaz ayarlarını aç', es: 'Abrir ajustes', fr: 'Ouvrir les réglages', de: 'Geräteeinstellungen öffnen'));
+  String get notificationSettings => l10n(lang, _m(en: 'Notification settings', tr: 'Bildirim ayarları', es: 'Ajustes de notificaciones', fr: 'Paramètres de notification', de: 'Benachrichtigungseinstellungen'));
+  String get achievementUnlocked => l10n(lang, _m(en: 'Achievement unlocked!', tr: 'Rozet kazanıldı!', es: '¡Logro desbloqueado!', fr: 'Succès débloqué !', de: 'Erfolg freigeschaltet!'));
+  String get breakAfterFocus => l10n(lang, _m(
+        en: 'Break after focus',
+        tr: 'Odak sonrası mola',
+        es: 'Descanso tras enfocar',
+        fr: 'Pause après focus',
+        de: 'Pause nach Fokus',
+      ));
+  String get startRewardTimer => l10n(lang, _m(
+        en: 'Start reward timer',
+        tr: 'Ödül zamanlayıcısını başlat',
+        es: 'Iniciar temporizador de recompensa',
+        fr: 'Lancer le minuteur récompense',
+        de: 'Belohnungs-Timer starten',
+      ));
+  String get rewardTimerActive => l10n(lang, _m(en: 'Enjoy your reward!', tr: 'Ödülünün tadını çıkar!', es: '¡Disfruta tu recompensa!', fr: 'Profitez de votre récompense !', de: 'Genieß deine Belohnung!'));
+  String get movedToTomorrow => l10n(lang, _m(en: 'Moved to another time', tr: 'Başka bir zamana taşındı', es: 'Movido a otro momento', fr: 'Reporté à un autre moment', de: 'Auf später verschoben'));
+  String get notDoneYet => l10n(lang, _m(en: 'Not done yet', tr: 'Henüz yapılmadı', es: 'Aún no hecho', fr: 'Pas encore fait', de: 'Noch nicht erledigt'));
+  String energyLabel(EnergyLevel level) => switch (level) {
+        EnergyLevel.low => energyLow,
+        EnergyLevel.medium => energyMedium,
+        EnergyLevel.high => energyHigh,
+      };
 
   String friendlyTaskActionError(Object e) {
     if (e is DioException) {

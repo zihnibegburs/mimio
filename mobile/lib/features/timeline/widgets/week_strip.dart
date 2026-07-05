@@ -39,10 +39,10 @@ class WeekStrip extends ConsumerWidget {
                 duration: const Duration(milliseconds: 200),
                 width: 56,
                 decoration: BoxDecoration(
-                  color: isSelected ? MimioColors.primary : Colors.white,
+                  color: isSelected ? MimioColors.primary : context.palette.surface,
                   borderRadius: BorderRadius.circular(16),
                   border: Border.all(
-                    color: isToday && !isSelected ? MimioColors.primary : const Color(0xFFE8E8F0),
+                    color: isToday && !isSelected ? MimioColors.primary : context.palette.border,
                     width: isToday ? 2 : 1,
                   ),
                   boxShadow: isSelected
@@ -57,7 +57,7 @@ class WeekStrip extends ConsumerWidget {
                       style: TextStyle(
                         fontSize: 10,
                         fontWeight: FontWeight.w700,
-                        color: isSelected ? Colors.white70 : MimioColors.textSecondary,
+                        color: isSelected ? Colors.white70 : context.palette.textSecondary,
                       ),
                     ),
                     const SizedBox(height: 4),
@@ -66,7 +66,7 @@ class WeekStrip extends ConsumerWidget {
                       style: TextStyle(
                         fontSize: 20,
                         fontWeight: FontWeight.w800,
-                        color: isSelected ? Colors.white : MimioColors.textPrimary,
+                        color: isSelected ? Colors.white : context.palette.textPrimary,
                       ),
                     ),
                     const SizedBox(height: 4),

@@ -97,4 +97,14 @@ public class Task {
 
     @Column(length = 500)
     private String reward;
+
+    @Column(name = "energy_level", length = 10)
+    private String energyLevel;
+
+    @Column(length = 500)
+    private String motivation;
+
+    @Column(name = "transition_buffer_minutes", nullable = false)
+    @Builder.Default
+    private Integer transitionBufferMinutes = 0;
 }

@@ -1,5 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:mimio/core/models/adhd_models.dart';
+import 'package:mimio/core/storage/adhd_settings_storage.dart';
+import 'package:mimio/features/profile/focus_blocking_sheet.dart';
+import 'package:mimio/features/profile/notification_settings_sheet.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mimio/core/l10n/app_strings.dart';
 import 'package:mimio/core/models/achievement.dart';
@@ -68,6 +72,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     final auth = ref.watch(authStateProvider).value;
     final s = ref.watch(stringsProvider);
     final lang = ref.watch(appLanguageProvider).valueOrNull ?? 'tr';
+    final themeMode = ref.watch(appThemeModeProvider).valueOrNull ?? ThemeMode.system;
+    final palette = context.palette;
     final stats = ref.watch(achievementStatsProvider).valueOrNull ?? const AchievementStats();
     final unlockedCount = achievementDefinitions.where((a) => a.isUnlocked(stats)).length;
 
@@ -106,7 +112,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                 ),
                 Text(
                   auth.email,
-                  style: const TextStyle(color: MimioColors.textSecondary),
+                  style: TextStyle(color: palette.textSecondary),
                 ),
               ],
             ),
@@ -118,7 +124,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             title: Text(s.editProfile),
             trailing: Icon(_editing ? Icons.expand_less : Icons.chevron_right_rounded),
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-            tileColor: Colors.white,
+            tileColor: palette.surface,
             onTap: () {
               if (_editing) {
                 setState(() => _editing = false);
@@ -132,9 +138,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: palette.surface,
                 borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: const Color(0xFFE8E8F0)),
+                border: Border.all(color: palette.border),
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -162,7 +168,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                           decoration: BoxDecoration(
                             color: color,
                             shape: BoxShape.circle,
-                            border: selected ? Border.all(color: MimioColors.textPrimary, width: 3) : null,
+                            border: selected ? Border.all(color: palette.textPrimary, width: 3) : null,
                           ),
                           child: selected ? const Icon(Icons.check, color: Colors.white, size: 18) : null,
                         ),
@@ -195,9 +201,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
           _SectionHeader(title: s.achievementsTitle),
           Container(
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: palette.surface,
               borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: const Color(0xFFE8E8F0)),
+              border: Border.all(color: palette.border),
             ),
             child: ListTile(
               leading: Container(
@@ -239,9 +245,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
           _SectionHeader(title: s.integrations),
           Container(
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: palette.surface,
               borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: const Color(0xFFE8E8F0)),
+              border: Border.all(color: palette.border),
             ),
             child: ListTile(
               leading: const Icon(Icons.calendar_month_rounded, color: MimioColors.primary),
@@ -255,12 +261,28 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
           _SectionHeader(title: s.preferences),
           Container(
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: palette.surface,
               borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: const Color(0xFFE8E8F0)),
+              border: Border.all(color: palette.border),
             ),
             child: Column(
               children: [
+                ListTile(
+                  leading: const Icon(Icons.bolt_rounded, color: MimioColors.primary),
+                  title: Text(s.dailyEnergy),
+                  trailing: DropdownButton<EnergyLevel?>(
+                    value: ref.watch(adhdPreferencesProvider).valueOrNull?.dailyEnergyLevel,
+                    underline: const SizedBox.shrink(),
+                    items: [
+                      DropdownMenuItem(value: null, child: Text(s.cancel)),
+                      ...EnergyLevel.values.map((e) => DropdownMenuItem(value: e, child: Text(s.energyLabel(e)))),
+                    ],
+                    onChanged: (v) => ref.read(adhdPreferencesProvider.notifier).patch(
+                          (p) => v == null ? p.copyWith(clearDailyEnergy: true) : p.copyWith(dailyEnergyLevel: v),
+                        ),
+                  ),
+                ),
+                const Divider(height: 1, indent: 56),
                 ListTile(
                   leading: const Icon(Icons.language_rounded),
                   title: Text(s.language),
@@ -280,10 +302,48 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                 ),
                 const Divider(height: 1, indent: 56),
                 ListTile(
+                  leading: const Icon(Icons.dark_mode_outlined),
+                  title: Text(s.appearance),
+                  subtitle: Text(s.themeModeLabel(preferenceFromThemeMode(themeMode))),
+                  trailing: DropdownButton<ThemeMode>(
+                    value: themeMode,
+                    underline: const SizedBox.shrink(),
+                    items: ThemeMode.values
+                        .map(
+                          (mode) => DropdownMenuItem(
+                            value: mode,
+                            child: Text(s.themeModeLabel(preferenceFromThemeMode(mode))),
+                          ),
+                        )
+                        .toList(),
+                    onChanged: (value) {
+                      if (value != null) {
+                        ref.read(appThemeModeProvider.notifier).setThemeMode(value);
+                      }
+                    },
+                  ),
+                ),
+                const Divider(height: 1, indent: 56),
+                ListTile(
                   leading: const Icon(Icons.notifications_outlined),
                   title: Text(s.notifications),
-                  subtitle: Text(s.comingSoon, style: const TextStyle(fontSize: 12)),
-                  enabled: false,
+                  subtitle: Text(s.notificationSettings, style: const TextStyle(fontSize: 12)),
+                  trailing: const Icon(Icons.chevron_right_rounded),
+                  onTap: () => showNotificationSettingsSheet(context, ref),
+                ),
+                const Divider(height: 1, indent: 56),
+                ListTile(
+                  leading: const Icon(Icons.do_not_disturb_on_rounded),
+                  title: Text(s.focusBlocking),
+                  trailing: const Icon(Icons.chevron_right_rounded),
+                  onTap: () => showFocusBlockingSheet(context, ref),
+                ),
+                const Divider(height: 1, indent: 56),
+                ListTile(
+                  leading: const Icon(Icons.insights_rounded),
+                  title: Text(s.weeklyRetro),
+                  trailing: const Icon(Icons.chevron_right_rounded),
+                  onTap: () => context.push('/weekly-retro'),
                 ),
               ],
             ),
@@ -293,14 +353,14 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             leading: Icon(Icons.logout_rounded, color: Colors.red.shade400),
             title: Text(s.logout, style: TextStyle(color: Colors.red.shade400, fontWeight: FontWeight.w600)),
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-            tileColor: Colors.white,
+            tileColor: palette.surface,
             onTap: () => ref.read(authStateProvider.notifier).logout(),
           ),
           const SizedBox(height: 32),
           Text(
             '${s.version} 1.0.0',
             textAlign: TextAlign.center,
-            style: const TextStyle(fontSize: 12, color: MimioColors.textSecondary),
+            style: TextStyle(fontSize: 12, color: palette.textSecondary),
           ),
         ],
       ),
@@ -315,14 +375,15 @@ class _SectionHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final palette = context.palette;
     return Padding(
       padding: const EdgeInsets.only(bottom: 8, left: 4),
       child: Text(
         title,
-        style: const TextStyle(
+        style: TextStyle(
           fontSize: 13,
           fontWeight: FontWeight.w700,
-          color: MimioColors.textSecondary,
+          color: palette.textSecondary,
         ),
       ),
     );

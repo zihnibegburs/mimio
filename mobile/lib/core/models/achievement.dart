@@ -151,7 +151,7 @@ const achievementDefinitions = [
   AchievementDefinition(
     id: AchievementId.firstTask,
     icon: Icons.flag_rounded,
-    color: Color(0xFF6C63FF),
+    color: Color(0xFF3D9B87),
     target: 1,
     progressOf: _tasksCompleted,
   ),
@@ -242,7 +242,7 @@ const achievementDefinitions = [
   AchievementDefinition(
     id: AchievementId.calendarImporter,
     icon: Icons.calendar_month_rounded,
-    color: Color(0xFF6C63FF),
+    color: Color(0xFF3D9B87),
     target: 1,
     progressOf: _calendarImports,
   ),

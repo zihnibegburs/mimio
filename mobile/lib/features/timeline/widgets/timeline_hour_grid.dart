@@ -45,9 +45,9 @@ class TimelineHourGrid extends ConsumerWidget {
                       padding: const EdgeInsets.only(right: 8, top: 2),
                       child: Text(
                         '${hour.toString().padLeft(2, '0')}:00',
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 11,
-                          color: MimioColors.textSecondary,
+                          color: context.palette.textSecondary,
                           fontWeight: FontWeight.w600,
                         ),
                       ),

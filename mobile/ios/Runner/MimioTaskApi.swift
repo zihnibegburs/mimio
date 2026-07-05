@@ -44,7 +44,7 @@ enum MimioTaskApi {
 
         let body: [String: Any] = [
             "title": title,
-            "color": "#6C63FF",
+            "color": "#3D9B87",
             "icon": "task",
             "durationMinutes": 30,
             "isInbox": false,

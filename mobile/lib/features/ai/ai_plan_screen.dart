@@ -182,9 +182,9 @@ class _AiPlanScreenState extends ConsumerState<AiPlanScreen> {
             Container(
               padding: const EdgeInsets.all(4),
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: context.palette.surface,
                 borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: const Color(0xFFE8E8F0)),
+                border: Border.all(color: context.palette.border),
               ),
               child: Row(
                 children: [
@@ -211,7 +211,7 @@ class _AiPlanScreenState extends ConsumerState<AiPlanScreen> {
             const SizedBox(height: 8),
             Text(
               mode == AiMode.plan ? s.planExample : s.breakdownExample,
-              style: const TextStyle(color: MimioColors.textSecondary, fontSize: 13),
+              style: TextStyle(color: context.palette.textSecondary, fontSize: 13),
             ),
             const SizedBox(height: 16),
             SpeechTextField(
@@ -305,7 +305,7 @@ class _AiPlanScreenState extends ConsumerState<AiPlanScreen> {
             Text(
               s.poweredByGroq,
               textAlign: TextAlign.center,
-              style: const TextStyle(fontSize: 11, color: MimioColors.textSecondary),
+              style: TextStyle(fontSize: 11, color: context.palette.textSecondary),
             ),
           ],
         ),
@@ -342,13 +342,13 @@ class _ModeChip extends StatelessWidget {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(icon, size: 18, color: selected ? Colors.white : MimioColors.textSecondary),
+              Icon(icon, size: 18, color: selected ? Colors.white : context.palette.textSecondary),
               const SizedBox(width: 6),
               Text(
                 label,
                 style: TextStyle(
                   fontWeight: FontWeight.w700,
-                  color: selected ? Colors.white : MimioColors.textSecondary,
+                  color: selected ? Colors.white : context.palette.textSecondary,
                 ),
               ),
             ],
@@ -380,7 +380,7 @@ class _ResultHeader extends StatelessWidget {
         children: [
           Text(title, style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 16)),
           const SizedBox(height: 4),
-          Text(subtitle, style: const TextStyle(color: MimioColors.textSecondary)),
+          Text(subtitle, style: TextStyle(color: context.palette.textSecondary)),
         ],
       ),
     );
@@ -404,9 +404,9 @@ class _TaskResultTile extends StatelessWidget {
       margin: const EdgeInsets.only(top: 8),
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: context.palette.surface,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: const Color(0xFFE8E8F0)),
+        border: Border.all(color: context.palette.border),
       ),
       child: Row(
         children: [

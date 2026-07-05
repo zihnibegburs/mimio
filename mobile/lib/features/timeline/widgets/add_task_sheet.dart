@@ -2,11 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mimio/core/l10n/app_strings.dart';
 import 'package:mimio/core/models/ai_models.dart';
+import 'package:mimio/core/data/routine_templates.dart';
+import 'package:mimio/core/models/adhd_models.dart';
 import 'package:mimio/core/models/recurrence.dart';
 import 'package:mimio/core/platform/notification_service.dart';
 import 'package:mimio/core/repositories/ai_repository.dart';
 import 'package:mimio/core/theme/mimio_theme.dart';
 import 'package:mimio/features/providers.dart';
+import 'package:mimio/features/timeline/widgets/inline_time_picker.dart';
 import 'package:mimio/features/timeline/widgets/recurrence_picker.dart';
 
 class AddTaskSheet extends ConsumerStatefulWidget {
@@ -21,7 +24,12 @@ class AddTaskSheet extends ConsumerStatefulWidget {
 class _AddTaskSheetState extends ConsumerState<AddTaskSheet> {
   final _titleController = TextEditingController();
   final _rewardController = TextEditingController();
+  final _motivationController = TextEditingController();
   bool _useAiDuration = true;
+  bool _addToInbox = false;
+  EnergyLevel? _energyLevel;
+  int _transitionBuffer = 0;
+  bool _remind5Min = false;
   int _duration = 30;
   String _selectedColor = MimioColors.taskColors.first;
   TimeOfDay _time = TimeOfDay.now();
@@ -38,12 +46,8 @@ class _AddTaskSheetState extends ConsumerState<AddTaskSheet> {
   void dispose() {
     _titleController.dispose();
     _rewardController.dispose();
+    _motivationController.dispose();
     super.dispose();
-  }
-
-  Future<void> _pickTime() async {
-    final picked = await showTimePicker(context: context, initialTime: _time);
-    if (picked != null) setState(() => _time = picked);
   }
 
   DateTime get _scheduledAt => DateTime(
@@ -89,7 +93,12 @@ class _AddTaskSheetState extends ConsumerState<AddTaskSheet> {
     });
 
     try {
-      final reminders = TaskReminderSettings(remind10Min: _remind10Min, remind1Min: _remind1Min);
+      final reminders = TaskReminderSettings(
+        remind10Min: _remind10Min,
+        remind5Min: _remind5Min,
+        remind1Min: _remind1Min,
+        transitionEnd: true,
+      );
       if (_splitIntoSubtasks) {
         var steps = _previewSteps;
         if (steps == null || steps.isEmpty) {
@@ -117,10 +126,14 @@ class _AddTaskSheetState extends ConsumerState<AddTaskSheet> {
               title: _titleController.text.trim(),
               durationMinutes: duration,
               color: _selectedColor,
-              scheduledAt: _scheduledAt,
+              scheduledAt: _addToInbox ? null : _scheduledAt,
+              isInbox: _addToInbox,
               recurrence: _recurrence,
               reward: _rewardController.text.trim().isEmpty ? null : _rewardController.text.trim(),
               reminders: reminders,
+              energyLevel: _energyLevel,
+              motivation: _motivationController.text.trim().isEmpty ? null : _motivationController.text.trim(),
+              transitionBufferMinutes: _transitionBuffer,
             );
       }
 
@@ -137,8 +150,8 @@ class _AddTaskSheetState extends ConsumerState<AddTaskSheet> {
     final s = ref.watch(stringsProvider);
 
     return Container(
-      decoration: const BoxDecoration(
-        color: Colors.white,
+      decoration: BoxDecoration(
+        color: context.palette.surface,
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
       padding: EdgeInsets.only(
@@ -179,16 +192,63 @@ class _AddTaskSheetState extends ConsumerState<AddTaskSheet> {
               },
             ),
             const SizedBox(height: 16),
+            const SizedBox(height: 12),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: medicationPresetsFor(ref.watch(appLanguageProvider).valueOrNull ?? 'tr').map((preset) {
+                return ActionChip(
+                  avatar: const Icon(Icons.medication_rounded, size: 16),
+                  label: Text(preset.title),
+                  onPressed: () {
+                    _titleController.text = preset.title;
+                    _duration = preset.durationMinutes;
+                    _selectedColor = preset.color;
+                    _useAiDuration = false;
+                    setState(() {});
+                  },
+                );
+              }).toList(),
+            ),
+            SwitchListTile(
+              contentPadding: EdgeInsets.zero,
+              title: Text(s.addToInbox, style: const TextStyle(fontWeight: FontWeight.w600)),
+              subtitle: Text(s.inboxHint, style: const TextStyle(fontSize: 12)),
+              value: _addToInbox,
+              onChanged: (v) => setState(() => _addToInbox = v),
+            ),
+            if (!_splitIntoSubtasks) ...[
+              const SizedBox(height: 12),
+              Text(s.motivationWhy, style: Theme.of(context).textTheme.labelLarge),
+              const SizedBox(height: 8),
+              TextField(
+                controller: _motivationController,
+                decoration: InputDecoration(hintText: s.motivationWhy),
+                maxLines: 2,
+              ),
+              const SizedBox(height: 12),
+              Text(s.energyLevel, style: Theme.of(context).textTheme.labelLarge),
+              Wrap(
+                spacing: 8,
+                children: EnergyLevel.values.map((e) {
+                  return ChoiceChip(
+                    label: Text(s.energyLabel(e)),
+                    selected: _energyLevel == e,
+                    onSelected: (_) => setState(() => _energyLevel = _energyLevel == e ? null : e),
+                  );
+                }).toList(),
+              ),
+            ],
             Container(
               decoration: BoxDecoration(
-                border: Border.all(color: const Color(0xFFE8E8F0)),
+                border: Border.all(color: context.palette.border),
                 borderRadius: BorderRadius.circular(16),
               ),
               child: SwitchListTile(
                 title: Text(s.splitIntoSteps, style: const TextStyle(fontWeight: FontWeight.w600)),
                 subtitle: Text(
                   s.splitIntoStepsHint,
-                  style: const TextStyle(fontSize: 12, color: MimioColors.textSecondary),
+                  style: TextStyle(fontSize: 12, color: context.palette.textSecondary),
                 ),
                 secondary: const Icon(Icons.auto_awesome_rounded, color: MimioColors.primary),
                 value: _splitIntoSubtasks,
@@ -227,7 +287,7 @@ class _AddTaskSheetState extends ConsumerState<AddTaskSheet> {
                         children: [
                           Text(
                             '${e.key + 1}.',
-                            style: const TextStyle(fontWeight: FontWeight.w700, color: MimioColors.textSecondary),
+                            style: TextStyle(fontWeight: FontWeight.w700, color: context.palette.textSecondary),
                           ),
                           const SizedBox(width: 8),
                           Expanded(child: Text(e.value.title, style: const TextStyle(fontWeight: FontWeight.w600))),
@@ -250,7 +310,7 @@ class _AddTaskSheetState extends ConsumerState<AddTaskSheet> {
               const SizedBox(height: 4),
               Text(
                 s.rewardOptionalHint,
-                style: const TextStyle(fontSize: 12, color: MimioColors.textSecondary),
+                style: TextStyle(fontSize: 12, color: context.palette.textSecondary),
               ),
               const SizedBox(height: 8),
               TextField(
@@ -304,34 +364,24 @@ class _AddTaskSheetState extends ConsumerState<AddTaskSheet> {
               ),
               SwitchListTile(
                 contentPadding: EdgeInsets.zero,
+                title: Text(s.remind5Min, style: const TextStyle(fontWeight: FontWeight.w600)),
+                value: _remind5Min,
+                onChanged: (v) => setState(() => _remind5Min = v),
+              ),
+              SwitchListTile(
+                contentPadding: EdgeInsets.zero,
                 title: Text(s.remind1Min, style: const TextStyle(fontWeight: FontWeight.w600)),
                 value: _remind1Min,
                 onChanged: (v) => setState(() => _remind1Min = v),
               ),
             ],
+            if (!_addToInbox) ...[
             const SizedBox(height: 20),
             Text(s.time, style: Theme.of(context).textTheme.labelLarge),
             const SizedBox(height: 8),
-            InkWell(
-              onTap: _pickTime,
-              borderRadius: BorderRadius.circular(16),
-              child: Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  border: Border.all(color: const Color(0xFFE8E8F0)),
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                child: Row(
-                  children: [
-                    const Icon(Icons.access_time_rounded, color: MimioColors.primary),
-                    const SizedBox(width: 12),
-                    Text(
-                      _time.format(context),
-                      style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-                    ),
-                  ],
-                ),
-              ),
+            InlineTimePicker(
+              value: _time,
+              onChanged: (time) => setState(() => _time = time),
             ),
             if (!_splitIntoSubtasks) ...[
               const SizedBox(height: 20),
@@ -339,6 +389,7 @@ class _AddTaskSheetState extends ConsumerState<AddTaskSheet> {
                 value: _recurrence,
                 onChanged: (value) => setState(() => _recurrence = value),
               ),
+            ],
             ],
             const SizedBox(height: 20),
             Text(s.color, style: Theme.of(context).textTheme.labelLarge),
@@ -357,7 +408,7 @@ class _AddTaskSheetState extends ConsumerState<AddTaskSheet> {
                     decoration: BoxDecoration(
                       color: color,
                       shape: BoxShape.circle,
-                      border: selected ? Border.all(color: MimioColors.textPrimary, width: 3) : null,
+                      border: selected ? Border.all(color: context.palette.textPrimary, width: 3) : null,
                     ),
                     child: selected ? const Icon(Icons.check, color: Colors.white, size: 18) : null,
                   ),
