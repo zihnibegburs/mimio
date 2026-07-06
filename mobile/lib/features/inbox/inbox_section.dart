@@ -5,6 +5,7 @@ import 'package:mimio/core/models/models.dart';
 import 'package:mimio/core/theme/mimio_theme.dart';
 import 'package:mimio/core/utils/task_icons.dart';
 import 'package:mimio/features/providers.dart';
+import 'package:mimio/core/widgets/mimio_soft_overlay.dart';
 import 'package:mimio/features/timeline/widgets/edit_task_sheet.dart';
 
 class InboxSection extends ConsumerWidget {
@@ -64,10 +65,9 @@ class _InboxTile extends ConsumerWidget {
           onPressed: () => _schedule(context, ref),
           child: Text(s.scheduleTask),
         ),
-        onTap: () => showModalBottomSheet(
+        onTap: () => showMimioBottomSheet(
           context: context,
           isScrollControlled: true,
-          backgroundColor: Colors.transparent,
           builder: (_) => EditTaskSheet(
             task: task,
             selectedDate: DateTime.now(),

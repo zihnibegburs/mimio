@@ -13,11 +13,14 @@ import 'package:mimio/core/repositories/repositories.dart';
 import 'package:mimio/core/services/calendar_import_service.dart';
 import 'package:mimio/features/achievements/achievements_screen.dart';
 import 'package:mimio/core/utils/task_icons.dart';
+import 'package:mimio/core/services/google_auth_service.dart';
 import 'package:mimio/core/storage/adhd_settings_storage.dart';
 import 'package:mimio/core/storage/local_focus_storage.dart';
 import 'package:mimio/core/storage/settings_storage.dart';
 
 final localFocusStorageProvider = Provider<LocalFocusStorage>((ref) => LocalFocusStorage());
+
+final googleAuthServiceProvider = Provider<GoogleAuthService>((ref) => GoogleAuthService());
 
 final liveActivityServiceProvider = Provider<LiveActivityService>((ref) => LiveActivityService.instance);
 
@@ -40,6 +43,17 @@ class AuthNotifier extends AsyncNotifier<AuthResponse?> {
     });
   }
 
+  Future<void> loginWithGoogle() async {
+    state = const AsyncLoading();
+    state = await AsyncValue.guard(() async {
+      final idToken = await ref.read(googleAuthServiceProvider).signInAndGetIdToken();
+      if (idToken == null) {
+        throw Exception('Google sign-in cancelled');
+      }
+      return ref.read(authRepositoryProvider).loginWithGoogle(idToken: idToken);
+    });
+  }
+
   Future<void> register(String email, String password, String displayName) async {
     state = const AsyncLoading();
     state = await AsyncValue.guard(() async {
@@ -53,6 +67,7 @@ class AuthNotifier extends AsyncNotifier<AuthResponse?> {
 
   Future<void> logout() async {
     await ref.read(focusSessionProvider.notifier).clearSession();
+    await ref.read(googleAuthServiceProvider).signOut();
     await ref.read(authRepositoryProvider).logout();
     state = const AsyncData(null);
   }

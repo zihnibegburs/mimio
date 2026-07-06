@@ -762,6 +762,20 @@ class S {
   String get passwordMin6 =>
       l10n(lang, _m(en: 'At least 6 characters', tr: 'En az 6 karakter', es: 'Al menos 6 caracteres', fr: 'Au moins 6 caractères', de: 'Mindestens 6 Zeichen'));
   String get login => l10n(lang, _m(en: 'Log in', tr: 'Giriş Yap', es: 'Iniciar sesión', fr: 'Se connecter', de: 'Anmelden'));
+  String get loginWithGoogle => l10n(lang, _m(
+        en: 'Continue with Google',
+        tr: 'Google ile devam et',
+        es: 'Continuar con Google',
+        fr: 'Continuer avec Google',
+        de: 'Mit Google fortfahren',
+      ));
+  String get orContinueWith => l10n(lang, _m(
+        en: 'or',
+        tr: 'veya',
+        es: 'o',
+        fr: 'ou',
+        de: 'oder',
+      ));
   String get noAccountRegister => l10n(lang, _m(
         en: 'Don\'t have an account? Sign up',
         tr: 'Hesabın yok mu? Kayıt ol',

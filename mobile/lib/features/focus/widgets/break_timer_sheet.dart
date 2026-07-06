@@ -2,13 +2,13 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:mimio/core/l10n/app_strings.dart';
+import 'package:mimio/core/widgets/mimio_soft_overlay.dart';
 import 'package:mimio/core/theme/mimio_theme.dart';
 
 Future<void> showBreakTimerSheet(BuildContext context, S s, {required int minutes, VoidCallback? onDone}) {
-  return showModalBottomSheet(
+  return showMimioBottomSheet(
     context: context,
     isScrollControlled: true,
-    backgroundColor: Colors.transparent,
     isDismissible: false,
     builder: (_) => _BreakTimerSheet(minutes: minutes, s: s, onDone: onDone),
   );

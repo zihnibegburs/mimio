@@ -7,6 +7,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mimio/core/l10n/app_strings.dart';
 import 'package:mimio/core/models/models.dart';
 import 'package:mimio/core/theme/mimio_theme.dart';
+import 'package:mimio/core/widgets/mimio_soft_overlay.dart';
 import 'package:mimio/features/providers.dart';
 
 Future<void> showTaskCelebration(
@@ -21,24 +22,16 @@ Future<void> showTaskCelebration(
     context: navigator.context,
     barrierDismissible: true,
     barrierLabel: MaterialLocalizations.of(context).modalBarrierDismissLabel,
-    barrierColor: Colors.black.withValues(alpha: 0.45),
-    transitionDuration: const Duration(milliseconds: 220),
+    barrierColor: MimioOverlay.barrierColor,
+    transitionDuration: MimioOverlay.transitionDuration,
     pageBuilder: (_, __, ___) {
       return _CelebrationDialog(
         event: CelebrationEvent(taskTitle: task.title, reward: task.reward),
         strings: s,
       );
     },
-    transitionBuilder: (context, animation, _, child) {
-      final curved = CurvedAnimation(parent: animation, curve: Curves.easeOutCubic);
-      return FadeTransition(
-        opacity: curved,
-        child: ScaleTransition(
-          scale: Tween<double>(begin: 0.92, end: 1).animate(curved),
-          child: child,
-        ),
-      );
-    },
+    transitionBuilder: (context, animation, _, child) =>
+        MimioOverlay.softTransition(animation, child),
   );
 }
 

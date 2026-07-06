@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mimio/core/l10n/app_strings.dart';
 import 'package:mimio/core/models/recurrence.dart';
+import 'package:mimio/core/widgets/mimio_soft_overlay.dart';
 import 'package:mimio/core/theme/mimio_theme.dart';
 
 class RecurrencePicker extends ConsumerWidget {
@@ -80,7 +81,7 @@ class RecurrencePicker extends ConsumerWidget {
   }
 
   Future<void> _showOptions(BuildContext context, S s) async {
-    final selected = await showModalBottomSheet<RecurrenceType>(
+    final selected = await showMimioBottomSheet<RecurrenceType>(
       context: context,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),

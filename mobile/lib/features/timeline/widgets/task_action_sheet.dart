@@ -5,6 +5,7 @@ import 'package:mimio/core/models/models.dart';
 import 'package:mimio/core/models/recurrence.dart';
 import 'package:mimio/core/theme/mimio_theme.dart';
 import 'package:mimio/features/providers.dart';
+import 'package:mimio/core/widgets/mimio_soft_overlay.dart';
 import 'package:mimio/features/timeline/widgets/delete_task_dialog.dart';
 import 'package:mimio/features/timeline/widgets/edit_task_sheet.dart';
 import 'package:mimio/features/timeline/widgets/subtask_breakdown_sheet.dart';
@@ -29,9 +30,8 @@ void showTaskActionSheet({
   final isSubtask = task.parentTaskId != null;
   final canBreakdown = !isSubtask && !task.hasSubtasks && !task.isCompleted;
 
-  showModalBottomSheet(
+  showMimioBottomSheet(
     context: context,
-    backgroundColor: Colors.transparent,
     builder: (ctx) => Container(
       decoration: BoxDecoration(
         color: context.palette.surface,
@@ -156,10 +156,9 @@ void showTaskActionSheet({
               label: s.edit,
               onTap: () {
                 Navigator.pop(ctx);
-                showModalBottomSheet(
+                showMimioBottomSheet(
                   context: context,
                   isScrollControlled: true,
-                  backgroundColor: Colors.transparent,
                   builder: (_) => EditTaskSheet(
                     task: task,
                     selectedDate: selectedDate,
@@ -175,10 +174,9 @@ void showTaskActionSheet({
                 color: MimioColors.primary,
                 onTap: () {
                   Navigator.pop(ctx);
-                  showModalBottomSheet(
+                  showMimioBottomSheet(
                     context: context,
                     isScrollControlled: true,
-                    backgroundColor: Colors.transparent,
                     builder: (_) => SubtaskBreakdownSheet(
                       task: task,
                       selectedDate: selectedDate,
@@ -192,9 +190,11 @@ void showTaskActionSheet({
               color: Colors.red.shade400,
               destructive: true,
               onTap: () async {
-                Navigator.pop(ctx);
-                final scope = await showDeleteTaskDialog(context: context, s: s, task: task);
-                if (scope != null) await onDelete(scope);
+                final scope = await showDeleteTaskDialog(context: ctx, s: s, task: task);
+                if (scope != null && ctx.mounted) {
+                  Navigator.pop(ctx);
+                  await onDelete(scope);
+                }
               },
             ),
             const SizedBox(height: 8),

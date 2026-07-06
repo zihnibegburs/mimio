@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:mimio/core/theme/mimio_theme.dart';
+import 'package:mimio/core/widgets/mimio_soft_overlay.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mimio/core/l10n/app_strings.dart';
 
 Future<void> showFocusBlockingSheet(BuildContext context, WidgetRef ref) {
-  return showModalBottomSheet(
+  return showMimioBottomSheet(
     context: context,
-    backgroundColor: Colors.transparent,
     builder: (_) => const _FocusBlockingSheet(),
   );
 }

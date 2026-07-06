@@ -4,6 +4,7 @@ import 'package:mimio/core/l10n/app_strings.dart';
 import 'package:mimio/core/models/achievement.dart';
 import 'package:mimio/core/storage/adhd_settings_storage.dart';
 import 'package:mimio/core/theme/mimio_theme.dart';
+import 'package:mimio/core/widgets/mimio_soft_overlay.dart';
 import 'package:mimio/features/achievements/achievements_screen.dart';
 
 class AchievementUnlockListener extends ConsumerStatefulWidget {
@@ -47,20 +48,43 @@ class _AchievementUnlockListenerState extends ConsumerState<AchievementUnlockLis
 
   void _showUnlock(AchievementDefinition def) {
     final s = ref.read(stringsProvider);
-    showDialog(
+    showMimioSoftDialog(
       context: context,
-      builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: Text(s.achievementUnlocked),
-        content: Column(
+      builder: (dialogCtx) => MimioSoftCard(
+        child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(def.icon, size: 48, color: def.color),
+            Icon(def.icon, size: 36, color: def.color),
+            const SizedBox(height: 10),
+            Text(
+              s.achievementUnlocked,
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+                color: dialogCtx.palette.textSecondary,
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              s.achievementTitle(def.id),
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 15,
+                fontWeight: FontWeight.w700,
+                color: dialogCtx.palette.textPrimary,
+              ),
+            ),
             const SizedBox(height: 12),
-            Text(s.achievementTitle(def.id), textAlign: TextAlign.center, style: const TextStyle(fontWeight: FontWeight.w700)),
+            Align(
+              alignment: Alignment.centerRight,
+              child: MimioSoftTextButton(
+                label: s.awesome,
+                onPressed: () => Navigator.pop(dialogCtx),
+              ),
+            ),
           ],
         ),
-        actions: [TextButton(onPressed: () => Navigator.pop(ctx), child: Text(s.awesome))],
       ),
     );
   }

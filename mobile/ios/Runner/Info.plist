@@ -57,6 +57,12 @@
 				<string>mimio</string>
 			</array>
 		</dict>
+		<dict>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>com.googleusercontent.apps.444356161269-gka2bbkma5qf6mji3m5jmo9aa5bhc8bc</string>
+			</array>
+		</dict>
 	</array>
 	<key>NSMicrophoneUsageDescription</key>
 	<string>Görevlerinizi sesle yazabilmeniz için mikrofon erişimi gerekiyor.</string>

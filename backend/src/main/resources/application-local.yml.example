@@ -1,3 +1,5 @@
 mimio:
   groq:
     api-key: your-groq-api-key-here
+  google:
+    client-id: your-web-client-id.apps.googleusercontent.com

@@ -16,6 +16,7 @@ dependencies:
   shared_preferences: ^2.5.3
   intl: ^0.20.2
   google_fonts: ^6.2.1
+  google_sign_in: ^6.2.2
   confetti: ^0.8.0
   home_widget: ^0.7.0
   live_activities: ^2.3.0

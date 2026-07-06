@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 import 'package:mimio/core/l10n/app_strings.dart';
 import 'package:mimio/core/models/models.dart';
 import 'package:mimio/core/theme/mimio_theme.dart';
+import 'package:mimio/core/widgets/mimio_soft_overlay.dart';
 import 'package:mimio/features/achievements/achievement_unlock_listener.dart';
 import 'package:mimio/features/inbox/inbox_section.dart';
 import 'package:mimio/features/onboarding/onboarding_screen.dart';
@@ -170,10 +171,9 @@ class HomeScreen extends ConsumerWidget {
   }
 
   void _showAddTask(BuildContext context, WidgetRef ref, DateTime date) {
-    showModalBottomSheet(
+    showMimioBottomSheet(
       context: context,
       isScrollControlled: true,
-      backgroundColor: Colors.transparent,
       builder: (_) => AddTaskSheet(selectedDate: date),
     );
   }
@@ -440,10 +440,9 @@ class _TodayTabState extends ConsumerState<_TodayTab> {
   }
 
   void _showAddTask(BuildContext context, WidgetRef ref, DateTime date) {
-    showModalBottomSheet(
+    showMimioBottomSheet(
       context: context,
       isScrollControlled: true,
-      backgroundColor: Colors.transparent,
       builder: (_) => AddTaskSheet(selectedDate: date),
     );
   }

@@ -2,13 +2,13 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:mimio/core/l10n/app_strings.dart';
+import 'package:mimio/core/widgets/mimio_soft_overlay.dart';
 import 'package:mimio/core/theme/mimio_theme.dart';
 
 Future<void> showRewardTimerSheet(BuildContext context, S s, {required String reward, required int minutes}) {
-  return showModalBottomSheet(
+  return showMimioBottomSheet(
     context: context,
     isScrollControlled: true,
-    backgroundColor: Colors.transparent,
     builder: (_) => _RewardTimerSheet(reward: reward, minutes: minutes, s: s),
   );
 }

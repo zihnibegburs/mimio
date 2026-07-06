@@ -1,6 +1,7 @@
 package com.mimio.controller;
 
 import com.mimio.dto.auth.AuthResponse;
+import com.mimio.dto.auth.GoogleLoginRequest;
 import com.mimio.dto.auth.LoginRequest;
 import com.mimio.dto.auth.RegisterRequest;
 import com.mimio.dto.auth.UpdateProfileRequest;
@@ -28,6 +29,11 @@ public class AuthController {
     @PostMapping("/login")
     public AuthResponse login(@Valid @RequestBody LoginRequest request) {
         return authService.login(request);
+    }
+
+    @PostMapping("/google")
+    public AuthResponse loginWithGoogle(@Valid @RequestBody GoogleLoginRequest request) {
+        return authService.loginWithGoogle(request);
     }
 
     @GetMapping("/me")

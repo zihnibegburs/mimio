@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:mimio/core/l10n/app_strings.dart';
 import 'package:mimio/core/models/models.dart';
 import 'package:mimio/core/models/recurrence.dart';
+import 'package:mimio/core/theme/mimio_theme.dart';
+import 'package:mimio/core/widgets/mimio_soft_overlay.dart';
 
 Future<DeleteRecurrenceScope?> showDeleteTaskDialog({
   required BuildContext context,
@@ -9,39 +11,77 @@ Future<DeleteRecurrenceScope?> showDeleteTaskDialog({
   required TaskModel task,
 }) {
   if (!task.isRecurring) {
-    return showDialog<DeleteRecurrenceScope>(
+    return showMimioSoftDialog<DeleteRecurrenceScope>(
       context: context,
-      builder: (dialogCtx) => AlertDialog(
-        title: Text(s.deleteTask),
-        content: Text(s.deleteTaskConfirm(task.title)),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(dialogCtx),
-            child: Text(s.cancel),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(dialogCtx, DeleteRecurrenceScope.thisOccurrence),
-            style: TextButton.styleFrom(foregroundColor: Colors.red),
-            child: Text(s.delete),
-          ),
-        ],
+      builder: (dialogCtx) => MimioSoftCard(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text(
+              s.deleteTask,
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+                color: dialogCtx.palette.textSecondary,
+              ),
+            ),
+            const SizedBox(height: 6),
+            Text(
+              s.deleteTaskConfirm(task.title),
+              style: TextStyle(
+                fontSize: 13,
+                height: 1.35,
+                color: dialogCtx.palette.textPrimary,
+              ),
+            ),
+            const SizedBox(height: 14),
+            MimioSoftDialogActions(
+              actions: [
+                MimioSoftTextButton(
+                  label: s.cancel,
+                  onPressed: () => Navigator.pop(dialogCtx),
+                ),
+                MimioSoftTextButton(
+                  label: s.delete,
+                  destructive: true,
+                  onPressed: () =>
+                      Navigator.pop(dialogCtx, DeleteRecurrenceScope.thisOccurrence),
+                ),
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }
 
-  return showDialog<DeleteRecurrenceScope>(
+  return showMimioSoftDialog<DeleteRecurrenceScope>(
     context: context,
-    builder: (dialogCtx) => AlertDialog(
-      title: Text(s.deleteRecurringTask),
-      content: Column(
+    maxWidth: 320,
+    builder: (dialogCtx) => MimioSoftCard(
+      child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Text(
-            s.deleteRecurringTaskPrompt(task.title),
-            style: const TextStyle(fontSize: 15),
+            s.deleteRecurringTask,
+            style: TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w600,
+              color: dialogCtx.palette.textSecondary,
+            ),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 6),
+          Text(
+            s.deleteRecurringTaskPrompt(task.title),
+            style: TextStyle(
+              fontSize: 13,
+              height: 1.35,
+              color: dialogCtx.palette.textPrimary,
+            ),
+          ),
+          const SizedBox(height: 10),
           _ScopeOption(
             label: s.deleteRecurringThis,
             onTap: () => Navigator.pop(dialogCtx, DeleteRecurrenceScope.thisOccurrence),
@@ -55,14 +95,16 @@ Future<DeleteRecurrenceScope?> showDeleteTaskDialog({
             destructive: true,
             onTap: () => Navigator.pop(dialogCtx, DeleteRecurrenceScope.all),
           ),
+          const SizedBox(height: 6),
+          Align(
+            alignment: Alignment.centerRight,
+            child: MimioSoftTextButton(
+              label: s.cancel,
+              onPressed: () => Navigator.pop(dialogCtx),
+            ),
+          ),
         ],
       ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(dialogCtx),
-          child: Text(s.cancel),
-        ),
-      ],
     ),
   );
 }
@@ -80,15 +122,24 @@ class _ScopeOption extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 4),
-      child: TextButton(
-        onPressed: onTap,
-        style: TextButton.styleFrom(
-          alignment: Alignment.centerLeft,
-          foregroundColor: destructive ? Colors.red.shade400 : null,
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(10),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
+          child: Text(
+            label,
+            style: TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w500,
+              color: destructive
+                  ? MimioColors.accent.withValues(alpha: 0.9)
+                  : context.palette.textPrimary,
+            ),
+          ),
         ),
-        child: Text(label),
       ),
     );
   }

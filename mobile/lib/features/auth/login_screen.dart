@@ -37,6 +37,13 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     }
   }
 
+  Future<void> _loginWithGoogle() async {
+    await ref.read(authStateProvider.notifier).loginWithGoogle();
+    if (mounted && ref.read(authStateProvider).hasValue && ref.read(authStateProvider).value != null) {
+      context.go('/home');
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final authState = ref.watch(authStateProvider);
@@ -119,6 +126,31 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                             child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
                           )
                         : Text(s.login),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                Row(
+                  children: [
+                    Expanded(child: Divider(color: context.palette.textSecondary.withValues(alpha: 0.3))),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      child: Text(
+                        s.orContinueWith,
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                              color: context.palette.textSecondary,
+                            ),
+                      ),
+                    ),
+                    Expanded(child: Divider(color: context.palette.textSecondary.withValues(alpha: 0.3))),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                SizedBox(
+                  width: double.infinity,
+                  child: OutlinedButton.icon(
+                    onPressed: authState.isLoading ? null : _loginWithGoogle,
+                    icon: const Icon(Icons.g_mobiledata, size: 28),
+                    label: Text(s.loginWithGoogle),
                   ),
                 ),
                 const SizedBox(height: 16),

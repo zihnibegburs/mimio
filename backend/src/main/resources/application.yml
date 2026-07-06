@@ -39,6 +39,8 @@ mimio:
   jwt:
     secret: mimio-dev-secret-key-change-in-production-min-256-bits-long!!
     expiration-ms: 86400000
+  google:
+    client-id: ${GOOGLE_CLIENT_ID:444356161269-9ukhho3o8jbtum1ht8ea9v6nungmoau3.apps.googleusercontent.com}
   groq:
     api-key: ${GROQ_API_KEY:}
     base-url: https://api.groq.com/openai/v1

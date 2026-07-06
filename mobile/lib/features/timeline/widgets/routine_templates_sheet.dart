@@ -5,12 +5,12 @@ import 'package:mimio/core/l10n/app_strings.dart';
 import 'package:mimio/core/models/adhd_models.dart';
 import 'package:mimio/core/theme/mimio_theme.dart';
 import 'package:mimio/core/utils/task_icons.dart';
+import 'package:mimio/core/widgets/mimio_soft_overlay.dart';
 import 'package:mimio/features/providers.dart';
 
 Future<void> showRoutineTemplatesSheet(BuildContext context, WidgetRef ref, DateTime date) {
-  return showModalBottomSheet(
+  return showMimioBottomSheet(
     context: context,
-    backgroundColor: Colors.transparent,
     builder: (_) => _RoutineTemplatesSheet(selectedDate: date),
   );
 }

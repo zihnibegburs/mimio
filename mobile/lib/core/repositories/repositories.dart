@@ -40,6 +40,15 @@ class AuthRepository {
     return auth;
   }
 
+  Future<AuthResponse> loginWithGoogle({required String idToken}) async {
+    final response = await _dio.post('/auth/google', data: {
+      'idToken': idToken,
+    });
+    final auth = AuthResponse.fromJson(response.data as Map<String, dynamic>);
+    await _storage.saveToken(auth.token);
+    return auth;
+  }
+
   Future<AuthResponse?> getMe() async {
     final token = await _storage.getToken();
     if (token == null) return null;

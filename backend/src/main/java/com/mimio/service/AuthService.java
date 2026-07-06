@@ -1,8 +1,11 @@
 package com.mimio.service;
 
+import com.google.api.client.googleapis.auth.oauth2.GoogleIdToken;
 import com.mimio.domain.entity.User;
+import com.mimio.domain.enums.AuthProvider;
 import com.mimio.domain.repository.UserRepository;
 import com.mimio.dto.auth.AuthResponse;
+import com.mimio.dto.auth.GoogleLoginRequest;
 import com.mimio.dto.auth.LoginRequest;
 import com.mimio.dto.auth.RegisterRequest;
 import com.mimio.dto.auth.UpdateProfileRequest;
@@ -20,6 +23,7 @@ public class AuthService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
+    private final GoogleTokenService googleTokenService;
 
     @Transactional
     public AuthResponse register(RegisterRequest request) {
@@ -41,11 +45,68 @@ public class AuthService {
         User user = userRepository.findByEmail(request.email().toLowerCase().trim())
                 .orElseThrow(() -> new BadRequestException("Invalid email or password"));
 
+        if (user.getPasswordHash() == null) {
+            throw new BadRequestException("This account uses Google sign-in");
+        }
+
         if (!passwordEncoder.matches(request.password(), user.getPasswordHash())) {
             throw new BadRequestException("Invalid email or password");
         }
 
         return buildAuthResponse(user);
+    }
+
+    @Transactional
+    public AuthResponse loginWithGoogle(GoogleLoginRequest request) {
+        GoogleIdToken.Payload payload = googleTokenService.verify(request.idToken());
+
+        String googleId = payload.getSubject();
+        String email = payload.getEmail().toLowerCase().trim();
+        String displayName = resolveDisplayName(payload, email);
+
+        return userRepository.findByGoogleId(googleId)
+                .map(this::buildAuthResponse)
+                .orElseGet(() -> linkOrCreateGoogleUser(googleId, email, displayName));
+    }
+
+    private AuthResponse linkOrCreateGoogleUser(String googleId, String email, String displayName) {
+        return userRepository.findByEmail(email)
+                .map(user -> linkGoogleAccount(user, googleId))
+                .orElseGet(() -> createGoogleUser(googleId, email, displayName));
+    }
+
+    private AuthResponse linkGoogleAccount(User user, String googleId) {
+        if (user.getGoogleId() != null && !user.getGoogleId().equals(googleId)) {
+            throw new BadRequestException("Email linked to another Google account");
+        }
+
+        if (user.getGoogleId() == null) {
+            user.setGoogleId(googleId);
+            userRepository.save(user);
+        }
+
+        return buildAuthResponse(user);
+    }
+
+    private AuthResponse createGoogleUser(String googleId, String email, String displayName) {
+        User user = User.builder()
+                .email(email)
+                .googleId(googleId)
+                .displayName(displayName)
+                .authProvider(AuthProvider.GOOGLE)
+                .build();
+
+        userRepository.save(user);
+        return buildAuthResponse(user);
+    }
+
+    private String resolveDisplayName(GoogleIdToken.Payload payload, String email) {
+        Object name = payload.get("name");
+        if (name instanceof String value && !value.isBlank()) {
+            return value.trim();
+        }
+        int atIndex = email.indexOf('@');
+        return atIndex > 0 ? email.substring(0, atIndex) : email;
     }
 
     public AuthResponse getMe(User user) {

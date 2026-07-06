@@ -175,7 +175,17 @@ class MimioTheme {
       ),
       dialogTheme: DialogThemeData(
         backgroundColor: palette.surface,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        insetPadding: const EdgeInsets.symmetric(horizontal: 40, vertical: 24),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+        titleTextStyle: GoogleFonts.nunito(
+          fontSize: 15,
+          fontWeight: FontWeight.w600,
+          color: palette.textSecondary,
+        ),
+        contentTextStyle: GoogleFonts.nunito(
+          fontSize: 13,
+          color: palette.textPrimary,
+        ),
       ),
       floatingActionButtonTheme: FloatingActionButtonThemeData(
         backgroundColor: primary,

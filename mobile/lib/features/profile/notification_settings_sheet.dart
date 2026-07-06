@@ -3,13 +3,13 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mimio/core/l10n/app_strings.dart';
 import 'package:mimio/core/models/adhd_models.dart';
 import 'package:mimio/core/storage/adhd_settings_storage.dart';
+import 'package:mimio/core/widgets/mimio_soft_overlay.dart';
 import 'package:mimio/core/theme/mimio_theme.dart';
 
 Future<void> showNotificationSettingsSheet(BuildContext context, WidgetRef ref) {
-  return showModalBottomSheet(
+  return showMimioBottomSheet(
     context: context,
     isScrollControlled: true,
-    backgroundColor: Colors.transparent,
     builder: (_) => const _NotificationSettingsSheet(),
   );
 }
