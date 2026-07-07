@@ -1,9 +1,33 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:mimio/core/l10n/app_strings.dart';
 import 'package:mimio/core/models/models.dart';
 import 'package:mimio/features/providers.dart';
+import 'package:mimio/features/timeline/home_tab.dart';
 import 'package:mimio/features/timeline/task_completion_helper.dart';
+
+Future<void> startTaskAndOpenFocus(
+  BuildContext context,
+  WidgetRef ref,
+  String taskId,
+) async {
+  final s = ref.read(stringsProvider);
+  try {
+    await ref.read(timelineProvider.notifier).startTask(taskId);
+    ref.read(homeTabProvider.notifier).state = HomeTab.focus;
+    if (context.mounted) context.push('/focus');
+  } catch (e) {
+    if (context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(s.friendlyTaskActionError(e)),
+          backgroundColor: Colors.red.shade400,
+        ),
+      );
+    }
+  }
+}
 
 Future<void> toggleFocusPause(
   BuildContext context,

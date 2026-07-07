@@ -518,6 +518,8 @@ class _SwipeToDelete extends StatefulWidget {
 
 class _SwipeToDeleteState extends State<_SwipeToDelete> with SingleTickerProviderStateMixin {
   static const _actionWidth = 76.0;
+  static const _dragResistance = 1.8;
+  static const _openThreshold = 0.55;
 
   late final AnimationController _controller;
   late final Animation<double> _offset;
@@ -587,13 +589,15 @@ class _SwipeToDeleteState extends State<_SwipeToDelete> with SingleTickerProvide
           ),
           GestureDetector(
             onHorizontalDragUpdate: (details) {
-              _controller.value = (_controller.value - details.delta.dx / _actionWidth).clamp(0.0, 1.0);
+              _controller.value = (_controller.value -
+                      details.delta.dx / (_actionWidth * _dragResistance))
+                  .clamp(0.0, 1.0);
             },
             onHorizontalDragEnd: (details) {
               final velocity = details.primaryVelocity ?? 0;
-              if (velocity > 400) {
+              if (velocity > 500) {
                 _close();
-              } else if (_controller.value > 0.35 || velocity < -400) {
+              } else if (_controller.value > _openThreshold || velocity < -650) {
                 _open();
               } else {
                 _close();
@@ -601,10 +605,19 @@ class _SwipeToDeleteState extends State<_SwipeToDelete> with SingleTickerProvide
             },
             child: AnimatedBuilder(
               animation: _offset,
-              builder: (context, child) => Transform.translate(
-                offset: Offset(_offset.value, 0),
-                child: child,
-              ),
+              builder: (context, child) {
+                final opaque = LiquidGlassTokens.tint(context, opacity: 1.0);
+                return Transform.translate(
+                  offset: Offset(_offset.value, 0),
+                  child: DecoratedBox(
+                    decoration: BoxDecoration(
+                      color: opaque,
+                      borderRadius: BorderRadius.circular(22),
+                    ),
+                    child: child,
+                  ),
+                );
+              },
               child: widget.child,
             ),
           ),

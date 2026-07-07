@@ -8,7 +8,6 @@ import 'package:mimio/features/focus/widgets/focus_timer_widget.dart';
 import 'package:mimio/features/focus/widgets/body_doubling_panel.dart';
 import 'package:mimio/features/focus/widgets/start_focus_sheet.dart';
 import 'package:mimio/features/providers.dart';
-import 'package:mimio/features/timeline/home_tab.dart';
 
 class FocusTabView extends ConsumerWidget {
   const FocusTabView({super.key});
@@ -127,22 +126,7 @@ class _NoActiveFocus extends ConsumerWidget {
                   ),
                   title: Text(task.title, style: const TextStyle(fontWeight: FontWeight.w600)),
                   trailing: const Icon(Icons.chevron_right_rounded),
-                  onTap: () async {
-                    final s = ref.read(stringsProvider);
-                    try {
-                      await ref.read(timelineProvider.notifier).startTask(task.id);
-                      ref.read(homeTabProvider.notifier).state = HomeTab.focus;
-                    } catch (e) {
-                      if (context.mounted) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text(s.friendlyTaskActionError(e)),
-                            backgroundColor: Colors.red.shade400,
-                          ),
-                        );
-                      }
-                    }
-                  },
+                  onTap: () => startTaskAndOpenFocus(context, ref, task.id),
                 );
               }),
             ],

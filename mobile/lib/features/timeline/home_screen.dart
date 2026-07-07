@@ -18,6 +18,7 @@ import 'package:mimio/core/storage/adhd_settings_storage.dart';
 import 'package:mimio/core/storage/settings_storage.dart';
 import 'package:mimio/core/utils/schedule_utils.dart';
 import 'package:mimio/features/achievements/achievements_screen.dart';
+import 'package:mimio/features/focus/focus_session_actions.dart';
 import 'package:mimio/features/focus/focus_tab_view.dart';
 import 'package:mimio/features/focus/widgets/celebration_dialog.dart';
 import 'package:mimio/features/focus/widgets/active_task_banner.dart';
@@ -380,21 +381,7 @@ class _TodayTabState extends ConsumerState<_TodayTab> {
   }
 
   Future<void> _startTask(BuildContext context, WidgetRef ref, String id) async {
-    final s = ref.read(stringsProvider);
-    try {
-      await ref.read(timelineProvider.notifier).startTask(id);
-      ref.read(homeTabProvider.notifier).state = HomeTab.focus;
-      if (context.mounted) context.push('/focus');
-    } catch (e) {
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(s.friendlyTaskActionError(e)),
-            backgroundColor: Colors.red.shade400,
-          ),
-        );
-      }
-    }
+    await startTaskAndOpenFocus(context, ref, id);
   }
 
   Future<void> _togglePause(WidgetRef ref, String id) async {

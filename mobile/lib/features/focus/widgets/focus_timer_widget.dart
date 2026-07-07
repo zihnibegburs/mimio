@@ -31,7 +31,9 @@ class _FocusTimerWidgetState extends ConsumerState<FocusTimerWidget> {
   bool _dragging = false;
   double? _dragProgress;
 
-  double get _strokeWidth => widget.size * 0.06;
+  double get _strokeWidth => widget.size * 0.095;
+  double get _knobSize => widget.size * 0.16;
+  double get _knobHitRadius => _knobSize * 0.72;
 
   double _progressFromOffset(Offset local) {
     final center = Offset(widget.size / 2, widget.size / 2);
@@ -46,13 +48,13 @@ class _FocusTimerWidgetState extends ConsumerState<FocusTimerWidget> {
     final center = Offset(widget.size / 2, widget.size / 2);
     final dist = (local - center).distance;
     final radius = (widget.size - _strokeWidth) / 2;
-    final onRing = (dist - radius).abs() <= _strokeWidth * 2.2;
+    final onRing = (dist - radius).abs() <= _strokeWidth * 1.8;
 
     final knobAngle = -pi / 2 + 2 * pi * progress;
     final knobCenter = center + Offset(radius * cos(knobAngle), radius * sin(knobAngle));
-    final onKnob = (local - knobCenter).distance <= 22;
+    final onKnob = (local - knobCenter).distance <= _knobHitRadius;
 
-    final innerDeadZone = widget.size * 0.22;
+    final innerDeadZone = widget.size * 0.24;
     return (onRing || onKnob) && dist >= innerDeadZone;
   }
 
@@ -98,6 +100,7 @@ class _FocusTimerWidgetState extends ConsumerState<FocusTimerWidget> {
     final radius = (widget.size - _strokeWidth) / 2;
     final knobX = widget.size / 2 + radius * cos(knobAngle);
     final knobY = widget.size / 2 + radius * sin(knobAngle);
+    final knobSize = _knobSize;
 
     return SizedBox(
       width: widget.size,
@@ -135,23 +138,57 @@ class _FocusTimerWidgetState extends ConsumerState<FocusTimerWidget> {
             ),
             if (widget.interactive)
               Positioned(
-                left: knobX - 14,
-                top: knobY - 14,
-                child: AnimatedContainer(
-                  duration: const Duration(milliseconds: 120),
-                  width: 28,
-                  height: 28,
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    shape: BoxShape.circle,
-                    border: Border.all(color: color, width: 3),
-                    boxShadow: [
-                      BoxShadow(
-                        color: color.withValues(alpha: _dragging ? 0.45 : 0.25),
-                        blurRadius: _dragging ? 12 : 6,
-                        offset: const Offset(0, 2),
+                left: knobX - knobSize / 2,
+                top: knobY - knobSize / 2,
+                child: AnimatedScale(
+                  scale: _dragging ? 1.12 : 1.0,
+                  duration: const Duration(milliseconds: 160),
+                  curve: Curves.easeOutBack,
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 160),
+                    width: knobSize,
+                    height: knobSize,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      gradient: RadialGradient(
+                        center: const Alignment(-0.35, -0.4),
+                        radius: 0.95,
+                        colors: [
+                          Colors.white,
+                          color.withValues(alpha: 0.12),
+                          color.withValues(alpha: 0.28),
+                        ],
+                        stops: const [0.0, 0.55, 1.0],
                       ),
-                    ],
+                      border: Border.all(
+                        color: color.withValues(alpha: 0.9),
+                        width: knobSize * 0.14,
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: color.withValues(alpha: _dragging ? 0.5 : 0.32),
+                          blurRadius: _dragging ? 18 : 10,
+                          spreadRadius: _dragging ? 2 : 0,
+                          offset: const Offset(0, 4),
+                        ),
+                        BoxShadow(
+                          color: Colors.white.withValues(alpha: 0.9),
+                          blurRadius: 0,
+                          spreadRadius: -knobSize * 0.08,
+                          offset: Offset.zero,
+                        ),
+                      ],
+                    ),
+                    child: Center(
+                      child: Container(
+                        width: knobSize * 0.22,
+                        height: knobSize * 0.22,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: Colors.white.withValues(alpha: _dragging ? 0.95 : 0.75),
+                        ),
+                      ),
+                    ),
                   ),
                 ),
               ),
@@ -223,6 +260,14 @@ class _TimerRingPainter extends CustomPainter {
     final center = Offset(size.width / 2, size.height / 2);
     final radius = (size.width - strokeWidth) / 2;
     final rect = Rect.fromCircle(center: center, radius: radius);
+    final clampedProgress = progress.clamp(0, 1);
+
+    final outerGlowPaint = Paint()
+      ..color = trackColor.withValues(alpha: 0.35)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = strokeWidth + 6
+      ..strokeCap = StrokeCap.round
+      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 4);
 
     final trackPaint = Paint()
       ..color = trackColor
@@ -230,17 +275,67 @@ class _TimerRingPainter extends CustomPainter {
       ..strokeWidth = strokeWidth
       ..strokeCap = StrokeCap.round;
 
+    final innerTrackPaint = Paint()
+      ..color = Colors.white.withValues(alpha: 0.55)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = strokeWidth * 0.35
+      ..strokeCap = StrokeCap.round;
+
+    final progressGlowPaint = Paint()
+      ..shader = SweepGradient(
+        startAngle: -pi / 2,
+        endAngle: 3 * pi / 2,
+        colors: [
+          color.withValues(alpha: 0.15),
+          color.withValues(alpha: 0.45),
+          color.withValues(alpha: 0.15),
+        ],
+        stops: const [0.0, 0.5, 1.0],
+        transform: GradientRotation(-pi / 2),
+      ).createShader(rect)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = strokeWidth + 8
+      ..strokeCap = StrokeCap.round
+      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 6);
+
     final progressPaint = Paint()
-      ..color = color
+      ..shader = SweepGradient(
+        startAngle: -pi / 2,
+        endAngle: 3 * pi / 2,
+        colors: [
+          color.withValues(alpha: 0.75),
+          color,
+          color.withValues(alpha: 0.88),
+        ],
+        stops: const [0.0, 0.55, 1.0],
+        transform: GradientRotation(-pi / 2),
+      ).createShader(rect)
       ..style = PaintingStyle.stroke
       ..strokeWidth = strokeWidth
       ..strokeCap = StrokeCap.round;
 
+    final progressHighlightPaint = Paint()
+      ..color = Colors.white.withValues(alpha: 0.42)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = strokeWidth * 0.28
+      ..strokeCap = StrokeCap.round;
+
+    canvas.drawArc(rect, 0, 2 * pi, false, outerGlowPaint);
     canvas.drawArc(rect, 0, 2 * pi, false, trackPaint);
-    canvas.drawArc(rect, -pi / 2, 2 * pi * progress.clamp(0, 1), false, progressPaint);
+    canvas.drawArc(rect, 0, 2 * pi, false, innerTrackPaint);
+
+    if (clampedProgress > 0) {
+      final sweep = 2 * pi * clampedProgress;
+      canvas.drawArc(rect, -pi / 2, sweep, false, progressGlowPaint);
+      canvas.drawArc(rect, -pi / 2, sweep, false, progressPaint);
+      canvas.drawArc(rect, -pi / 2, sweep, false, progressHighlightPaint);
+    }
   }
 
   @override
   bool shouldRepaint(covariant _TimerRingPainter oldDelegate) =>
-      oldDelegate.progress != progress || oldDelegate.color != color;
+      oldDelegate.progress != progress ||
+      oldDelegate.color != color ||
+      oldDelegate.trackColor != trackColor ||
+      oldDelegate.strokeWidth != strokeWidth;
 }

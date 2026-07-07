@@ -10,7 +10,7 @@ class LiveActivityService {
   static final LiveActivityService instance = LiveActivityService._();
 
   final LiveActivities _plugin = LiveActivities();
-  String? _activityId;
+  String? _activeTaskId;
   bool _initialized = false;
 
   Future<void> initialize() async {
@@ -19,7 +19,7 @@ class LiveActivityService {
       await _plugin.init(
         appGroupId: PlatformConfig.appGroupId,
         urlScheme: 'mimio',
-        requestAndroidNotificationPermission: false,
+        requestAndroidNotificationPermission: true,
       );
       _initialized = true;
     } on PlatformException catch (e) {
@@ -56,20 +56,17 @@ class LiveActivityService {
       final enabled = await _plugin.areActivitiesEnabled();
       if (!enabled) return;
 
-      if (_activityId != null && _activityId != data.taskId) {
+      if (_activeTaskId != null && _activeTaskId != data.taskId) {
         await endActivity();
       }
 
-      if (_activityId == null) {
-        _activityId = await _plugin.createActivity(
-          data.taskId,
-          payload,
-          activityTag: 'mimio_focus',
-          removeWhenAppIsKilled: false,
-        );
-      } else {
-        await _plugin.updateActivity(_activityId!, payload, activityTag: 'mimio_focus');
-      }
+      await _plugin.createOrUpdateActivity(
+        data.taskId,
+        payload,
+        activityTag: 'mimio_focus',
+        removeWhenAppIsKilled: false,
+      );
+      _activeTaskId = data.taskId;
     } on PlatformException catch (e) {
       debugPrint('Live Activity sync skipped: ${e.message}');
     } catch (e) {
@@ -78,15 +75,15 @@ class LiveActivityService {
   }
 
   Future<void> endActivity() async {
-    if (!_initialized || _activityId == null) return;
+    if (!_initialized || _activeTaskId == null) return;
     try {
-      await _plugin.endActivity(_activityId!, activityTag: 'mimio_focus');
+      await _plugin.endActivity(_activeTaskId!, activityTag: 'mimio_focus');
     } on PlatformException catch (e) {
       debugPrint('Live Activity end skipped: ${e.message}');
     } catch (e) {
       debugPrint('Live Activity end: $e');
     } finally {
-      _activityId = null;
+      _activeTaskId = null;
     }
   }
 
