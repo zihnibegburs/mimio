@@ -169,6 +169,7 @@ class _CalendarImportScreenState extends ConsumerState<CalendarImportScreen> {
     final locale = dateLocaleFor(lang);
 
     return Scaffold(
+      backgroundColor: context.palette.background,
       appBar: AppBar(
         title: Text(s.calendarImportTitle),
         leading: IconButton(

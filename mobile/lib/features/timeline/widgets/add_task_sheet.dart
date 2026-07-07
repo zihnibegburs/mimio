@@ -4,6 +4,7 @@ import 'package:mimio/core/l10n/app_strings.dart';
 import 'package:mimio/core/models/recurrence.dart';
 import 'package:mimio/core/theme/mimio_theme.dart';
 import 'package:mimio/core/widgets/liquid_glass.dart';
+import 'package:mimio/core/widgets/mimio_soft_overlay.dart';
 import 'package:mimio/core/widgets/speech_text_field.dart';
 import 'package:mimio/features/timeline/widgets/add_task_detail_screen.dart';
 import 'package:mimio/features/timeline/widgets/task_draft.dart';
@@ -61,13 +62,11 @@ class _AddTaskSheetState extends ConsumerState<AddTaskSheet> {
   }
 
   Future<void> _openDetails() async {
-    final created = await Navigator.push<bool>(
-      context,
-      MaterialPageRoute(
-        builder: (_) => AddTaskDetailScreen(
-          selectedDate: widget.selectedDate,
-          initialDraft: _draft,
-        ),
+    final created = await pushMimioOverlayRoute<bool>(
+      context: context,
+      builder: (_) => AddTaskDetailScreen(
+        selectedDate: widget.selectedDate,
+        initialDraft: _draft,
       ),
     );
     if (created == true && mounted) Navigator.pop(context);

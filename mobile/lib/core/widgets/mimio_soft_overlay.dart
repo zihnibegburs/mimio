@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:mimio/core/theme/mimio_theme.dart';
 import 'package:mimio/core/widgets/liquid_glass.dart';
 
@@ -7,6 +8,8 @@ abstract final class MimioOverlay {
   static final barrierColor = Colors.black.withValues(alpha: 0.18);
 
   static const transitionDuration = Duration(milliseconds: 200);
+  static const slideTransitionDuration = Duration(milliseconds: 350);
+  static const slideReverseTransitionDuration = Duration(milliseconds: 300);
 
   static Widget softTransition(Animation<double> animation, Widget child) {
     final curved = CurvedAnimation(parent: animation, curve: Curves.easeOutCubic);
@@ -18,6 +21,37 @@ abstract final class MimioOverlay {
       ),
     );
   }
+
+  static Widget slideUpTransition(Animation<double> animation, Widget child) {
+    final curved = CurvedAnimation(
+      parent: animation,
+      curve: Curves.easeOutCubic,
+      reverseCurve: Curves.easeInCubic,
+    );
+    return SlideTransition(
+      position: Tween<Offset>(
+        begin: const Offset(0, 1),
+        end: Offset.zero,
+      ).animate(curved),
+      child: child,
+    );
+  }
+}
+
+/// GoRouter page that slides up over the current route without hiding what's underneath.
+Page<T> mimioOverlayGoRoutePage<T>({
+  required GoRouterState state,
+  required Widget child,
+}) {
+  return CustomTransitionPage<T>(
+    key: state.pageKey,
+    opaque: false,
+    child: child,
+    transitionDuration: MimioOverlay.slideTransitionDuration,
+    reverseTransitionDuration: MimioOverlay.slideReverseTransitionDuration,
+    transitionsBuilder: (context, animation, secondaryAnimation, child) =>
+        MimioOverlay.slideUpTransition(animation, child),
+  );
 }
 
 Future<T?> showMimioSoftDialog<T>({
@@ -44,6 +78,26 @@ Future<T?> showMimioSoftDialog<T>({
     ),
     transitionBuilder: (_, animation, _, child) =>
         MimioOverlay.softTransition(animation, child),
+  );
+}
+
+/// Slides a page up over the current route without hiding what's underneath.
+Future<T?> pushMimioOverlayRoute<T>({
+  required BuildContext context,
+  required WidgetBuilder builder,
+  Duration transitionDuration = MimioOverlay.slideTransitionDuration,
+}) {
+  return Navigator.of(context).push<T>(
+    PageRouteBuilder<T>(
+      opaque: false,
+      barrierColor: Colors.transparent,
+      maintainState: true,
+      transitionDuration: transitionDuration,
+      reverseTransitionDuration: MimioOverlay.slideReverseTransitionDuration,
+      pageBuilder: (context, animation, secondaryAnimation) => builder(context),
+      transitionsBuilder: (context, animation, secondaryAnimation, child) =>
+          MimioOverlay.slideUpTransition(animation, child),
+    ),
   );
 }
 

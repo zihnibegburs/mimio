@@ -79,6 +79,7 @@ class _BrainDumpScreenState extends ConsumerState<BrainDumpScreen> {
     final s = ref.watch(stringsProvider);
 
     return Scaffold(
+      backgroundColor: context.palette.background,
       appBar: AppBar(
         title: Text(s.brainDump),
         leading: IconButton(icon: const Icon(Icons.arrow_back_rounded), onPressed: () => context.pop()),

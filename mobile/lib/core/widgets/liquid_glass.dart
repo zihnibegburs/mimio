@@ -72,49 +72,88 @@ class LiquidGlass extends StatelessWidget {
   final List<BoxShadow>? boxShadow;
   final Clip clipBehavior;
 
+  BorderRadius _innerBorderRadius(double inset) {
+    if (inset <= 0) return borderRadius;
+    return BorderRadius.only(
+      topLeft: Radius.circular((borderRadius.topLeft.x - inset).clamp(0.0, double.infinity)),
+      topRight: Radius.circular((borderRadius.topRight.x - inset).clamp(0.0, double.infinity)),
+      bottomLeft: Radius.circular((borderRadius.bottomLeft.x - inset).clamp(0.0, double.infinity)),
+      bottomRight: Radius.circular((borderRadius.bottomRight.x - inset).clamp(0.0, double.infinity)),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final highlight = LiquidGlassTokens.highlight(context);
     final edge = LiquidGlassTokens.edgeShadow(context);
     final tint = tintColor ?? LiquidGlassTokens.tint(context, opacity: tintOpacity);
     final shadows = boxShadow ?? LiquidGlassTokens.elevation(context);
+    final innerRadius = _innerBorderRadius(borderWidth);
 
     Widget surface = DecoratedBox(
       decoration: BoxDecoration(
         borderRadius: borderRadius,
         boxShadow: shadows,
-        border: Border(
-          top: BorderSide(color: highlight, width: borderWidth),
-          left: BorderSide(color: highlight.withValues(alpha: 0.45), width: borderWidth * 0.5),
-          right: BorderSide(color: highlight.withValues(alpha: 0.45), width: borderWidth * 0.5),
-          bottom: BorderSide(color: edge, width: borderWidth * 0.5),
-        ),
+        // Gradient padding trick — per-side Border() ignores borderRadius and leaves square corners.
+        gradient: borderWidth > 0
+            ? LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [
+                  highlight,
+                  highlight.withValues(alpha: 0.42),
+                  edge,
+                ],
+                stops: const [0.0, 0.4, 1.0],
+              )
+            : null,
       ),
-      child: ClipRRect(
-        borderRadius: borderRadius,
-        clipBehavior: clipBehavior,
-        child: Stack(
-          fit: StackFit.passthrough,
-          children: [
-            if (blur)
-              Positioned.fill(
-                child: BackdropFilter(
-                  filter: ImageFilter.blur(sigmaX: blurSigma, sigmaY: blurSigma),
-                  child: const SizedBox.expand(),
+      child: Padding(
+        padding: EdgeInsets.all(borderWidth),
+        child: ClipRRect(
+          borderRadius: innerRadius,
+          clipBehavior: clipBehavior,
+          child: Stack(
+            fit: StackFit.passthrough,
+            children: [
+              if (blur)
+                Positioned.fill(
+                  child: BackdropFilter(
+                    filter: ImageFilter.blur(sigmaX: blurSigma, sigmaY: blurSigma),
+                    child: const SizedBox.expand(),
+                  ),
                 ),
-              ),
-            if (gradient != null)
+              if (gradient != null)
+                Positioned.fill(
+                  child: DecoratedBox(decoration: BoxDecoration(gradient: gradient)),
+                ),
               Positioned.fill(
-                child: DecoratedBox(decoration: BoxDecoration(gradient: gradient)),
+                child: ColoredBox(color: gradient == null ? tint : tint.withValues(alpha: tintOpacity ?? 0.35)),
               ),
-            Positioned.fill(
-              child: ColoredBox(color: gradient == null ? tint : tint.withValues(alpha: tintOpacity ?? 0.35)),
-            ),
-            if (padding != null)
-              Padding(padding: padding!, child: child)
-            else
-              child,
-          ],
+              if (borderWidth > 0)
+                Positioned(
+                  top: 0,
+                  left: 12,
+                  right: 12,
+                  height: 1,
+                  child: DecoratedBox(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [
+                          Colors.transparent,
+                          highlight.withValues(alpha: 0.55),
+                          Colors.transparent,
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              if (padding != null)
+                Padding(padding: padding!, child: child)
+              else
+                child,
+            ],
+          ),
         ),
       ),
     );

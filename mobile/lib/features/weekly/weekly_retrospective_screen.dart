@@ -15,6 +15,7 @@ class WeeklyRetrospectiveScreen extends ConsumerWidget {
     final s = ref.watch(stringsProvider);
 
     return Scaffold(
+      backgroundColor: context.palette.background,
       appBar: AppBar(
         title: Text(s.weeklyRetro),
         leading: IconButton(icon: const Icon(Icons.arrow_back_rounded), onPressed: () => context.pop()),

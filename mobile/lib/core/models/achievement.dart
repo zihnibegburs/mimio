@@ -1,21 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:mimio/core/theme/mimio_theme.dart';
 
 enum AchievementScope { weekly, allTime }
 
-enum AchievementId {
-  weeklyFirstTask,
-  weeklyFiveTasks,
-  weeklyTenTasks,
-  weeklyTwentyTasks,
-  firstTask,
-  fiveTasks,
-  twentyFiveTasks,
-  hundredTasks,
-}
+const allTimeAchievementCount = 400;
 
 class AchievementDefinition {
   const AchievementDefinition({
-    required this.id,
+    required this.key,
     required this.scope,
     required this.icon,
     required this.color,
@@ -23,7 +15,7 @@ class AchievementDefinition {
     required this.progressOf,
   });
 
-  final AchievementId id;
+  final String key;
   final AchievementScope scope;
   final IconData icon;
   final Color color;
@@ -34,7 +26,7 @@ class AchievementDefinition {
   double progress(AchievementStats stats) => (progressOf(stats) / target).clamp(0.0, 1.0);
 
   String unlockKey(AchievementStats stats) =>
-      scope == AchievementScope.weekly ? '${id.name}_${stats.weekKey}' : id.name;
+      scope == AchievementScope.weekly ? '${key}_${stats.weekKey}' : key;
 }
 
 class AchievementStats {
@@ -78,9 +70,26 @@ String weekKeyFor(DateTime date) {
   return '${monday.year}-${monday.month.toString().padLeft(2, '0')}-${monday.day.toString().padLeft(2, '0')}';
 }
 
+const _achievementIcons = [
+  Icons.flag_rounded,
+  Icons.bolt_rounded,
+  Icons.auto_awesome_rounded,
+  Icons.emoji_events_rounded,
+  Icons.star_rounded,
+  Icons.local_fire_department_rounded,
+  Icons.rocket_launch_rounded,
+  Icons.diamond_rounded,
+  Icons.workspace_premium_rounded,
+  Icons.military_tech_rounded,
+  Icons.celebration_rounded,
+  Icons.thumb_up_rounded,
+];
+
+final _achievementColors = MimioColors.taskColors.map(MimioColors.fromHex).toList();
+
 const weeklyAchievementDefinitions = [
   AchievementDefinition(
-    id: AchievementId.weeklyFirstTask,
+    key: 'weekly_1',
     scope: AchievementScope.weekly,
     icon: Icons.wb_sunny_rounded,
     color: Color(0xFF3D9B87),
@@ -88,7 +97,7 @@ const weeklyAchievementDefinitions = [
     progressOf: _weeklyTasksCompleted,
   ),
   AchievementDefinition(
-    id: AchievementId.weeklyFiveTasks,
+    key: 'weekly_5',
     scope: AchievementScope.weekly,
     icon: Icons.bolt_rounded,
     color: Color(0xFF4ECDC4),
@@ -96,7 +105,7 @@ const weeklyAchievementDefinitions = [
     progressOf: _weeklyTasksCompleted,
   ),
   AchievementDefinition(
-    id: AchievementId.weeklyTenTasks,
+    key: 'weekly_10',
     scope: AchievementScope.weekly,
     icon: Icons.auto_awesome_rounded,
     color: Color(0xFFFF6B9D),
@@ -104,7 +113,7 @@ const weeklyAchievementDefinitions = [
     progressOf: _weeklyTasksCompleted,
   ),
   AchievementDefinition(
-    id: AchievementId.weeklyTwentyTasks,
+    key: 'weekly_20',
     scope: AchievementScope.weekly,
     icon: Icons.emoji_events_rounded,
     color: Color(0xFFFFE66D),
@@ -113,42 +122,22 @@ const weeklyAchievementDefinitions = [
   ),
 ];
 
-const allTimeAchievementDefinitions = [
-  AchievementDefinition(
-    id: AchievementId.firstTask,
-    scope: AchievementScope.allTime,
-    icon: Icons.flag_rounded,
-    color: Color(0xFF3D9B87),
-    target: 1,
-    progressOf: _tasksCompleted,
-  ),
-  AchievementDefinition(
-    id: AchievementId.fiveTasks,
-    scope: AchievementScope.allTime,
-    icon: Icons.bolt_rounded,
-    color: Color(0xFF4ECDC4),
-    target: 5,
-    progressOf: _tasksCompleted,
-  ),
-  AchievementDefinition(
-    id: AchievementId.twentyFiveTasks,
-    scope: AchievementScope.allTime,
-    icon: Icons.auto_awesome_rounded,
-    color: Color(0xFFFF6B9D),
-    target: 25,
-    progressOf: _tasksCompleted,
-  ),
-  AchievementDefinition(
-    id: AchievementId.hundredTasks,
-    scope: AchievementScope.allTime,
-    icon: Icons.emoji_events_rounded,
-    color: Color(0xFFFFE66D),
-    target: 100,
-    progressOf: _tasksCompleted,
-  ),
-];
+final allTimeAchievementDefinitions = List<AchievementDefinition>.generate(
+  allTimeAchievementCount,
+  (index) {
+    final target = index + 1;
+    return AchievementDefinition(
+      key: 'allTime_$target',
+      scope: AchievementScope.allTime,
+      icon: _achievementIcons[index % _achievementIcons.length],
+      color: _achievementColors[index % _achievementColors.length],
+      target: target,
+      progressOf: _tasksCompleted,
+    );
+  },
+);
 
-const achievementDefinitions = [
+final achievementDefinitions = [
   ...weeklyAchievementDefinitions,
   ...allTimeAchievementDefinitions,
 ];

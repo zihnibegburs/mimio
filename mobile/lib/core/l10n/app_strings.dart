@@ -199,75 +199,66 @@ class S {
         de: 'Abzeichen und Fortschritt ansehen',
       ));
 
-  String achievementTitle(AchievementId id) => l10n(lang, switch (id) {
-        AchievementId.weeklyFirstTask => _m(en: 'Week Starter', tr: 'Haftaya Başlangıç', es: 'Inicio de semana', fr: 'Début de semaine', de: 'Wochenstart'),
-        AchievementId.weeklyFiveTasks => _m(en: 'Weekly Momentum', tr: 'Haftalık Ivme', es: 'Impulso semanal', fr: 'Élan hebdomadaire', de: 'Wochen-Schwung'),
-        AchievementId.weeklyTenTasks => _m(en: 'Weekly Flow', tr: 'Haftalık Akış', es: 'Flujo semanal', fr: 'Flow hebdomadaire', de: 'Wochen-Flow'),
-        AchievementId.weeklyTwentyTasks => _m(en: 'Week Champion', tr: 'Haftanın Şampiyonu', es: 'Campeón de la semana', fr: 'Champion de la semaine', de: 'Wochen-Champion'),
-        AchievementId.firstTask => _m(en: 'First Step', tr: 'İlk Adım', es: 'Primer paso', fr: 'Premier pas', de: 'Erster Schritt'),
-        AchievementId.fiveTasks => _m(en: 'On a Roll', tr: 'Ivme Kazandın', es: 'En racha', fr: 'En forme', de: 'Im Flow'),
-        AchievementId.twentyFiveTasks => _m(en: 'Productive', tr: 'Üretken', es: 'Productivo', fr: 'Productif', de: 'Produktiv'),
-        AchievementId.hundredTasks => _m(en: 'Task Master', tr: 'Görev Ustası', es: 'Maestro de tareas', fr: 'Maître des tâches', de: 'Aufgabenmeister'),
-      });
+  String achievementTitle(AchievementDefinition def) {
+    if (def.scope == AchievementScope.weekly) {
+      switch (def.target) {
+        case 1:
+          return l10n(lang, _m(en: 'Week Starter', tr: 'Haftaya Başlangıç', es: 'Inicio de semana', fr: 'Début de semaine', de: 'Wochenstart'));
+        case 5:
+          return l10n(lang, _m(en: 'Weekly Momentum', tr: 'Haftalık Ivme', es: 'Impulso semanal', fr: 'Élan hebdomadaire', de: 'Wochen-Schwung'));
+        case 10:
+          return l10n(lang, _m(en: 'Weekly Flow', tr: 'Haftalık Akış', es: 'Flujo semanal', fr: 'Flow hebdomadaire', de: 'Wochen-Flow'));
+        case 20:
+          return l10n(lang, _m(en: 'Week Champion', tr: 'Haftanın Şampiyonu', es: 'Campeón de la semana', fr: 'Champion de la semaine', de: 'Wochen-Champion'));
+        default:
+          return achievementCountTitle(def.target);
+      }
+    }
 
-  String achievementDescription(AchievementId id) => l10n(lang, switch (id) {
-        AchievementId.weeklyFirstTask => _m(
-              en: 'Complete 1 task this week.',
-              tr: 'Bu hafta 1 görev tamamla.',
-              es: 'Completa 1 tarea esta semana.',
-              fr: 'Terminez 1 tâche cette semaine.',
-              de: 'Schließe diese Woche 1 Aufgabe ab.',
-            ),
-        AchievementId.weeklyFiveTasks => _m(
-              en: 'Complete 5 tasks this week.',
-              tr: 'Bu hafta 5 görev tamamla.',
-              es: 'Completa 5 tareas esta semana.',
-              fr: 'Terminez 5 tâches cette semaine.',
-              de: 'Schließe diese Woche 5 Aufgaben ab.',
-            ),
-        AchievementId.weeklyTenTasks => _m(
-              en: 'Complete 10 tasks this week.',
-              tr: 'Bu hafta 10 görev tamamla.',
-              es: 'Completa 10 tareas esta semana.',
-              fr: 'Terminez 10 tâches cette semaine.',
-              de: 'Schließe diese Woche 10 Aufgaben ab.',
-            ),
-        AchievementId.weeklyTwentyTasks => _m(
-              en: 'Complete 20 tasks this week.',
-              tr: 'Bu hafta 20 görev tamamla.',
-              es: 'Completa 20 tareas esta semana.',
-              fr: 'Terminez 20 tâches cette semaine.',
-              de: 'Schließe diese Woche 20 Aufgaben ab.',
-            ),
-        AchievementId.firstTask => _m(
-              en: 'Complete your first task.',
-              tr: 'İlk görevini tamamla.',
-              es: 'Completa tu primera tarea.',
-              fr: 'Terminez votre première tâche.',
-              de: 'Schließe deine erste Aufgabe ab.',
-            ),
-        AchievementId.fiveTasks => _m(
-              en: 'Complete 5 tasks.',
-              tr: '5 görev tamamla.',
-              es: 'Completa 5 tareas.',
-              fr: 'Terminez 5 tâches.',
-              de: 'Schließe 5 Aufgaben ab.',
-            ),
-        AchievementId.twentyFiveTasks => _m(
-              en: 'Complete 25 tasks.',
-              tr: '25 görev tamamla.',
-              es: 'Completa 25 tareas.',
-              fr: 'Terminez 25 tâches.',
-              de: 'Schließe 25 Aufgaben ab.',
-            ),
-        AchievementId.hundredTasks => _m(
-              en: 'Complete 100 tasks.',
-              tr: '100 görev tamamla.',
-              es: 'Completa 100 tareas.',
-              fr: 'Terminez 100 tâches.',
-              de: 'Schließe 100 Aufgaben ab.',
-            ),
-      });
+    switch (def.target) {
+      case 1:
+        return l10n(lang, _m(en: 'First Step', tr: 'İlk Adım', es: 'Primer paso', fr: 'Premier pas', de: 'Erster Schritt'));
+      case 5:
+        return l10n(lang, _m(en: 'On a Roll', tr: 'Ivme Kazandın', es: 'En racha', fr: 'En forme', de: 'Im Flow'));
+      case 25:
+        return l10n(lang, _m(en: 'Productive', tr: 'Üretken', es: 'Productivo', fr: 'Productif', de: 'Produktiv'));
+      case 100:
+        return l10n(lang, _m(en: 'Task Master', tr: 'Görev Ustası', es: 'Maestro de tareas', fr: 'Maître des tâches', de: 'Aufgabenmeister'));
+      default:
+        return achievementCountTitle(def.target);
+    }
+  }
+
+  String achievementDescription(AchievementDefinition def) {
+    if (def.scope == AchievementScope.weekly) {
+      return achievementWeeklyDescription(def.target);
+    }
+    return achievementAllTimeDescription(def.target);
+  }
+
+  String achievementCountTitle(int count) => l10n(lang, _m(
+        en: '$count Tasks',
+        tr: '$count Görev',
+        es: '$count tareas',
+        fr: '$count tâches',
+        de: '$count Aufgaben',
+      ));
+
+  String achievementWeeklyDescription(int count) => l10n(lang, _m(
+        en: 'Complete $count tasks this week.',
+        tr: 'Bu hafta $count görev tamamla.',
+        es: 'Completa $count tareas esta semana.',
+        fr: 'Terminez $count tâches cette semaine.',
+        de: 'Schließe diese Woche $count Aufgaben ab.',
+      ));
+
+  String achievementAllTimeDescription(int count) => l10n(lang, _m(
+        en: 'Complete $count tasks in total.',
+        tr: 'Toplam $count görev tamamla.',
+        es: 'Completa $count tareas en total.',
+        fr: 'Terminez $count tâches au total.',
+        de: 'Schließe insgesamt $count Aufgaben ab.',
+      ));
 
   // Tasks
   String get taskOptions =>

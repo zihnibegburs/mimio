@@ -164,6 +164,7 @@ class _AiPlanScreenState extends ConsumerState<AiPlanScreen> {
     final s = ref.watch(stringsProvider);
 
     return Scaffold(
+      backgroundColor: context.palette.background,
       appBar: AppBar(
         title: Text(s.aiPlanner),
         leading: IconButton(

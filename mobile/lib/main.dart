@@ -15,6 +15,7 @@ import 'package:mimio/core/platform/widget_sync_service.dart';
 import 'package:mimio/core/storage/token_storage.dart';
 import 'package:mimio/core/theme/mimio_theme.dart';
 import 'package:mimio/core/widgets/liquid_glass.dart';
+import 'package:mimio/core/widgets/mimio_soft_overlay.dart';
 import 'package:mimio/features/auth/login_screen.dart';
 import 'package:mimio/features/auth/register_screen.dart';
 import 'package:mimio/features/providers.dart';
@@ -130,13 +131,35 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/home',
         builder: (_, __) => const WebShell(child: HomeScreen()),
       ),
-      GoRoute(path: '/focus', builder: (_, __) => const FocusScreen()),
-      GoRoute(path: '/ai', builder: (_, __) => const AiPlanScreen()),
-      GoRoute(path: '/profile', builder: (_, __) => const ProfileScreen()),
-      GoRoute(path: '/calendar-import', builder: (_, __) => const CalendarImportScreen()),
-      GoRoute(path: '/achievements', builder: (_, __) => const AchievementsScreen()),
-      GoRoute(path: '/brain-dump', builder: (_, __) => const BrainDumpScreen()),
-      GoRoute(path: '/weekly-retro', builder: (_, __) => const WeeklyRetrospectiveScreen()),
+      GoRoute(
+        path: '/focus',
+        pageBuilder: (context, state) => mimioOverlayGoRoutePage(state: state, child: const FocusScreen()),
+      ),
+      GoRoute(
+        path: '/ai',
+        pageBuilder: (context, state) => mimioOverlayGoRoutePage(state: state, child: const AiPlanScreen()),
+      ),
+      GoRoute(
+        path: '/profile',
+        pageBuilder: (context, state) => mimioOverlayGoRoutePage(state: state, child: const ProfileScreen()),
+      ),
+      GoRoute(
+        path: '/calendar-import',
+        pageBuilder: (context, state) => mimioOverlayGoRoutePage(state: state, child: const CalendarImportScreen()),
+      ),
+      GoRoute(
+        path: '/achievements',
+        pageBuilder: (context, state) => mimioOverlayGoRoutePage(state: state, child: const AchievementsScreen()),
+      ),
+      GoRoute(
+        path: '/brain-dump',
+        pageBuilder: (context, state) => mimioOverlayGoRoutePage(state: state, child: const BrainDumpScreen()),
+      ),
+      GoRoute(
+        path: '/weekly-retro',
+        pageBuilder: (context, state) =>
+            mimioOverlayGoRoutePage(state: state, child: const WeeklyRetrospectiveScreen()),
+      ),
     ],
   );
 });

@@ -220,12 +220,14 @@ class _OnboardingHostState extends ConsumerState<_OnboardingHost> {
     if (!mounted) return;
 
     if (!prefs.onboardingCompleted) {
-      await Navigator.of(context).push(
-        MaterialPageRoute(builder: (_) => const OnboardingScreen()),
+      await pushMimioOverlayRoute(
+        context: context,
+        builder: (_) => const OnboardingScreen(),
       );
     } else if (!hasTheme) {
-      await Navigator.of(context).push(
-        MaterialPageRoute(builder: (_) => const OnboardingScreen(themeOnly: true)),
+      await pushMimioOverlayRoute(
+        context: context,
+        builder: (_) => const OnboardingScreen(themeOnly: true),
       );
     }
   }

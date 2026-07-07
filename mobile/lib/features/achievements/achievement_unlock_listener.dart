@@ -79,7 +79,7 @@ class _AchievementUnlockListenerState extends ConsumerState<AchievementUnlockLis
             ),
             const SizedBox(height: 4),
             Text(
-              s.achievementTitle(def.id),
+              s.achievementTitle(def),
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontSize: 15,

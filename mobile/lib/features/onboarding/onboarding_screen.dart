@@ -32,6 +32,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
 
     if (widget.themeOnly) {
       return Scaffold(
+        backgroundColor: context.palette.background,
         body: SafeArea(
           child: Padding(
             padding: const EdgeInsets.all(24),
@@ -52,6 +53,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
     }
 
     return Scaffold(
+      backgroundColor: context.palette.background,
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.all(24),

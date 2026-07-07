@@ -84,6 +84,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     final avatarColor = MimioColors.fromHex(_editing ? (_selectedColor ?? auth.avatarColor) : auth.avatarColor);
 
     return Scaffold(
+      backgroundColor: context.palette.background,
       appBar: AppBar(
         title: Text(s.profile),
         leading: IconButton(
