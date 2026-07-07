@@ -3,9 +3,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mimio/core/l10n/app_strings.dart';
 import 'package:mimio/core/models/models.dart';
 import 'package:mimio/core/theme/mimio_theme.dart';
+import 'package:mimio/features/focus/focus_session_actions.dart';
 import 'package:mimio/features/focus/widgets/focus_timer_widget.dart';
 import 'package:mimio/features/focus/widgets/body_doubling_panel.dart';
-import 'package:mimio/features/timeline/task_completion_helper.dart';
+import 'package:mimio/features/focus/widgets/start_focus_sheet.dart';
 import 'package:mimio/features/providers.dart';
 import 'package:mimio/features/timeline/home_tab.dart';
 
@@ -49,25 +50,7 @@ class FocusTabView extends ConsumerWidget {
                 children: [
                   Expanded(
                     child: OutlinedButton.icon(
-                      onPressed: () async {
-                        final s = ref.read(stringsProvider);
-                        try {
-                          if (session.isActive) {
-                            await ref.read(timelineProvider.notifier).pauseTask(session.taskId);
-                          } else {
-                            await ref.read(timelineProvider.notifier).resumeTask(session.taskId);
-                          }
-                        } catch (e) {
-                          if (context.mounted) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text(s.friendlyTaskActionError(e)),
-                                backgroundColor: Colors.red.shade400,
-                              ),
-                            );
-                          }
-                        }
-                      },
+                      onPressed: () => toggleFocusPause(context, ref, session),
                       icon: Icon(session.isActive ? Icons.pause_rounded : Icons.play_arrow_rounded),
                       label: Text(session.isActive ? s.pause : s.continueLabel),
                     ),
@@ -75,23 +58,7 @@ class FocusTabView extends ConsumerWidget {
                   const SizedBox(width: 12),
                   Expanded(
                     child: ElevatedButton.icon(
-                      onPressed: () async {
-                        final taskId = session.taskId;
-                        try {
-                          final completed = await ref.read(timelineProvider.notifier).completeTask(taskId);
-                          if (!context.mounted) return;
-                          await handleTaskCompleted(context, ref, completed, completed);
-                        } catch (e) {
-                          if (context.mounted) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text(s.friendlyTaskActionError(e)),
-                                backgroundColor: Colors.red.shade400,
-                              ),
-                            );
-                          }
-                        }
-                      },
+                      onPressed: () => finishFocusSession(context, ref, session),
                       icon: const Icon(Icons.check_rounded),
                       label: Text(s.finish),
                       style: ElevatedButton.styleFrom(backgroundColor: MimioColors.success),
@@ -135,6 +102,15 @@ class _NoActiveFocus extends ConsumerWidget {
               s.focusModeHint,
               textAlign: TextAlign.center,
               style: TextStyle(color: context.palette.textSecondary, height: 1.5),
+            ),
+            const SizedBox(height: 32),
+            ElevatedButton.icon(
+              onPressed: () => showStartFocusSheet(context, ref),
+              icon: const Icon(Icons.play_arrow_rounded),
+              label: Text(s.startFocus),
+              style: ElevatedButton.styleFrom(
+                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+              ),
             ),
             if (pending.isNotEmpty) ...[
               const SizedBox(height: 32),

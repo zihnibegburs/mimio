@@ -5,6 +5,7 @@ import 'package:mimio/core/models/models.dart';
 import 'package:mimio/core/theme/mimio_theme.dart';
 import 'package:mimio/core/utils/task_icons.dart';
 import 'package:mimio/features/providers.dart';
+import 'package:mimio/core/widgets/liquid_glass.dart';
 import 'package:mimio/core/widgets/mimio_soft_overlay.dart';
 import 'package:mimio/features/timeline/widgets/edit_task_sheet.dart';
 
@@ -48,13 +49,11 @@ class _InboxTile extends ConsumerWidget {
     final s = ref.watch(stringsProvider);
     final color = MimioColors.fromHex(task.color);
 
-    return Container(
+    return LiquidGlass(
       margin: const EdgeInsets.only(bottom: 8),
-      decoration: BoxDecoration(
-        color: context.palette.surface,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: context.palette.border),
-      ),
+      blur: false,
+      borderRadius: BorderRadius.circular(18),
+      tintOpacity: 0.78,
       child: ListTile(
         leading: CircleAvatar(
           backgroundColor: color.withValues(alpha: 0.15),

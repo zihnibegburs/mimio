@@ -3,8 +3,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mimio/core/l10n/app_strings.dart';
 import 'package:mimio/core/theme/mimio_theme.dart';
+import 'package:mimio/features/focus/focus_session_actions.dart';
 import 'package:mimio/features/focus/widgets/focus_timer_widget.dart';
 import 'package:mimio/features/focus/widgets/celebration_dialog.dart';
+import 'package:mimio/features/focus/widgets/start_focus_sheet.dart';
 import 'package:mimio/features/providers.dart';
 
 class FocusScreen extends ConsumerWidget {
@@ -33,7 +35,24 @@ class FocusScreen extends ConsumerWidget {
         data: (session) {
           if (session == null) {
             return Center(
-              child: Text(s.noActiveTask, style: TextStyle(color: context.palette.textSecondary)),
+              child: Padding(
+                padding: const EdgeInsets.all(32),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      s.noActiveTask,
+                      style: TextStyle(color: context.palette.textSecondary),
+                    ),
+                    const SizedBox(height: 24),
+                    ElevatedButton.icon(
+                      onPressed: () => showStartFocusSheet(context, ref),
+                      icon: const Icon(Icons.play_arrow_rounded),
+                      label: Text(s.startFocus),
+                    ),
+                  ],
+                ),
+              ),
             );
           }
 
@@ -61,37 +80,7 @@ class FocusScreen extends ConsumerWidget {
                   children: [
                     Expanded(
                       child: OutlinedButton.icon(
-                        onPressed: session.isActive
-                            ? () async {
-                                final s = ref.read(stringsProvider);
-                                try {
-                                  await ref.read(timelineProvider.notifier).pauseTask(session.taskId);
-                                } catch (e) {
-                                  if (context.mounted) {
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      SnackBar(
-                                        content: Text(s.friendlyTaskActionError(e)),
-                                        backgroundColor: Colors.red.shade400,
-                                      ),
-                                    );
-                                  }
-                                }
-                              }
-                            : () async {
-                                final s = ref.read(stringsProvider);
-                                try {
-                                  await ref.read(timelineProvider.notifier).resumeTask(session.taskId);
-                                } catch (e) {
-                                  if (context.mounted) {
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      SnackBar(
-                                        content: Text(s.friendlyTaskActionError(e)),
-                                        backgroundColor: Colors.red.shade400,
-                                      ),
-                                    );
-                                  }
-                                }
-                              },
+                        onPressed: () => toggleFocusPause(context, ref, session),
                         icon: Icon(session.isActive ? Icons.pause_rounded : Icons.play_arrow_rounded),
                         label: Text(session.isActive ? s.pause : s.resume),
                         style: OutlinedButton.styleFrom(
@@ -106,6 +95,18 @@ class FocusScreen extends ConsumerWidget {
                       child: ElevatedButton.icon(
                         onPressed: () async {
                           final s = ref.read(stringsProvider);
+                          if (session.isStandalone) {
+                            await finishFocusSession(
+                              context,
+                              ref,
+                              session,
+                              onDone: () {
+                                if (context.mounted) context.pop();
+                              },
+                            );
+                            return;
+                          }
+
                           final taskId = session.taskId;
                           try {
                             final completed = await ref.read(timelineProvider.notifier).completeTask(taskId);
@@ -150,7 +151,7 @@ class FocusScreen extends ConsumerWidget {
                           }
                         },
                         icon: const Icon(Icons.check_rounded),
-                        label: Text(s.complete),
+                        label: Text(session.isStandalone ? s.finish : s.complete),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: MimioColors.success,
                           padding: const EdgeInsets.symmetric(vertical: 16),

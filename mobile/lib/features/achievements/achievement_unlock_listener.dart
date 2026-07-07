@@ -6,6 +6,7 @@ import 'package:mimio/core/storage/adhd_settings_storage.dart';
 import 'package:mimio/core/theme/mimio_theme.dart';
 import 'package:mimio/core/widgets/mimio_soft_overlay.dart';
 import 'package:mimio/features/achievements/achievements_screen.dart';
+import 'package:mimio/features/providers.dart';
 
 class AchievementUnlockListener extends ConsumerStatefulWidget {
   const AchievementUnlockListener({super.key, required this.child});
@@ -19,25 +20,36 @@ class AchievementUnlockListener extends ConsumerStatefulWidget {
 class _AchievementUnlockListenerState extends ConsumerState<AchievementUnlockListener> {
   Set<String> _knownUnlocked = {};
   bool _loaded = false;
+  String? _loadedForUserId;
 
-  @override
-  void initState() {
-    super.initState();
-    _loadKnown();
-  }
-
-  Future<void> _loadKnown() async {
-    _knownUnlocked = await ref.read(adhdSettingsStorageProvider).loadUnlockedAchievementIds();
-    if (mounted) setState(() => _loaded = true);
+  Future<void> _loadKnown(String? userId) async {
+    if (userId == null) {
+      if (!mounted) return;
+      setState(() {
+        _knownUnlocked = {};
+        _loaded = true;
+        _loadedForUserId = null;
+      });
+      return;
+    }
+    final known = await ref.read(adhdSettingsStorageProvider).loadUnlockedAchievementIds(userId);
+    if (!mounted) return;
+    setState(() {
+      _knownUnlocked = known;
+      _loaded = true;
+      _loadedForUserId = userId;
+    });
   }
 
   void _checkUnlocks(AchievementStats stats) {
     if (!_loaded) return;
     for (final def in achievementDefinitions) {
-      final id = def.id.name;
+      final id = def.unlockKey(stats);
       if (def.isUnlocked(stats) && !_knownUnlocked.contains(id)) {
+        final userId = ref.read(authStateProvider).valueOrNull?.userId;
+        if (userId == null) return;
         _knownUnlocked = {..._knownUnlocked, id};
-        ref.read(adhdSettingsStorageProvider).saveUnlockedAchievementIds(_knownUnlocked);
+        ref.read(adhdSettingsStorageProvider).saveUnlockedAchievementIds(userId, _knownUnlocked);
         WidgetsBinding.instance.addPostFrameCallback((_) {
           if (!mounted) return;
           _showUnlock(def);
@@ -91,6 +103,12 @@ class _AchievementUnlockListenerState extends ConsumerState<AchievementUnlockLis
 
   @override
   Widget build(BuildContext context) {
+    final userId = ref.watch(authStateProvider.select((auth) => auth.valueOrNull?.userId));
+    if (userId != _loadedForUserId) {
+      _loaded = false;
+      _loadKnown(userId);
+    }
+
     ref.listen(achievementStatsProvider, (prev, next) {
       final stats = next.valueOrNull;
       if (stats != null) _checkUnlocks(stats);

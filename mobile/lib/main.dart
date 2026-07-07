@@ -14,6 +14,7 @@ import 'package:mimio/core/platform/siri_sync_service.dart';
 import 'package:mimio/core/platform/widget_sync_service.dart';
 import 'package:mimio/core/storage/token_storage.dart';
 import 'package:mimio/core/theme/mimio_theme.dart';
+import 'package:mimio/core/widgets/liquid_glass.dart';
 import 'package:mimio/features/auth/login_screen.dart';
 import 'package:mimio/features/auth/register_screen.dart';
 import 'package:mimio/features/providers.dart';
@@ -58,6 +59,9 @@ class MimioApp extends ConsumerWidget {
         themeMode: themeMode,
         locale: Locale(lang),
         routerConfig: router,
+        builder: (context, child) => MimioAmbientBackground(
+          child: child ?? const SizedBox.shrink(),
+        ),
         debugShowCheckedModeBanner: false,
       ),
     );

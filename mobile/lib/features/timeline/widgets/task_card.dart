@@ -6,6 +6,7 @@ import 'package:mimio/core/models/adhd_models.dart';
 import 'package:mimio/core/models/models.dart';
 import 'package:mimio/core/utils/task_icons.dart';
 import 'package:mimio/core/theme/mimio_theme.dart';
+import 'package:mimio/core/widgets/liquid_glass.dart';
 import 'package:mimio/features/providers.dart';
 
 typedef SubtaskAction = void Function(TaskModel subtask);
@@ -53,18 +54,13 @@ class TaskCard extends ConsumerWidget {
       child: _SwipeToDelete(
         onDelete: onDelete,
         deleteLabel: s.delete,
-        child: Container(
-          decoration: BoxDecoration(
-            color: context.palette.surface,
-            borderRadius: BorderRadius.circular(20),
-            border: isActive || isPaused
-                ? Border.all(color: color, width: 2)
-                : Border.all(color: context.palette.border),
-            boxShadow: [
-              if (isActive || isPaused)
-                BoxShadow(color: color.withValues(alpha: 0.2), blurRadius: 12, offset: const Offset(0, 4)),
-            ],
-          ),
+        child: LiquidGlass(
+          blur: false,
+          borderRadius: BorderRadius.circular(22),
+          tintOpacity: Theme.of(context).brightness == Brightness.dark ? 0.72 : 0.78,
+          boxShadow: isActive || isPaused
+              ? [BoxShadow(color: color.withValues(alpha: 0.22), blurRadius: 16, offset: const Offset(0, 6))]
+              : LiquidGlassTokens.elevation(context),
           child: IntrinsicHeight(
             child: Row(
               children: [

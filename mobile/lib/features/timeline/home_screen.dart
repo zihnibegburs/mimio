@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 import 'package:mimio/core/l10n/app_strings.dart';
 import 'package:mimio/core/models/models.dart';
 import 'package:mimio/core/theme/mimio_theme.dart';
+import 'package:mimio/core/widgets/liquid_glass.dart';
 import 'package:mimio/core/widgets/mimio_soft_overlay.dart';
 import 'package:mimio/features/achievements/achievement_unlock_listener.dart';
 import 'package:mimio/features/inbox/inbox_section.dart';
@@ -14,6 +15,7 @@ import 'package:mimio/features/timeline/widgets/now_mode_view.dart';
 import 'package:mimio/features/timeline/widgets/routine_templates_sheet.dart';
 import 'package:mimio/features/timeline/widgets/schedule_warning_banner.dart';
 import 'package:mimio/core/storage/adhd_settings_storage.dart';
+import 'package:mimio/core/storage/settings_storage.dart';
 import 'package:mimio/core/utils/schedule_utils.dart';
 import 'package:mimio/features/achievements/achievements_screen.dart';
 import 'package:mimio/features/focus/focus_tab_view.dart';
@@ -42,80 +44,89 @@ class HomeScreen extends ConsumerWidget {
     final s = ref.watch(stringsProvider);
 
     return AchievementUnlockListener(
-      child: Scaffold(
+      child: _OnboardingHost(
+        child: Scaffold(
         extendBody: true,
-        appBar: AppBar(
-          title: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(s.hello(auth?.displayName ?? '')),
-              Text(
-                _tabSubtitle(tab, selectedDate, ref, s),
-                style: TextStyle(
-                  fontSize: 13,
-                  color: context.palette.textSecondary,
-                  fontWeight: FontWeight.w500,
+        appBar: PreferredSize(
+          preferredSize: const Size.fromHeight(kToolbarHeight),
+          child: LiquidGlassAppBar(
+            child: SafeArea(
+              bottom: false,
+              child: AppBar(
+                title: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(s.hello(auth?.firstName ?? '')),
+                    Text(
+                      _tabSubtitle(tab, selectedDate, ref, s),
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: context.palette.textSecondary,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
                 ),
-              ),
-            ],
-          ),
-          actions: [
-            if (tab == HomeTab.today)
-              Consumer(
-                builder: (context, ref, _) {
-                  final overwhelm = ref.watch(adhdPreferencesProvider).valueOrNull?.overwhelmMode ?? false;
-                  return IconButton(
-                    icon: Icon(overwhelm ? Icons.visibility_rounded : Icons.visibility_outlined),
-                    tooltip: s.overwhelmMode,
-                    onPressed: () => ref.read(adhdPreferencesProvider.notifier).patch(
-                          (p) => p.copyWith(overwhelmMode: !p.overwhelmMode),
-                        ),
-                  );
-                },
-              ),
-            IconButton(
-              icon: const Icon(Icons.psychology_rounded),
-              tooltip: s.brainDump,
-              onPressed: () => context.push('/brain-dump'),
-            ),
-            IconButton(
-              icon: const Icon(Icons.auto_awesome_rounded),
-              tooltip: s.aiPlanner,
-              onPressed: () => context.push('/ai'),
-            ),
-            if (tab == HomeTab.today)
-              Consumer(
-                builder: (context, ref, _) {
-                  final viewMode = ref.watch(timelineViewModeProvider);
-                  return IconButton(
-                    icon: Icon(viewMode == TimelineViewMode.list
-                        ? Icons.view_timeline_rounded
-                        : Icons.view_list_rounded),
-                    tooltip: viewMode == TimelineViewMode.list ? s.hourView : s.listView,
-                    onPressed: () {
-                      ref.read(timelineViewModeProvider.notifier).state =
-                          viewMode == TimelineViewMode.list ? TimelineViewMode.grid : TimelineViewMode.list;
-                    },
-                  );
-                },
-              ),
-            Padding(
-              padding: const EdgeInsets.only(right: 8),
-              child: GestureDetector(
-                onTap: () => context.push('/profile'),
-                child: CircleAvatar(
-                  radius: 18,
-                  backgroundColor: auth != null
-                      ? MimioColors.fromHex(auth.avatarColor)
-                      : MimioColors.primary,
-                  child: Text(
-                    (auth?.displayName.isNotEmpty ?? false) ? auth!.displayName[0].toUpperCase() : '?',
-                    style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w800, color: Colors.white),
+                actions: [
+                  if (tab == HomeTab.today)
+                    Consumer(
+                      builder: (context, ref, _) {
+                        final overwhelm = ref.watch(adhdPreferencesProvider).valueOrNull?.overwhelmMode ?? false;
+                        return IconButton(
+                          icon: Icon(overwhelm ? Icons.visibility_rounded : Icons.visibility_outlined),
+                          tooltip: s.overwhelmMode,
+                          onPressed: () => ref.read(adhdPreferencesProvider.notifier).patch(
+                                (p) => p.copyWith(overwhelmMode: !p.overwhelmMode),
+                              ),
+                        );
+                      },
+                    ),
+                  IconButton(
+                    icon: const Icon(Icons.psychology_rounded),
+                    tooltip: s.brainDump,
+                    onPressed: () => context.push('/brain-dump'),
                   ),
-                ),
+                  IconButton(
+                    icon: const Icon(Icons.auto_awesome_rounded),
+                    tooltip: s.aiPlanner,
+                    onPressed: () => context.push('/ai'),
+                  ),
+                  if (tab == HomeTab.today)
+                    Consumer(
+                      builder: (context, ref, _) {
+                        final viewMode = ref.watch(timelineViewModeProvider);
+                        return IconButton(
+                          icon: Icon(viewMode == TimelineViewMode.list
+                              ? Icons.view_timeline_rounded
+                              : Icons.view_list_rounded),
+                          tooltip: viewMode == TimelineViewMode.list ? s.hourView : s.listView,
+                          onPressed: () {
+                            ref.read(timelineViewModeProvider.notifier).state =
+                                viewMode == TimelineViewMode.list ? TimelineViewMode.grid : TimelineViewMode.list;
+                          },
+                        );
+                      },
+                    ),
+                  Padding(
+                    padding: const EdgeInsets.only(right: 8),
+                    child: GestureDetector(
+                      onTap: () => context.push('/profile'),
+                      child: CircleAvatar(
+                        radius: 18,
+                        backgroundColor: auth != null
+                            ? MimioColors.fromHex(auth.avatarColor)
+                            : MimioColors.primary,
+                        child: Text(
+                          (auth?.displayName.isNotEmpty ?? false) ? auth!.displayName[0].toUpperCase() : '?',
+                          style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w800, color: Colors.white),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
-          ],
+          ),
         ),
         body: IndexedStack(
           index: tab.index,
@@ -155,6 +166,7 @@ class HomeScreen extends ConsumerWidget {
             ),
           ],
         ),
+        ),
       ),
     );
   }
@@ -177,6 +189,49 @@ class HomeScreen extends ConsumerWidget {
       builder: (_) => AddTaskSheet(selectedDate: date),
     );
   }
+}
+
+class _OnboardingHost extends ConsumerStatefulWidget {
+  const _OnboardingHost({required this.child});
+
+  final Widget child;
+
+  @override
+  ConsumerState<_OnboardingHost> createState() => _OnboardingHostState();
+}
+
+class _OnboardingHostState extends ConsumerState<_OnboardingHost> {
+  bool _checked = false;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) => _maybeShowOnboarding());
+  }
+
+  Future<void> _maybeShowOnboarding() async {
+    if (_checked || !mounted) return;
+    _checked = true;
+
+    final prefs = ref.read(adhdPreferencesProvider).valueOrNull ??
+        await ref.read(adhdSettingsStorageProvider).load();
+    final hasTheme = await ref.read(settingsStorageProvider).hasThemePreference();
+
+    if (!mounted) return;
+
+    if (!prefs.onboardingCompleted) {
+      await Navigator.of(context).push(
+        MaterialPageRoute(builder: (_) => const OnboardingScreen()),
+      );
+    } else if (!hasTheme) {
+      await Navigator.of(context).push(
+        MaterialPageRoute(builder: (_) => const OnboardingScreen(themeOnly: true)),
+      );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) => widget.child;
 }
 
 class _AchievementsTab extends ConsumerWidget {
@@ -209,22 +264,6 @@ class _TodayTab extends ConsumerStatefulWidget {
 }
 
 class _TodayTabState extends ConsumerState<_TodayTab> {
-  @override
-  void initState() {
-    super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) => _maybeShowOnboarding());
-  }
-
-  Future<void> _maybeShowOnboarding() async {
-    final prefs = ref.read(adhdPreferencesProvider).valueOrNull ??
-        await ref.read(adhdSettingsStorageProvider).load();
-    if (!prefs.onboardingCompleted && mounted) {
-      await Navigator.of(context).push(
-        MaterialPageRoute(builder: (_) => const OnboardingScreen()),
-      );
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     final timelineAsync = ref.watch(timelineProvider);

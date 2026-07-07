@@ -47,19 +47,19 @@ class MimioPalette extends ThemeExtension<MimioPalette> {
   final Color border;
 
   static const light = MimioPalette(
-    background: Color(0xFFF4F9F8),
-    surface: Colors.white,
+    background: Color(0xFFF0F7F5),
+    surface: Color(0xE6FFFFFF),
     textPrimary: Color(0xFF1C2826),
     textSecondary: Color(0xFF5F7A76),
-    border: Color(0xFFDDE8E6),
+    border: Color(0x66DDE8E6),
   );
 
   static const dark = MimioPalette(
-    background: Color(0xFF0F1614),
-    surface: Color(0xFF1A2422),
+    background: Color(0xFF0C1211),
+    surface: Color(0x991A2422),
     textPrimary: Color(0xFFE8F2F0),
     textSecondary: Color(0xFF8FA8A4),
-    border: Color(0xFF2E3E3B),
+    border: Color(0x442E3E3B),
   );
 
   @override
@@ -147,7 +147,7 @@ class MimioTheme {
         secondary: MimioColors.accent,
         onSurface: palette.textPrimary,
       ),
-      scaffoldBackgroundColor: palette.background,
+      scaffoldBackgroundColor: Colors.transparent,
       cardColor: palette.surface,
       dividerColor: palette.border,
       textTheme: GoogleFonts.nunitoTextTheme(
@@ -157,8 +157,10 @@ class MimioTheme {
         displayColor: palette.textPrimary,
       ),
       appBarTheme: AppBarTheme(
-        backgroundColor: palette.background,
+        backgroundColor: Colors.transparent,
+        surfaceTintColor: Colors.transparent,
         elevation: 0,
+        scrolledUnderElevation: 0,
         centerTitle: false,
         titleTextStyle: GoogleFonts.nunito(
           fontSize: 22,
@@ -168,13 +170,13 @@ class MimioTheme {
         iconTheme: IconThemeData(color: palette.textPrimary),
       ),
       bottomSheetTheme: BottomSheetThemeData(
-        backgroundColor: palette.surface,
+        backgroundColor: Colors.transparent,
         shape: const RoundedRectangleBorder(
-          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+          borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
         ),
       ),
       dialogTheme: DialogThemeData(
-        backgroundColor: palette.surface,
+        backgroundColor: Colors.transparent,
         insetPadding: const EdgeInsets.symmetric(horizontal: 40, vertical: 24),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
         titleTextStyle: GoogleFonts.nunito(
@@ -190,7 +192,9 @@ class MimioTheme {
       floatingActionButtonTheme: FloatingActionButtonThemeData(
         backgroundColor: primary,
         foregroundColor: Colors.white,
-        elevation: 4,
+        elevation: 8,
+        highlightElevation: 12,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
       ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,

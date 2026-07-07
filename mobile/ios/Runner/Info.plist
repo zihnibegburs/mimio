@@ -49,6 +49,10 @@
 	<true/>
 	<key>NSSupportsLiveActivitiesFrequentUpdates</key>
 	<true/>
+	<key>GIDClientID</key>
+	<string>444356161269-gka2bbkma5qf6mji3m5jmo9aa5bhc8bc.apps.googleusercontent.com</string>
+	<key>GIDServerClientID</key>
+	<string>444356161269-9ukhho3o8jbtum1ht8ea9v6nungmoau3.apps.googleusercontent.com</string>
 	<key>CFBundleURLTypes</key>
 	<array>
 		<dict>

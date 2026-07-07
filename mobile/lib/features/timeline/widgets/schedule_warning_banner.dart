@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mimio/core/l10n/app_strings.dart';
 import 'package:mimio/core/models/models.dart';
 import 'package:mimio/core/theme/mimio_theme.dart';
+import 'package:mimio/core/widgets/liquid_glass.dart';
 import 'package:mimio/core/utils/schedule_utils.dart';
 import 'package:mimio/features/providers.dart';
 
@@ -24,13 +25,17 @@ class ScheduleWarningBanner extends ConsumerWidget {
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 0, 20, 8),
-      child: Container(
+      child: LiquidGlass(
+        blur: false,
+        borderRadius: BorderRadius.circular(18),
         padding: const EdgeInsets.all(14),
-        decoration: BoxDecoration(
-          color: MimioColors.warning.withValues(alpha: 0.12),
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: MimioColors.warning.withValues(alpha: 0.4)),
+        gradient: LinearGradient(
+          colors: [
+            MimioColors.warning.withValues(alpha: 0.18),
+            MimioColors.warning.withValues(alpha: 0.08),
+          ],
         ),
+        tintOpacity: 0.5,
         child: Row(
           children: [
             Icon(Icons.schedule_rounded, color: MimioColors.warning, size: 20),

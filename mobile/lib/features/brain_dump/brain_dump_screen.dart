@@ -7,7 +7,6 @@ import 'package:mimio/core/repositories/ai_repository.dart';
 import 'package:mimio/core/theme/mimio_theme.dart';
 import 'package:mimio/core/utils/task_icons.dart';
 import 'package:mimio/core/widgets/speech_text_field.dart';
-import 'package:mimio/features/achievements/achievements_screen.dart';
 import 'package:mimio/features/providers.dart';
 
 class BrainDumpScreen extends ConsumerStatefulWidget {
@@ -67,7 +66,6 @@ class _BrainDumpScreenState extends ConsumerState<BrainDumpScreen> {
               scheduledAt: task.scheduledAt(_plan!.date),
             );
       }
-      await ref.read(achievementStatsProvider.notifier).recordAiPlanApplied();
       if (mounted) context.pop();
     } catch (e) {
       setState(() => _error = ref.read(stringsProvider).friendlyAiError(e));

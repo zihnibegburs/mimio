@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:mimio/core/theme/mimio_theme.dart';
+import 'package:mimio/core/widgets/liquid_glass.dart';
 
 /// Shared soft overlay styling — light scrim, gentle fade+scale transitions.
 abstract final class MimioOverlay {
-  static final barrierColor = Colors.black.withValues(alpha: 0.08);
+  static final barrierColor = Colors.black.withValues(alpha: 0.18);
 
   static const transitionDuration = Duration(milliseconds: 200);
 
@@ -80,20 +81,11 @@ class MimioSoftCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    return LiquidGlass(
+      borderRadius: BorderRadius.circular(22),
+      blur: true,
+      blurSigma: LiquidGlassTokens.blurSigmaChrome,
       padding: padding,
-      decoration: BoxDecoration(
-        color: context.palette.surface,
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: context.palette.border.withValues(alpha: 0.5)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.06),
-            blurRadius: 20,
-            offset: const Offset(0, 6),
-          ),
-        ],
-      ),
       child: child,
     );
   }

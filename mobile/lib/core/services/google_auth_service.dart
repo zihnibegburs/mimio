@@ -4,6 +4,7 @@ import 'package:mimio/core/config/google_config.dart';
 class GoogleAuthService {
   GoogleAuthService()
       : _googleSignIn = GoogleSignIn(
+          clientId: GoogleConfig.iosClientId,
           serverClientId: GoogleConfig.webClientId,
           scopes: const ['email', 'profile'],
         );

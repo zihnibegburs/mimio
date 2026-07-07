@@ -5,57 +5,28 @@ import 'package:mimio/core/l10n/app_strings.dart';
 import 'package:mimio/core/models/achievement.dart';
 import 'package:mimio/core/storage/achievement_storage.dart';
 import 'package:mimio/core/theme/mimio_theme.dart';
+import 'package:mimio/features/providers.dart';
 
 final achievementStatsProvider =
     AsyncNotifierProvider<AchievementStatsNotifier, AchievementStats>(AchievementStatsNotifier.new);
 
 class AchievementStatsNotifier extends AsyncNotifier<AchievementStats> {
+  String? get _userId => ref.read(authStateProvider).valueOrNull?.userId;
+
   @override
   Future<AchievementStats> build() async {
-    return ref.read(achievementStorageProvider).load();
+    final userId = ref.watch(authStateProvider.select((auth) => auth.valueOrNull?.userId));
+    if (userId == null) return const AchievementStats();
+    return ref.read(achievementStorageProvider).load(userId);
   }
 
-  Future<void> recordTaskCompleted({
-    required int durationMinutes,
-    required bool hasReward,
-    required DateTime completedAt,
-    required bool perfectDay,
-  }) async {
+  Future<void> recordTaskCompleted({required DateTime completedAt}) async {
+    final userId = _userId;
+    if (userId == null) return;
     final storage = ref.read(achievementStorageProvider);
-    final current = state.valueOrNull ?? await storage.load();
-    final updated = storage.recordTaskCompleted(
-      current,
-      durationMinutes: durationMinutes,
-      hasReward: hasReward,
-      completedAt: completedAt,
-      perfectDay: perfectDay,
-    );
-    await storage.save(updated);
-    state = AsyncData(updated);
-  }
-
-  Future<void> recordTaskCreated() async {
-    final storage = ref.read(achievementStorageProvider);
-    final current = state.valueOrNull ?? await storage.load();
-    final updated = storage.recordTaskCreated(current);
-    await storage.save(updated);
-    state = AsyncData(updated);
-  }
-
-  Future<void> recordCalendarImport(int count) async {
-    if (count <= 0) return;
-    final storage = ref.read(achievementStorageProvider);
-    final current = state.valueOrNull ?? await storage.load();
-    final updated = storage.recordCalendarImport(current, count);
-    await storage.save(updated);
-    state = AsyncData(updated);
-  }
-
-  Future<void> recordAiPlanApplied() async {
-    final storage = ref.read(achievementStorageProvider);
-    final current = state.valueOrNull ?? await storage.load();
-    final updated = storage.recordAiPlanApplied(current);
-    await storage.save(updated);
+    final current = state.valueOrNull ?? await storage.load(userId);
+    final updated = storage.recordTaskCompleted(current, completedAt: completedAt);
+    await storage.save(userId, updated);
     state = AsyncData(updated);
   }
 }
@@ -163,32 +134,63 @@ class _AchievementsBody extends StatelessWidget {
         const SizedBox(height: 20),
         Row(
           children: [
-            Expanded(child: _StatTile(label: strings.achievementsStatCompleted, value: '${stats.tasksCompleted}', icon: Icons.task_alt_rounded)),
+            Expanded(
+              child: _StatTile(
+                label: strings.achievementsStatWeekly,
+                value: '${stats.tasksCompletedThisWeek}',
+                icon: Icons.calendar_view_week_rounded,
+              ),
+            ),
             const SizedBox(width: 10),
-            Expanded(child: _StatTile(label: strings.achievementsStatStreak, value: '${stats.currentStreak}', icon: Icons.local_fire_department_rounded)),
-            const SizedBox(width: 10),
-            Expanded(child: _StatTile(label: strings.achievementsStatFocus, value: strings.minutesShort(stats.totalFocusMinutes), icon: Icons.timer_rounded)),
+            Expanded(
+              child: _StatTile(
+                label: strings.achievementsStatAllTime,
+                value: '${stats.tasksCompleted}',
+                icon: Icons.task_alt_rounded,
+              ),
+            ),
           ],
         ),
         const SizedBox(height: 24),
-        Text(strings.achievementsBadges, style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800)),
+        Text(strings.achievementsWeekly, style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800)),
         const SizedBox(height: 12),
-        GridView.builder(
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          itemCount: achievementDefinitions.length,
-          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: 2,
-            mainAxisSpacing: 12,
-            crossAxisSpacing: 12,
-            childAspectRatio: 0.92,
-          ),
-          itemBuilder: (context, index) {
-            final achievement = achievementDefinitions[index];
-            return _AchievementCard(achievement: achievement, stats: stats, strings: strings);
-          },
-        ),
+        _AchievementGrid(definitions: weeklyAchievementDefinitions, stats: stats, strings: strings),
+        const SizedBox(height: 24),
+        Text(strings.achievementsAllTime, style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800)),
+        const SizedBox(height: 12),
+        _AchievementGrid(definitions: allTimeAchievementDefinitions, stats: stats, strings: strings),
       ],
+    );
+  }
+}
+
+class _AchievementGrid extends StatelessWidget {
+  const _AchievementGrid({
+    required this.definitions,
+    required this.stats,
+    required this.strings,
+  });
+
+  final List<AchievementDefinition> definitions;
+  final AchievementStats stats;
+  final S strings;
+
+  @override
+  Widget build(BuildContext context) {
+    return GridView.builder(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      itemCount: definitions.length,
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 2,
+        mainAxisSpacing: 12,
+        crossAxisSpacing: 12,
+        childAspectRatio: 0.92,
+      ),
+      itemBuilder: (context, index) {
+        final achievement = definitions[index];
+        return _AchievementCard(achievement: achievement, stats: stats, strings: strings);
+      },
     );
   }
 }

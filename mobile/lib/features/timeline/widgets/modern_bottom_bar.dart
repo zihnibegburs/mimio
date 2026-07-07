@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:mimio/core/theme/mimio_theme.dart';
+import 'package:mimio/core/widgets/liquid_glass.dart';
 
 class ModernNavItem {
   const ModernNavItem({required this.icon, required this.selectedIcon, required this.label});
@@ -27,21 +28,12 @@ class ModernBottomBar extends StatelessWidget {
   Widget build(BuildContext context) {
     final leftCount = items.length ~/ 2;
 
-    return Container(
+    return LiquidGlass(
       margin: const EdgeInsets.fromLTRB(16, 0, 16, 20),
+      borderRadius: BorderRadius.circular(32),
+      blur: true,
+      blurSigma: LiquidGlassTokens.blurSigmaChrome,
       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 8),
-      decoration: BoxDecoration(
-        color: context.palette.surface,
-        borderRadius: BorderRadius.circular(28),
-        border: Border.all(color: context.palette.border),
-        boxShadow: [
-          BoxShadow(
-            color: MimioColors.primary.withValues(alpha: 0.08),
-            blurRadius: 24,
-            offset: const Offset(0, 8),
-          ),
-        ],
-      ),
       child: Row(
         children: [
           for (var i = 0; i < leftCount; i++)
@@ -73,8 +65,13 @@ class _NavButton extends StatelessWidget {
           duration: const Duration(milliseconds: 200),
           padding: const EdgeInsets.symmetric(vertical: 8),
           decoration: BoxDecoration(
-            color: selected ? MimioColors.primary.withValues(alpha: 0.12) : Colors.transparent,
-            borderRadius: BorderRadius.circular(20),
+            color: selected
+                ? MimioColors.primary.withValues(alpha: 0.18)
+                : Colors.white.withValues(alpha: 0.04),
+            borderRadius: BorderRadius.circular(22),
+            border: selected
+                ? Border.all(color: MimioColors.primary.withValues(alpha: 0.25))
+                : null,
           ),
           child: Column(
             mainAxisSize: MainAxisSize.min,

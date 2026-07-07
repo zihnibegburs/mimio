@@ -10,7 +10,6 @@ import 'package:mimio/core/widgets/speech_text_field.dart';
 import 'package:mimio/core/utils/task_icons.dart';
 import 'package:mimio/features/providers.dart';
 import 'package:mimio/features/timeline/home_tab.dart';
-import 'package:mimio/features/achievements/achievements_screen.dart';
 
 enum AiMode { breakdown, plan }
 
@@ -98,7 +97,6 @@ class _AiPlanScreenState extends ConsumerState<AiPlanScreen> {
               autoStart: false,
             );
       }
-      await ref.read(achievementStatsProvider.notifier).recordAiPlanApplied();
       if (!mounted) return;
       final s = ref.read(stringsProvider);
       ref.read(homeTabProvider.notifier).state = HomeTab.today;
@@ -142,7 +140,6 @@ class _AiPlanScreenState extends ConsumerState<AiPlanScreen> {
                 .toList(),
             autoStart: false,
           );
-      await ref.read(achievementStatsProvider.notifier).recordAiPlanApplied();
 
       if (!mounted) return;
       final s = ref.read(stringsProvider);

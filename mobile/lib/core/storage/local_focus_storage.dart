@@ -23,6 +23,20 @@ class LocalFocusSessionData {
   final DateTime? pausedAt;
 
   bool get isPaused => pausedAt != null;
+  bool get isStandalone => taskId == FocusSessionModel.standaloneTaskId;
+
+  factory LocalFocusSessionData.standalone({
+    required String title,
+    int durationMinutes = 25,
+    String color = '#3D9B87',
+  }) =>
+      LocalFocusSessionData(
+        taskId: FocusSessionModel.standaloneTaskId,
+        title: title,
+        color: color,
+        durationMinutes: durationMinutes,
+        startedAt: DateTime.now(),
+      );
 
   factory LocalFocusSessionData.fromTask(TaskModel task) => LocalFocusSessionData(
         taskId: task.id,

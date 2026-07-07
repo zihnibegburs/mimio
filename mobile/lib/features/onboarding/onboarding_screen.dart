@@ -8,7 +8,9 @@ import 'package:mimio/core/widgets/mimio_logo.dart';
 import 'package:mimio/features/providers.dart';
 
 class OnboardingScreen extends ConsumerStatefulWidget {
-  const OnboardingScreen({super.key});
+  const OnboardingScreen({super.key, this.themeOnly = false});
+
+  final bool themeOnly;
 
   @override
   ConsumerState<OnboardingScreen> createState() => _OnboardingScreenState();
@@ -16,18 +18,38 @@ class OnboardingScreen extends ConsumerStatefulWidget {
 
 class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   int _page = 0;
-  late ThemeMode _themeMode = WidgetsBinding.instance.platformDispatcher.platformBrightness ==
-          Brightness.dark
-      ? ThemeMode.dark
-      : ThemeMode.light;
+  ThemeMode? _themeMode;
   bool _preferList = true;
   bool _remind10 = true;
   bool _remind5 = false;
   bool _rewards = true;
 
+  bool get _canAdvance => _page != 0 || _themeMode != null;
+
   @override
   Widget build(BuildContext context) {
     final s = ref.watch(stringsProvider);
+
+    if (widget.themeOnly) {
+      return Scaffold(
+        body: SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Expanded(child: _buildThemePage(s)),
+                const SizedBox(height: 16),
+                ElevatedButton(
+                  onPressed: _themeMode == null ? null : _finishThemeOnly,
+                  child: Text(s.getStarted),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
 
     return Scaffold(
       body: SafeArea(
@@ -47,7 +69,11 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
               Expanded(child: _buildPage(s)),
               const SizedBox(height: 16),
               ElevatedButton(
-                onPressed: _page < 3 ? () => setState(() => _page++) : _finish,
+                onPressed: !_canAdvance
+                    ? null
+                    : _page < 3
+                        ? () => setState(() => _page++)
+                        : _finish,
                 child: Text(_page < 3 ? s.nextStep : s.getStarted),
               ),
             ],
@@ -57,9 +83,35 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
     );
   }
 
+  Widget _buildThemePage(S s) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(s.onboardingThemePref, style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800)),
+        const SizedBox(height: 8),
+        Text(s.onboardingThemeSubtitle, style: TextStyle(color: context.palette.textSecondary, height: 1.4)),
+        const SizedBox(height: 24),
+        _ThemeOption(
+          label: s.themeLight,
+          icon: Icons.light_mode_outlined,
+          selected: _themeMode == ThemeMode.light,
+          onTap: () => _selectTheme(ThemeMode.light),
+        ),
+        const SizedBox(height: 12),
+        _ThemeOption(
+          label: s.themeDark,
+          icon: Icons.dark_mode_outlined,
+          selected: _themeMode == ThemeMode.dark,
+          onTap: () => _selectTheme(ThemeMode.dark),
+        ),
+      ],
+    );
+  }
+
   Widget _buildPage(S s) {
     return switch (_page) {
-      0 => Column(
+      0 => _buildThemePage(s),
+      1 => Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             const MimioLogo(size: 72),
@@ -67,28 +119,6 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
             Text(s.onboardingWelcome, textAlign: TextAlign.center, style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w800)),
             const SizedBox(height: 12),
             Text(s.onboardingSubtitle, textAlign: TextAlign.center, style: TextStyle(color: context.palette.textSecondary, height: 1.5)),
-          ],
-        ),
-      1 => Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(s.onboardingThemePref, style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800)),
-            const SizedBox(height: 8),
-            Text(s.onboardingThemeSubtitle, style: TextStyle(color: context.palette.textSecondary, height: 1.4)),
-            const SizedBox(height: 24),
-            _ThemeOption(
-              label: s.themeLight,
-              icon: Icons.light_mode_outlined,
-              selected: _themeMode == ThemeMode.light,
-              onTap: () => _selectTheme(ThemeMode.light),
-            ),
-            const SizedBox(height: 12),
-            _ThemeOption(
-              label: s.themeDark,
-              icon: Icons.dark_mode_outlined,
-              selected: _themeMode == ThemeMode.dark,
-              onTap: () => _selectTheme(ThemeMode.dark),
-            ),
           ],
         ),
       2 => Column(
@@ -147,8 +177,17 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
     ref.read(appThemeModeProvider.notifier).setThemeMode(mode);
   }
 
+  Future<void> _finishThemeOnly() async {
+    final mode = _themeMode;
+    if (mode == null) return;
+    await ref.read(appThemeModeProvider.notifier).setThemeMode(mode);
+    if (mounted) Navigator.of(context).pop();
+  }
+
   Future<void> _finish() async {
-    await ref.read(appThemeModeProvider.notifier).setThemeMode(_themeMode);
+    final mode = _themeMode;
+    if (mode == null) return;
+    await ref.read(appThemeModeProvider.notifier).setThemeMode(mode);
     await ref.read(adhdPreferencesProvider.notifier).patch((p) => p.copyWith(
           onboardingCompleted: true,
           preferListView: _preferList,

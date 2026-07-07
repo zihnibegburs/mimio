@@ -41,9 +41,14 @@ class AuthRepository {
   }
 
   Future<AuthResponse> loginWithGoogle({required String idToken}) async {
-    final response = await _dio.post('/auth/google', data: {
-      'idToken': idToken,
-    });
+    final response = await _dio.post(
+      '/auth/google',
+      data: {'idToken': idToken},
+      options: Options(
+        receiveTimeout: const Duration(seconds: 120),
+        sendTimeout: const Duration(seconds: 30),
+      ),
+    );
     final auth = AuthResponse.fromJson(response.data as Map<String, dynamic>);
     await _storage.saveToken(auth.token);
     return auth;

@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 import 'package:mimio/core/l10n/app_strings.dart';
 import 'package:mimio/core/models/models.dart';
 import 'package:mimio/core/theme/mimio_theme.dart';
+import 'package:mimio/core/widgets/liquid_glass.dart';
 import 'package:mimio/core/utils/schedule_utils.dart';
 import 'package:mimio/features/providers.dart';
 
@@ -84,14 +85,15 @@ class _NowCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    return LiquidGlass(
+      blur: false,
+      borderRadius: BorderRadius.circular(26),
       padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: context.palette.surface,
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: accent.withValues(alpha: 0.35), width: 2),
-        boxShadow: [
-          BoxShadow(color: accent.withValues(alpha: 0.12), blurRadius: 20, offset: const Offset(0, 8)),
+      tintOpacity: 0.8,
+      gradient: LinearGradient(
+        colors: [
+          accent.withValues(alpha: 0.12),
+          accent.withValues(alpha: 0.04),
         ],
       ),
       child: task == null

@@ -6,7 +6,9 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 class AdhdSettingsStorage {
   static const _prefsKey = 'adhd_preferences';
-  static const _unlockedAchievementsKey = 'unlocked_achievement_ids';
+  static const _legacyUnlockedAchievementsKey = 'unlocked_achievement_ids';
+
+  static String _unlockedAchievementsKey(String userId) => 'unlocked_achievement_ids_$userId';
 
   Future<AdhdPreferences> load() async {
     final prefs = await SharedPreferences.getInstance();
@@ -24,14 +26,20 @@ class AdhdSettingsStorage {
     await sp.setString(_prefsKey, jsonEncode(prefs.toJson()));
   }
 
-  Future<Set<String>> loadUnlockedAchievementIds() async {
+  Future<Set<String>> loadUnlockedAchievementIds(String userId) async {
     final prefs = await SharedPreferences.getInstance();
-    return prefs.getStringList(_unlockedAchievementsKey)?.toSet() ?? {};
+    await prefs.remove(_legacyUnlockedAchievementsKey);
+    return prefs.getStringList(_unlockedAchievementsKey(userId))?.toSet() ?? {};
   }
 
-  Future<void> saveUnlockedAchievementIds(Set<String> ids) async {
+  Future<void> saveUnlockedAchievementIds(String userId, Set<String> ids) async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setStringList(_unlockedAchievementsKey, ids.toList());
+    await prefs.setStringList(_unlockedAchievementsKey(userId), ids.toList());
+  }
+
+  Future<void> clearUnlockedAchievementIds(String userId) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove(_unlockedAchievementsKey(userId));
   }
 }
 

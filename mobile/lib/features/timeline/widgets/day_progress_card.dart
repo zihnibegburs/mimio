@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mimio/core/l10n/app_strings.dart';
 import 'package:mimio/core/models/models.dart';
 import 'package:mimio/core/theme/mimio_theme.dart';
+import 'package:mimio/core/widgets/liquid_glass.dart';
 
 class DayProgressCard extends ConsumerWidget {
   const DayProgressCard({super.key, required this.tasks});
@@ -17,19 +18,18 @@ class DayProgressCard extends ConsumerWidget {
     final active = tasks.where((t) => t.isActive).length;
     final progress = total == 0 ? 0.0 : completed / total;
 
-    return Container(
+    return LiquidGlass(
       margin: const EdgeInsets.fromLTRB(20, 4, 20, 12),
+      borderRadius: BorderRadius.circular(24),
+      blur: false,
       padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [
-            MimioColors.primary.withValues(alpha: 0.12),
-            MimioColors.primaryLight.withValues(alpha: 0.08),
-          ],
-        ),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: MimioColors.primary.withValues(alpha: 0.2)),
+      gradient: LinearGradient(
+        colors: [
+          MimioColors.primary.withValues(alpha: 0.16),
+          MimioColors.primaryLight.withValues(alpha: 0.1),
+        ],
       ),
+      tintOpacity: 0.42,
       child: Row(
         children: [
           SizedBox(

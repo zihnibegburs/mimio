@@ -26,6 +26,12 @@ class AuthResponse {
         avatarColor: json['avatarColor'] as String,
       );
 
+  String get firstName {
+    final trimmed = displayName.trim();
+    if (trimmed.isEmpty) return '';
+    return trimmed.split(RegExp(r'\s+')).first;
+  }
+
   AuthResponse copyWith({
     String? token,
     String? userId,
@@ -182,6 +188,8 @@ class TimelineModel {
 }
 
 class FocusSessionModel {
+  static const standaloneTaskId = '__standalone__';
+
   final String taskId;
   final String title;
   final String color;
@@ -216,6 +224,7 @@ class FocusSessionModel {
         progressPercent: (json['progressPercent'] as num).toDouble(),
       );
 
+  bool get isStandalone => taskId == standaloneTaskId;
   bool get isPaused => status == TaskStatus.paused;
   bool get isActive => status == TaskStatus.inProgress;
 

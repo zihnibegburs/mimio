@@ -16,6 +16,11 @@ class SettingsStorage {
     await prefs.setString(_languageKey, code);
   }
 
+  Future<bool> hasThemePreference() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.containsKey(_themeModeKey);
+  }
+
   Future<ThemeMode> getThemeMode() async {
     final prefs = await SharedPreferences.getInstance();
     return switch (prefs.getString(_themeModeKey)) {

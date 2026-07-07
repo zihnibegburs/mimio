@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:mimio/core/l10n/app_strings.dart';
 import 'package:mimio/core/models/models.dart';
 import 'package:mimio/core/theme/mimio_theme.dart';
+import 'package:mimio/core/widgets/liquid_glass.dart';
 import 'package:mimio/features/focus/widgets/focus_timer_widget.dart';
 
 class ActiveTaskBanner extends ConsumerWidget {
@@ -18,16 +19,14 @@ class ActiveTaskBanner extends ConsumerWidget {
 
     return GestureDetector(
       onTap: () => context.push('/focus'),
-      child: Container(
+      child: LiquidGlass(
         margin: const EdgeInsets.fromLTRB(20, 8, 20, 0),
+        borderRadius: BorderRadius.circular(24),
+        blur: true,
+        blurSigma: 20,
         padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          gradient: LinearGradient(colors: [color, color.withValues(alpha: 0.75)]),
-          borderRadius: BorderRadius.circular(20),
-          boxShadow: [
-            BoxShadow(color: color.withValues(alpha: 0.3), blurRadius: 16, offset: const Offset(0, 6)),
-          ],
-        ),
+        gradient: LinearGradient(colors: [color.withValues(alpha: 0.92), color.withValues(alpha: 0.72)]),
+        tintOpacity: 0.15,
         child: Row(
           children: [
             FocusTimerWidget(session: session, size: 72, showLabel: false, inverted: true),

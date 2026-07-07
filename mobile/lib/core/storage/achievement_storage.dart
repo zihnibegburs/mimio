@@ -5,87 +5,48 @@ import 'package:mimio/core/models/achievement.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class AchievementStorage {
-  static const _statsKey = 'achievement_stats';
+  static const _legacyStatsKey = 'achievement_stats';
 
-  Future<AchievementStats> load() async {
+  static String _statsKey(String userId) => 'achievement_stats_$userId';
+
+  Future<AchievementStats> load(String userId) async {
     final prefs = await SharedPreferences.getInstance();
-    final raw = prefs.getString(_statsKey);
+    await prefs.remove(_legacyStatsKey);
+    final raw = prefs.getString(_statsKey(userId));
     if (raw == null) return const AchievementStats();
     try {
-      return AchievementStats.fromJson(jsonDecode(raw) as Map<String, dynamic>);
+      final stats = AchievementStats.fromJson(jsonDecode(raw) as Map<String, dynamic>);
+      return _normalizeWeek(stats, DateTime.now());
     } catch (_) {
       return const AchievementStats();
     }
   }
 
-  Future<void> save(AchievementStats stats) async {
+  Future<void> save(String userId, AchievementStats stats) async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(_statsKey, jsonEncode(stats.toJson()));
+    await prefs.setString(_statsKey(userId), jsonEncode(stats.toJson()));
   }
 
-  String _dateKey(DateTime date) =>
-      '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
+  Future<void> clear(String userId) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove(_statsKey(userId));
+  }
+
+  AchievementStats _normalizeWeek(AchievementStats stats, DateTime now) {
+    final currentWeek = weekKeyFor(now);
+    if (stats.weekKey == currentWeek) return stats;
+    return stats.copyWith(tasksCompletedThisWeek: 0, weekKey: currentWeek);
+  }
 
   AchievementStats recordTaskCompleted(
     AchievementStats current, {
-    required int durationMinutes,
-    required bool hasReward,
     required DateTime completedAt,
-    required bool perfectDay,
   }) {
-    final today = _dateKey(completedAt);
-    final yesterday = _dateKey(completedAt.subtract(const Duration(days: 1)));
-
-    var streak = current.currentStreak;
-    if (current.lastCompletionDate != today) {
-      if (current.lastCompletionDate == yesterday) {
-        streak = current.currentStreak + 1;
-      } else {
-        streak = 1;
-      }
-    }
-
-    final longest = streak > current.longestStreak ? streak : current.longestStreak;
-    final hour = completedAt.hour;
-    final weekday = completedAt.weekday;
-    final isWeekend = weekday == DateTime.saturday || weekday == DateTime.sunday;
-
-    var completionsToday = 1;
-    if (current.lastCompletionDate == today) {
-      completionsToday = current.completionsToday + 1;
-    }
-    final maxDaily = completionsToday > current.maxDailyCompletions
-        ? completionsToday
-        : current.maxDailyCompletions;
-
-    return current.copyWith(
-      tasksCompleted: current.tasksCompleted + 1,
-      totalFocusMinutes: current.totalFocusMinutes + durationMinutes,
-      rewardsClaimed: hasReward ? current.rewardsClaimed + 1 : current.rewardsClaimed,
-      perfectDays: perfectDay ? current.perfectDays + 1 : current.perfectDays,
-      currentStreak: streak,
-      longestStreak: longest,
-      earlyBirdCompletions: hour < 9 ? current.earlyBirdCompletions + 1 : current.earlyBirdCompletions,
-      nightOwlCompletions: hour >= 21 ? current.nightOwlCompletions + 1 : current.nightOwlCompletions,
-      weekendCompletions: isWeekend ? current.weekendCompletions + 1 : current.weekendCompletions,
-      maxDailyCompletions: maxDaily,
-      completionsToday: completionsToday,
-      lastCompletionDate: today,
-    );
-  }
-
-  AchievementStats recordTaskCreated(AchievementStats current) {
-    return current.copyWith(tasksCreated: current.tasksCreated + 1);
-  }
-
-  AchievementStats recordAiPlanApplied(AchievementStats current) {
-    return current.copyWith(aiPlansApplied: current.aiPlansApplied + 1);
-  }
-
-  AchievementStats recordCalendarImport(AchievementStats current, int count) {
-    return current.copyWith(
-      calendarImports: current.calendarImports + count,
-      tasksCreated: current.tasksCreated + count,
+    final normalized = _normalizeWeek(current, completedAt);
+    return normalized.copyWith(
+      tasksCompleted: normalized.tasksCompleted + 1,
+      tasksCompletedThisWeek: normalized.tasksCompletedThisWeek + 1,
+      weekKey: weekKeyFor(completedAt),
     );
   }
 }

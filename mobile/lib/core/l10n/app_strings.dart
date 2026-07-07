@@ -170,7 +170,7 @@ class S {
   String get achievementsNav =>
       l10n(lang, _m(en: 'Badges', tr: 'Rozetler', es: 'Logros', fr: 'Badges', de: 'Abzeichen'));
   String get achievementsSubtitle => l10n(lang, _m(
-        en: 'Keep completing tasks to unlock badges.',
+        en: 'Complete tasks to unlock badges.',
         tr: 'Görevleri tamamlayarak rozetleri aç.',
         es: 'Completa tareas para desbloquear insignias.',
         fr: 'Terminez des tâches pour débloquer des badges.',
@@ -183,14 +183,14 @@ class S {
         fr: '$unlocked / $total débloqués',
         de: '$unlocked / $total freigeschaltet',
       ));
-  String get achievementsBadges =>
-      l10n(lang, _m(en: 'Badges', tr: 'Rozetler', es: 'Insignias', fr: 'Badges', de: 'Abzeichen'));
-  String get achievementsStatCompleted =>
-      l10n(lang, _m(en: 'Completed', tr: 'Tamamlanan', es: 'Completadas', fr: 'Terminées', de: 'Erledigt'));
-  String get achievementsStatStreak =>
-      l10n(lang, _m(en: 'Streak', tr: 'Seri', es: 'Racha', fr: 'Série', de: 'Serie'));
-  String get achievementsStatFocus =>
-      l10n(lang, _m(en: 'Focus', tr: 'Odak', es: 'Enfoque', fr: 'Focus', de: 'Fokus'));
+  String get achievementsWeekly =>
+      l10n(lang, _m(en: 'This week', tr: 'Bu hafta', es: 'Esta semana', fr: 'Cette semaine', de: 'Diese Woche'));
+  String get achievementsAllTime =>
+      l10n(lang, _m(en: 'All time', tr: 'Tüm zamanlar', es: 'Todo el tiempo', fr: 'Tous les temps', de: 'Gesamt'));
+  String get achievementsStatWeekly =>
+      l10n(lang, _m(en: 'This week', tr: 'Bu hafta', es: 'Esta semana', fr: 'Cette semaine', de: 'Diese Woche'));
+  String get achievementsStatAllTime =>
+      l10n(lang, _m(en: 'All time', tr: 'Tüm zamanlar', es: 'Todo el tiempo', fr: 'Tous les temps', de: 'Gesamt'));
   String get achievementsProfileSubtitle => l10n(lang, _m(
         en: 'View your badges and progress',
         tr: 'Rozetlerini ve ilerlemeni gör',
@@ -200,26 +200,45 @@ class S {
       ));
 
   String achievementTitle(AchievementId id) => l10n(lang, switch (id) {
+        AchievementId.weeklyFirstTask => _m(en: 'Week Starter', tr: 'Haftaya Başlangıç', es: 'Inicio de semana', fr: 'Début de semaine', de: 'Wochenstart'),
+        AchievementId.weeklyFiveTasks => _m(en: 'Weekly Momentum', tr: 'Haftalık Ivme', es: 'Impulso semanal', fr: 'Élan hebdomadaire', de: 'Wochen-Schwung'),
+        AchievementId.weeklyTenTasks => _m(en: 'Weekly Flow', tr: 'Haftalık Akış', es: 'Flujo semanal', fr: 'Flow hebdomadaire', de: 'Wochen-Flow'),
+        AchievementId.weeklyTwentyTasks => _m(en: 'Week Champion', tr: 'Haftanın Şampiyonu', es: 'Campeón de la semana', fr: 'Champion de la semaine', de: 'Wochen-Champion'),
         AchievementId.firstTask => _m(en: 'First Step', tr: 'İlk Adım', es: 'Primer paso', fr: 'Premier pas', de: 'Erster Schritt'),
         AchievementId.fiveTasks => _m(en: 'On a Roll', tr: 'Ivme Kazandın', es: 'En racha', fr: 'En forme', de: 'Im Flow'),
         AchievementId.twentyFiveTasks => _m(en: 'Productive', tr: 'Üretken', es: 'Productivo', fr: 'Productif', de: 'Produktiv'),
         AchievementId.hundredTasks => _m(en: 'Task Master', tr: 'Görev Ustası', es: 'Maestro de tareas', fr: 'Maître des tâches', de: 'Aufgabenmeister'),
-        AchievementId.focusHour => _m(en: 'Focused Hour', tr: 'Odaklı Saat', es: 'Hora enfocada', fr: 'Heure focus', de: 'Fokus-Stunde'),
-        AchievementId.focusMarathon => _m(en: 'Focus Marathon', tr: 'Odak Maratonu', es: 'Maratón de enfoque', fr: 'Marathon focus', de: 'Fokus-Marathon'),
-        AchievementId.perfectDay => _m(en: 'Perfect Day', tr: 'Mükemmel Gün', es: 'Día perfecto', fr: 'Journée parfaite', de: 'Perfekter Tag'),
-        AchievementId.streak3 => _m(en: '3-Day Streak', tr: '3 Günlük Seri', es: 'Racha de 3 días', fr: 'Série de 3 jours', de: '3-Tage-Serie'),
-        AchievementId.streak7 => _m(en: '7-Day Streak', tr: '7 Günlük Seri', es: 'Racha de 7 días', fr: 'Série de 7 jours', de: '7-Tage-Serie'),
-        AchievementId.rewardCollector => _m(en: 'Reward Hunter', tr: 'Ödül Avcısı', es: 'Cazador de recompensas', fr: 'Chasseur de récompenses', de: 'Belohnungsjäger'),
-        AchievementId.planner => _m(en: 'Planner', tr: 'Planlayıcı', es: 'Planificador', fr: 'Planificateur', de: 'Planer'),
-        AchievementId.earlyBird => _m(en: 'Early Bird', tr: 'Erken Kuş', es: 'Madrugador', fr: 'Lève-tôt', de: 'Frühaufsteher'),
-        AchievementId.nightOwl => _m(en: 'Night Owl', tr: 'Gece Kuşu', es: 'Noctámbulo', fr: 'Oiseau de nuit', de: 'Nachteule'),
-        AchievementId.calendarImporter => _m(en: 'Calendar Sync', tr: 'Takvim Senkronu', es: 'Sincronía de calendario', fr: 'Sync calendrier', de: 'Kalender-Sync'),
-        AchievementId.aiWhisperer => _m(en: 'AI Whisperer', tr: 'AI Fısıldayan', es: 'Susurro de IA', fr: 'Murmure IA', de: 'KI-Flüsterer'),
-        AchievementId.hatTrick => _m(en: 'Hat Trick', tr: 'Üçlü Vuruş', es: 'Hat-trick', fr: 'Triplé', de: 'Hattrick'),
-        AchievementId.twoWeekStreak => _m(en: 'Two-Week Streak', tr: '2 Haftalık Seri', es: 'Racha de 2 semanas', fr: 'Série de 2 semaines', de: '2-Wochen-Serie'),
       });
 
   String achievementDescription(AchievementId id) => l10n(lang, switch (id) {
+        AchievementId.weeklyFirstTask => _m(
+              en: 'Complete 1 task this week.',
+              tr: 'Bu hafta 1 görev tamamla.',
+              es: 'Completa 1 tarea esta semana.',
+              fr: 'Terminez 1 tâche cette semaine.',
+              de: 'Schließe diese Woche 1 Aufgabe ab.',
+            ),
+        AchievementId.weeklyFiveTasks => _m(
+              en: 'Complete 5 tasks this week.',
+              tr: 'Bu hafta 5 görev tamamla.',
+              es: 'Completa 5 tareas esta semana.',
+              fr: 'Terminez 5 tâches cette semaine.',
+              de: 'Schließe diese Woche 5 Aufgaben ab.',
+            ),
+        AchievementId.weeklyTenTasks => _m(
+              en: 'Complete 10 tasks this week.',
+              tr: 'Bu hafta 10 görev tamamla.',
+              es: 'Completa 10 tareas esta semana.',
+              fr: 'Terminez 10 tâches cette semaine.',
+              de: 'Schließe diese Woche 10 Aufgaben ab.',
+            ),
+        AchievementId.weeklyTwentyTasks => _m(
+              en: 'Complete 20 tasks this week.',
+              tr: 'Bu hafta 20 görev tamamla.',
+              es: 'Completa 20 tareas esta semana.',
+              fr: 'Terminez 20 tâches cette semaine.',
+              de: 'Schließe diese Woche 20 Aufgaben ab.',
+            ),
         AchievementId.firstTask => _m(
               en: 'Complete your first task.',
               tr: 'İlk görevini tamamla.',
@@ -247,97 +266,6 @@ class S {
               es: 'Completa 100 tareas.',
               fr: 'Terminez 100 tâches.',
               de: 'Schließe 100 Aufgaben ab.',
-            ),
-        AchievementId.focusHour => _m(
-              en: 'Spend 60 minutes in focus.',
-              tr: '60 dakika odaklan.',
-              es: 'Pasa 60 minutos enfocado.',
-              fr: 'Passez 60 minutes en focus.',
-              de: 'Verbringe 60 Minuten im Fokus.',
-            ),
-        AchievementId.focusMarathon => _m(
-              en: 'Spend 300 minutes in focus.',
-              tr: '300 dakika odaklan.',
-              es: 'Pasa 300 minutos enfocado.',
-              fr: 'Passez 300 minutes en focus.',
-              de: 'Verbringe 300 Minuten im Fokus.',
-            ),
-        AchievementId.perfectDay => _m(
-              en: 'Complete every task in a day.',
-              tr: 'Bir gündeki tüm görevleri tamamla.',
-              es: 'Completa todas las tareas de un día.',
-              fr: 'Terminez toutes les tâches d\'une journée.',
-              de: 'Schließe alle Aufgaben eines Tages ab.',
-            ),
-        AchievementId.streak3 => _m(
-              en: 'Complete tasks 3 days in a row.',
-              tr: '3 gün üst üste görev tamamla.',
-              es: 'Completa tareas 3 días seguidos.',
-              fr: 'Terminez des tâches 3 jours de suite.',
-              de: 'Schließe 3 Tage hintereinander Aufgaben ab.',
-            ),
-        AchievementId.streak7 => _m(
-              en: 'Complete tasks 7 days in a row.',
-              tr: '7 gün üst üste görev tamamla.',
-              es: 'Completa tareas 7 días seguidos.',
-              fr: 'Terminez des tâches 7 jours de suite.',
-              de: 'Schließe 7 Tage hintereinander Aufgaben ab.',
-            ),
-        AchievementId.rewardCollector => _m(
-              en: 'Complete 5 tasks with rewards.',
-              tr: '5 ödüllü görev tamamla.',
-              es: 'Completa 5 tareas con recompensa.',
-              fr: 'Terminez 5 tâches avec récompense.',
-              de: 'Schließe 5 Aufgaben mit Belohnung ab.',
-            ),
-        AchievementId.planner => _m(
-              en: 'Create 10 tasks.',
-              tr: '10 görev oluştur.',
-              es: 'Crea 10 tareas.',
-              fr: 'Créez 10 tâches.',
-              de: 'Erstelle 10 Aufgaben.',
-            ),
-        AchievementId.earlyBird => _m(
-              en: 'Complete a task before 9 AM.',
-              tr: 'Sabah 9\'dan önce bir görev tamamla.',
-              es: 'Completa una tarea antes de las 9.',
-              fr: 'Terminez une tâche avant 9 h.',
-              de: 'Schließe eine Aufgabe vor 9 Uhr ab.',
-            ),
-        AchievementId.nightOwl => _m(
-              en: 'Complete a task after 9 PM.',
-              tr: 'Akşam 9\'dan sonra bir görev tamamla.',
-              es: 'Completa una tarea después de las 21.',
-              fr: 'Terminez une tâche après 21 h.',
-              de: 'Schließe eine Aufgabe nach 21 Uhr ab.',
-            ),
-        AchievementId.calendarImporter => _m(
-              en: 'Import events from your calendar.',
-              tr: 'Takviminden etkinlik aktar.',
-              es: 'Importa eventos de tu calendario.',
-              fr: 'Importez des événements de votre calendrier.',
-              de: 'Importiere Termine aus deinem Kalender.',
-            ),
-        AchievementId.aiWhisperer => _m(
-              en: 'Save a plan from the AI planner.',
-              tr: 'AI planlayıcıdan plan kaydet.',
-              es: 'Guarda un plan del planificador IA.',
-              fr: 'Enregistrez un plan depuis le planificateur IA.',
-              de: 'Speichere einen Plan aus dem KI-Planer.',
-            ),
-        AchievementId.hatTrick => _m(
-              en: 'Complete 3 tasks in one day.',
-              tr: 'Bir günde 3 görev tamamla.',
-              es: 'Completa 3 tareas en un día.',
-              fr: 'Terminez 3 tâches en une journée.',
-              de: 'Schließe 3 Aufgaben an einem Tag ab.',
-            ),
-        AchievementId.twoWeekStreak => _m(
-              en: 'Keep a 14-day completion streak.',
-              tr: '14 günlük tamamlama serisi yap.',
-              es: 'Mantén una racha de 14 días.',
-              fr: 'Maintenez une série de 14 jours.',
-              de: 'Halte eine 14-Tage-Serie.',
             ),
       });
 
@@ -386,6 +314,10 @@ class S {
       l10n(lang, _m(en: 'Add task', tr: 'Görev Ekle', es: 'Añadir tarea', fr: 'Ajouter une tâche', de: 'Aufgabe hinzufügen'));
   String get newTask =>
       l10n(lang, _m(en: 'New task', tr: 'Yeni Görev', es: 'Nueva tarea', fr: 'Nouvelle tâche', de: 'Neue Aufgabe'));
+  String get taskDetails =>
+      l10n(lang, _m(en: 'Details', tr: 'Ayrıntılar', es: 'Detalles', fr: 'Détails', de: 'Details'));
+  String get recurringTask =>
+      l10n(lang, _m(en: 'Recurring', tr: 'Tekrarlayan', es: 'Recurrente', fr: 'Récurrent', de: 'Wiederkehrend'));
   String get editTask =>
       l10n(lang, _m(en: 'Edit task', tr: 'Görevi Düzenle', es: 'Editar tarea', fr: 'Modifier la tâche', de: 'Aufgabe bearbeiten'));
   String get editStep =>
@@ -724,12 +656,23 @@ class S {
   String get focusModeOff =>
       l10n(lang, _m(en: 'Focus mode is off', tr: 'Odak modu kapalı', es: 'Modo enfoque desactivado', fr: 'Mode focus désactivé', de: 'Fokusmodus aus'));
   String get focusModeHint => l10n(lang, _m(
-        en: 'When you start a task, the timer appears here.\nYou can also track it from the lock screen widget.',
-        tr: 'Bir görevi başlattığında zamanlayıcı burada görünür.\nWidget ile kilit ekranından da takip edebilirsin.',
-        es: 'Al iniciar una tarea, el temporizador aparece aquí.\nTambién puedes seguirlo desde el widget de la pantalla de bloqueo.',
-        fr: 'Quand vous démarrez une tâche, le minuteur apparaît ici.\nVous pouvez aussi le suivre depuis le widget de l\'écran verrouillé.',
-        de: 'Wenn du eine Aufgabe startest, erscheint der Timer hier.\nDu kannst ihn auch über das Sperrbildschirm-Widget verfolgen.',
+        en: 'Start a task or begin a free focus session for anything you want.\nTrack it here or from the lock screen widget.',
+        tr: 'Bir görev başlat veya istediğin herhangi bir şey için serbest odak seansı aç.\nBuradan veya kilit ekranı widget\'ından takip edebilirsin.',
+        es: 'Inicia una tarea o comienza una sesión libre para lo que quieras.\nSíguela aquí o desde el widget de la pantalla de bloqueo.',
+        fr: 'Démarrez une tâche ou une session libre pour ce que vous voulez.\nSuivez-la ici ou depuis le widget de l\'écran verrouillé.',
+        de: 'Starte eine Aufgabe oder eine freie Fokussitzung für alles, was du willst.\nVerfolge sie hier oder über das Sperrbildschirm-Widget.',
       ));
+  String get startFocus =>
+      l10n(lang, _m(en: 'Start focus', tr: 'Odak başlat', es: 'Iniciar enfoque', fr: 'Démarrer le focus', de: 'Fokus starten'));
+  String get focusWhatHint => l10n(lang, _m(
+        en: 'What are you focusing on?',
+        tr: 'Ne üzerinde odaklanacaksın?',
+        es: '¿En qué te concentras?',
+        fr: 'Sur quoi vous concentrez-vous ?',
+        de: 'Worauf konzentrierst du dich?',
+      ));
+  String get freeFocusTitle =>
+      l10n(lang, _m(en: 'Focus session', tr: 'Odak seansı', es: 'Sesión de enfoque', fr: 'Session focus', de: 'Fokussitzung'));
   String get focusModeOn => l10n(lang, _m(
         en: 'You\'re in focus mode — keep going!',
         tr: 'Odak modundasın — devam et!',

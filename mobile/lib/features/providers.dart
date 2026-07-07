@@ -15,6 +15,7 @@ import 'package:mimio/features/achievements/achievements_screen.dart';
 import 'package:mimio/core/utils/task_icons.dart';
 import 'package:mimio/core/services/google_auth_service.dart';
 import 'package:mimio/core/storage/adhd_settings_storage.dart';
+import 'package:mimio/core/storage/achievement_storage.dart';
 import 'package:mimio/core/storage/local_focus_storage.dart';
 import 'package:mimio/core/storage/settings_storage.dart';
 
@@ -44,12 +45,18 @@ class AuthNotifier extends AsyncNotifier<AuthResponse?> {
   }
 
   Future<void> loginWithGoogle() async {
+    final idToken = await ref.read(googleAuthServiceProvider).signInAndGetIdToken();
+    if (idToken == null) return;
+    if (idToken.isEmpty) {
+      state = AsyncError(
+        Exception('Google sign-in failed: missing id token'),
+        StackTrace.current,
+      );
+      return;
+    }
+
     state = const AsyncLoading();
     state = await AsyncValue.guard(() async {
-      final idToken = await ref.read(googleAuthServiceProvider).signInAndGetIdToken();
-      if (idToken == null) {
-        throw Exception('Google sign-in cancelled');
-      }
       return ref.read(authRepositoryProvider).loginWithGoogle(idToken: idToken);
     });
   }
@@ -66,9 +73,14 @@ class AuthNotifier extends AsyncNotifier<AuthResponse?> {
   }
 
   Future<void> logout() async {
+    final userId = state.valueOrNull?.userId;
     await ref.read(focusSessionProvider.notifier).clearSession();
     await ref.read(googleAuthServiceProvider).signOut();
     await ref.read(authRepositoryProvider).logout();
+    if (userId != null) {
+      await ref.read(achievementStorageProvider).clear(userId);
+      await ref.read(adhdSettingsStorageProvider).clearUnlockedAchievementIds(userId);
+    }
     state = const AsyncData(null);
   }
 
@@ -168,6 +180,20 @@ class FocusSessionNotifier extends AsyncNotifier<FocusSessionModel?> {
 
   Future<void> startWithTask(TaskModel task) async {
     _session = LocalFocusSessionData.fromTask(task);
+    await _persistAndSync();
+    _syncTickTimer();
+  }
+
+  Future<void> startStandalone({
+    required String title,
+    int durationMinutes = 25,
+    String color = '#3D9B87',
+  }) async {
+    _session = LocalFocusSessionData.standalone(
+      title: title,
+      durationMinutes: durationMinutes,
+      color: color,
+    );
     await _persistAndSync();
     _syncTickTimer();
   }
@@ -343,7 +369,6 @@ class TimelineNotifier extends AsyncNotifier<TimelineModel> {
           motivation: motivation,
           transitionBufferMinutes: transitionBufferMinutes,
         );
-    await ref.read(achievementStatsProvider.notifier).recordTaskCreated();
     if (autoStart) {
       await ref.read(focusSessionProvider.notifier).startWithTask(task);
     }
@@ -371,7 +396,6 @@ class TimelineNotifier extends AsyncNotifier<TimelineModel> {
     }
 
     await ref.read(settingsStorageProvider).markCalendarEventsImported(importedIds);
-    await ref.read(achievementStatsProvider.notifier).recordCalendarImport(importedIds.length);
     await refresh(showLoading: false);
     return importedIds.length;
   }
@@ -390,7 +414,6 @@ class TimelineNotifier extends AsyncNotifier<TimelineModel> {
           icon: TaskIcons.inferName(title),
           subtasks: subtasks,
         );
-    await ref.read(achievementStatsProvider.notifier).recordTaskCreated();
     if (autoStart) {
       final firstSubtask = task.subtasks.isNotEmpty ? task.subtasks.first : task;
       await ref.read(focusSessionProvider.notifier).startWithTask(firstSubtask);
@@ -483,9 +506,6 @@ class TimelineNotifier extends AsyncNotifier<TimelineModel> {
   Future<TaskModel> completeTask(String id) async {
     final timeline = state.valueOrNull;
     final task = timeline != null ? findTaskInTimeline(timeline, id) : null;
-    final perfectDay = timeline != null &&
-        timeline.tasks.isNotEmpty &&
-        timeline.tasks.where((t) => t.id != id).every((t) => t.isCompleted);
 
     await ref.read(focusSessionProvider.notifier).clearSession();
     final completed = await ref.read(taskRepositoryProvider).completeTask(id);
@@ -493,10 +513,7 @@ class TimelineNotifier extends AsyncNotifier<TimelineModel> {
 
     if (task != null) {
       await ref.read(achievementStatsProvider.notifier).recordTaskCompleted(
-            durationMinutes: task.durationMinutes,
-            hasReward: task.hasReward,
             completedAt: DateTime.now(),
-            perfectDay: perfectDay,
           );
     }
 
