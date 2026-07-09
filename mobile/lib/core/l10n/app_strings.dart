@@ -594,6 +594,7 @@ class S {
   String get listView =>
       l10n(lang, _m(en: 'List view', tr: 'Liste görünümü', es: 'Vista de lista', fr: 'Vue liste', de: 'Listenansicht'));
   String get today => l10n(lang, _m(en: 'Today', tr: 'Bugün', es: 'Hoy', fr: 'Aujourd\'hui', de: 'Heute'));
+  String get todoNav => l10n(lang, _m(en: 'To-do', tr: 'Yapılacaklar', es: 'Pendientes', fr: 'À faire', de: 'Aufgaben'));
   String get week => l10n(lang, _m(en: 'Week', tr: 'Hafta', es: 'Semana', fr: 'Semaine', de: 'Woche'));
   String get day => l10n(lang, _m(en: 'Day', tr: 'Gün', es: 'Día', fr: 'Jour', de: 'Tag'));
   String get focus => l10n(lang, _m(en: 'Focus', tr: 'Odak', es: 'Enfoque', fr: 'Focus', de: 'Fokus'));
@@ -976,6 +977,13 @@ class S {
         de: 'Jetzt erfassen, später planen',
       ));
   String get addToInbox => l10n(lang, _m(en: 'Add to inbox', tr: 'Gelen kutusuna ekle', es: 'Añadir a bandeja', fr: 'Ajouter à la boîte', de: 'Zum Eingang hinzufügen'));
+  String get emptyTodo => l10n(lang, _m(
+        en: 'No to-dos yet',
+        tr: 'Henüz yapılacak yok',
+        es: 'Sin pendientes',
+        fr: 'Aucune tâche',
+        de: 'Noch keine Aufgaben',
+      ));
   String get scheduleTask => l10n(lang, _m(en: 'Schedule', tr: 'Planla', es: 'Programar', fr: 'Planifier', de: 'Planen'));
   String get energyLevel => l10n(lang, _m(en: 'Energy needed', tr: 'Gerekli enerji', es: 'Energía necesaria', fr: 'Énergie requise', de: 'Benötigte Energie'));
   String get energyLow => l10n(lang, _m(en: 'Low', tr: 'Düşük', es: 'Baja', fr: 'Faible', de: 'Niedrig'));

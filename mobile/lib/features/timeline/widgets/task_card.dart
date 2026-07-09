@@ -19,11 +19,13 @@ class TaskCard extends ConsumerWidget {
     this.onStart,
     this.onPause,
     this.onComplete,
+    this.onCancel,
     this.onDelete,
     this.onSubtaskTap,
     this.onSubtaskStart,
     this.onSubtaskPause,
     this.onSubtaskComplete,
+    this.onSubtaskCancel,
   });
 
   final TaskModel task;
@@ -31,11 +33,13 @@ class TaskCard extends ConsumerWidget {
   final VoidCallback? onStart;
   final VoidCallback? onPause;
   final VoidCallback? onComplete;
+  final VoidCallback? onCancel;
   final Future<void> Function()? onDelete;
   final SubtaskAction? onSubtaskTap;
   final SubtaskAction? onSubtaskStart;
   final SubtaskAction? onSubtaskPause;
   final SubtaskAction? onSubtaskComplete;
+  final SubtaskAction? onSubtaskCancel;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -68,7 +72,7 @@ class TaskCard extends ConsumerWidget {
                   width: 6,
                   decoration: BoxDecoration(
                     color: color,
-                    borderRadius: const BorderRadius.horizontal(left: Radius.circular(20)),
+                    borderRadius: const BorderRadius.horizontal(left: Radius.circular(22)),
                   ),
                 ),
                 Expanded(
@@ -240,6 +244,7 @@ class TaskCard extends ConsumerWidget {
                                 onStart: onSubtaskStart != null ? () => onSubtaskStart!(sub) : null,
                                 onPause: onSubtaskPause != null ? () => onSubtaskPause!(sub) : null,
                                 onComplete: onSubtaskComplete != null ? () => onSubtaskComplete!(sub) : null,
+                                onCancel: onSubtaskCancel != null ? () => onSubtaskCancel!(sub) : null,
                               )),
                         ],
                         if ((isActive || isPaused) && !task.hasSubtasks) ...[
@@ -247,8 +252,10 @@ class TaskCard extends ConsumerWidget {
                           _ActiveControls(
                             pauseLabel: isPaused ? s.continueLabel : s.pause,
                             finishLabel: s.finish,
+                            cancelLabel: s.cancel,
                             onPause: onPause,
                             onComplete: onComplete,
+                            onCancel: onCancel,
                           ),
                         ] else if (!task.isCompleted && !task.hasSubtasks && !isFocused) ...[
                           const SizedBox(height: 12),
@@ -293,6 +300,7 @@ class _SubtaskRow extends StatelessWidget {
     this.onStart,
     this.onPause,
     this.onComplete,
+    this.onCancel,
   });
 
   final TaskModel subtask;
@@ -303,6 +311,7 @@ class _SubtaskRow extends StatelessWidget {
   final VoidCallback? onStart;
   final VoidCallback? onPause;
   final VoidCallback? onComplete;
+  final VoidCallback? onCancel;
 
   @override
   Widget build(BuildContext context) {
@@ -373,6 +382,8 @@ class _SubtaskRow extends StatelessWidget {
           if (isActive || isPaused) ...[
             _MiniAction(icon: Icons.pause_rounded, color: MimioColors.warning, onTap: onPause),
             const SizedBox(width: 4),
+            _MiniAction(icon: Icons.close_rounded, color: MimioColors.accent, onTap: onCancel),
+            const SizedBox(width: 4),
             _MiniAction(icon: Icons.check_rounded, color: MimioColors.success, onTap: onComplete),
           ] else if (!subtask.isCompleted && !isFocused) ...[
             _MiniAction(icon: Icons.play_arrow_rounded, color: parentColor, onTap: onStart),
@@ -420,14 +431,18 @@ class _ActiveControls extends StatelessWidget {
   const _ActiveControls({
     required this.pauseLabel,
     required this.finishLabel,
+    required this.cancelLabel,
     this.onPause,
     this.onComplete,
+    this.onCancel,
   });
 
   final String pauseLabel;
   final String finishLabel;
+  final String cancelLabel;
   final VoidCallback? onPause;
   final VoidCallback? onComplete;
+  final VoidCallback? onCancel;
 
   @override
   Widget build(BuildContext context) {
@@ -440,6 +455,18 @@ class _ActiveControls extends StatelessWidget {
             label: Text(pauseLabel),
             style: ElevatedButton.styleFrom(
               backgroundColor: MimioColors.warning,
+              padding: const EdgeInsets.symmetric(vertical: 10),
+            ),
+          ),
+        ),
+        const SizedBox(width: 8),
+        Expanded(
+          child: ElevatedButton.icon(
+            onPressed: onCancel,
+            icon: const Icon(Icons.close_rounded, size: 18),
+            label: Text(cancelLabel),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: MimioColors.accent,
               padding: const EdgeInsets.symmetric(vertical: 10),
             ),
           ),
@@ -518,6 +545,7 @@ class _SwipeToDelete extends StatefulWidget {
 
 class _SwipeToDeleteState extends State<_SwipeToDelete> with SingleTickerProviderStateMixin {
   static const _actionWidth = 76.0;
+  static const _borderRadius = 22.0;
   static const _dragResistance = 1.8;
   static const _openThreshold = 0.55;
 
@@ -552,40 +580,50 @@ class _SwipeToDeleteState extends State<_SwipeToDelete> with SingleTickerProvide
   Widget build(BuildContext context) {
     if (widget.onDelete == null) return widget.child;
 
+    final cardRadius = BorderRadius.circular(_borderRadius);
+    final surfaceColor = LiquidGlassTokens.tint(context, opacity: 1.0);
+
     return ClipRRect(
-      borderRadius: BorderRadius.circular(20),
+      borderRadius: cardRadius,
+      clipBehavior: Clip.antiAlias,
       child: Stack(
         children: [
-          Positioned.fill(
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.end,
-              children: [
-                Material(
-                  color: Colors.red.shade400,
-                  child: InkWell(
-                    onTap: _handleDelete,
-                    child: SizedBox(
-                      width: _actionWidth,
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          const Icon(Icons.delete_outline_rounded, color: Colors.white, size: 22),
-                          const SizedBox(height: 4),
-                          Text(
-                            widget.deleteLabel,
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 12,
-                              fontWeight: FontWeight.w600,
-                            ),
+          AnimatedBuilder(
+            animation: _controller,
+            builder: (context, _) {
+              if (_controller.value <= 0) return const SizedBox.shrink();
+              return Positioned.fill(
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    Material(
+                      color: Colors.red.shade400,
+                      child: InkWell(
+                        onTap: _handleDelete,
+                        child: SizedBox(
+                          width: _actionWidth,
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              const Icon(Icons.delete_outline_rounded, color: Colors.white, size: 22),
+                              const SizedBox(height: 4),
+                              Text(
+                                widget.deleteLabel,
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ],
                           ),
-                        ],
+                        ),
                       ),
                     ),
-                  ),
+                  ],
                 ),
-              ],
-            ),
+              );
+            },
           ),
           GestureDetector(
             onHorizontalDragUpdate: (details) {
@@ -606,15 +644,15 @@ class _SwipeToDeleteState extends State<_SwipeToDelete> with SingleTickerProvide
             child: AnimatedBuilder(
               animation: _offset,
               builder: (context, child) {
-                final opaque = LiquidGlassTokens.tint(context, opacity: 1.0);
                 return Transform.translate(
                   offset: Offset(_offset.value, 0),
-                  child: DecoratedBox(
-                    decoration: BoxDecoration(
-                      color: opaque,
-                      borderRadius: BorderRadius.circular(22),
+                  child: ClipRRect(
+                    borderRadius: cardRadius,
+                    clipBehavior: Clip.antiAlias,
+                    child: ColoredBox(
+                      color: surfaceColor,
+                      child: child,
                     ),
-                    child: child,
                   ),
                 );
               },

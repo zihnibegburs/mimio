@@ -1,5 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-enum HomeTab { today, week, focus, achievements }
+enum HomeTab { today, todo, week, focus, achievements }
 
 final homeTabProvider = StateProvider<HomeTab>((ref) => HomeTab.today);

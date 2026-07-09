@@ -34,9 +34,11 @@ class _FocusTimerWidgetState extends ConsumerState<FocusTimerWidget> {
   double get _strokeWidth => widget.size * 0.095;
   double get _knobSize => widget.size * 0.16;
   double get _knobHitRadius => _knobSize * 0.72;
+  double get _ringPadding => _knobSize * 0.5 + 4;
+  double get _canvasSize => widget.size + (_ringPadding * 2);
 
   double _progressFromOffset(Offset local) {
-    final center = Offset(widget.size / 2, widget.size / 2);
+    final center = Offset(_canvasSize / 2, _canvasSize / 2);
     final v = local - center;
     var angle = atan2(v.dy, v.dx);
     var progress = (angle + pi / 2) / (2 * pi);
@@ -45,7 +47,7 @@ class _FocusTimerWidgetState extends ConsumerState<FocusTimerWidget> {
   }
 
   bool _isSeekable(Offset local, double progress) {
-    final center = Offset(widget.size / 2, widget.size / 2);
+    final center = Offset(_canvasSize / 2, _canvasSize / 2);
     final dist = (local - center).distance;
     final radius = (widget.size - _strokeWidth) / 2;
     final onRing = (dist - radius).abs() <= _strokeWidth * 1.8;
@@ -98,13 +100,13 @@ class _FocusTimerWidgetState extends ConsumerState<FocusTimerWidget> {
         : session.remainingFormatted;
     final knobAngle = -pi / 2 + 2 * pi * progress;
     final radius = (widget.size - _strokeWidth) / 2;
-    final knobX = widget.size / 2 + radius * cos(knobAngle);
-    final knobY = widget.size / 2 + radius * sin(knobAngle);
+    final knobX = _canvasSize / 2 + radius * cos(knobAngle);
+    final knobY = _canvasSize / 2 + radius * sin(knobAngle);
     final knobSize = _knobSize;
 
     return SizedBox(
-      width: widget.size,
-      height: widget.size,
+      width: _canvasSize,
+      height: _canvasSize,
       child: GestureDetector(
         onPanStart: widget.interactive
             ? (details) {
@@ -123,6 +125,7 @@ class _FocusTimerWidgetState extends ConsumerState<FocusTimerWidget> {
         onPanCancel: widget.interactive ? () => _endDrag() : null,
         child: Stack(
           alignment: Alignment.center,
+          clipBehavior: Clip.none,
           children: [
             SizedBox(
               width: widget.size,
@@ -155,26 +158,26 @@ class _FocusTimerWidgetState extends ConsumerState<FocusTimerWidget> {
                         radius: 0.95,
                         colors: [
                           Colors.white,
-                          color.withValues(alpha: 0.12),
-                          color.withValues(alpha: 0.28),
+                          color.withValues(alpha: 0.08),
+                          color.withValues(alpha: 0.16),
                         ],
                         stops: const [0.0, 0.55, 1.0],
                       ),
                       border: Border.all(
-                        color: color.withValues(alpha: 0.9),
-                        width: knobSize * 0.14,
+                        color: color.withValues(alpha: 0.72),
+                        width: knobSize * 0.11,
                       ),
                       boxShadow: [
                         BoxShadow(
-                          color: color.withValues(alpha: _dragging ? 0.5 : 0.32),
-                          blurRadius: _dragging ? 18 : 10,
-                          spreadRadius: _dragging ? 2 : 0,
-                          offset: const Offset(0, 4),
+                          color: color.withValues(alpha: _dragging ? 0.24 : 0.14),
+                          blurRadius: _dragging ? 12 : 6,
+                          spreadRadius: _dragging ? 0.5 : 0,
+                          offset: const Offset(0, 2),
                         ),
                         BoxShadow(
-                          color: Colors.white.withValues(alpha: 0.9),
+                          color: Colors.white.withValues(alpha: 0.65),
                           blurRadius: 0,
-                          spreadRadius: -knobSize * 0.08,
+                          spreadRadius: -knobSize * 0.1,
                           offset: Offset.zero,
                         ),
                       ],
@@ -263,11 +266,11 @@ class _TimerRingPainter extends CustomPainter {
     final clampedProgress = progress.clamp(0, 1);
 
     final outerGlowPaint = Paint()
-      ..color = trackColor.withValues(alpha: 0.35)
+      ..color = trackColor.withValues(alpha: 0.16)
       ..style = PaintingStyle.stroke
-      ..strokeWidth = strokeWidth + 6
+      ..strokeWidth = strokeWidth + 2
       ..strokeCap = StrokeCap.round
-      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 4);
+      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 2.5);
 
     final trackPaint = Paint()
       ..color = trackColor
@@ -286,26 +289,26 @@ class _TimerRingPainter extends CustomPainter {
         startAngle: -pi / 2,
         endAngle: 3 * pi / 2,
         colors: [
-          color.withValues(alpha: 0.15),
-          color.withValues(alpha: 0.45),
-          color.withValues(alpha: 0.15),
+          color.withValues(alpha: 0.08),
+          color.withValues(alpha: 0.24),
+          color.withValues(alpha: 0.08),
         ],
         stops: const [0.0, 0.5, 1.0],
         transform: GradientRotation(-pi / 2),
       ).createShader(rect)
       ..style = PaintingStyle.stroke
-      ..strokeWidth = strokeWidth + 8
+      ..strokeWidth = strokeWidth + 3
       ..strokeCap = StrokeCap.round
-      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 6);
+      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 3);
 
     final progressPaint = Paint()
       ..shader = SweepGradient(
         startAngle: -pi / 2,
         endAngle: 3 * pi / 2,
         colors: [
-          color.withValues(alpha: 0.75),
+          color.withValues(alpha: 0.62),
           color,
-          color.withValues(alpha: 0.88),
+          color.withValues(alpha: 0.72),
         ],
         stops: const [0.0, 0.55, 1.0],
         transform: GradientRotation(-pi / 2),
@@ -315,9 +318,9 @@ class _TimerRingPainter extends CustomPainter {
       ..strokeCap = StrokeCap.round;
 
     final progressHighlightPaint = Paint()
-      ..color = Colors.white.withValues(alpha: 0.42)
+      ..color = Colors.white.withValues(alpha: 0.28)
       ..style = PaintingStyle.stroke
-      ..strokeWidth = strokeWidth * 0.28
+      ..strokeWidth = strokeWidth * 0.2
       ..strokeCap = StrokeCap.round;
 
     canvas.drawArc(rect, 0, 2 * pi, false, outerGlowPaint);

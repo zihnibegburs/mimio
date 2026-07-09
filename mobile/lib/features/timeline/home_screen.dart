@@ -4,11 +4,11 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:mimio/core/l10n/app_strings.dart';
 import 'package:mimio/core/models/models.dart';
+import 'package:mimio/core/models/recurrence.dart';
 import 'package:mimio/core/theme/mimio_theme.dart';
 import 'package:mimio/core/widgets/liquid_glass.dart';
 import 'package:mimio/core/widgets/mimio_soft_overlay.dart';
 import 'package:mimio/features/achievements/achievement_unlock_listener.dart';
-import 'package:mimio/features/inbox/inbox_section.dart';
 import 'package:mimio/features/onboarding/onboarding_screen.dart';
 import 'package:mimio/features/timeline/task_completion_helper.dart';
 import 'package:mimio/features/timeline/widgets/now_mode_view.dart';
@@ -20,7 +20,6 @@ import 'package:mimio/core/utils/schedule_utils.dart';
 import 'package:mimio/features/achievements/achievements_screen.dart';
 import 'package:mimio/features/focus/focus_session_actions.dart';
 import 'package:mimio/features/focus/focus_tab_view.dart';
-import 'package:mimio/features/focus/widgets/celebration_dialog.dart';
 import 'package:mimio/features/focus/widgets/active_task_banner.dart';
 import 'package:mimio/features/providers.dart';
 import 'package:mimio/features/timeline/home_tab.dart';
@@ -31,14 +30,22 @@ import 'package:mimio/features/timeline/widgets/task_action_sheet.dart';
 import 'package:mimio/features/timeline/widgets/modern_bottom_bar.dart';
 import 'package:mimio/features/timeline/widgets/task_card.dart';
 import 'package:mimio/features/timeline/widgets/timeline_hour_grid.dart';
+import 'package:mimio/features/timeline/widgets/todo_tab_view.dart';
 import 'package:mimio/features/timeline/widgets/week_strip.dart';
 import 'package:mimio/features/web/weekly_view.dart';
 
-class HomeScreen extends ConsumerWidget {
+class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends ConsumerState<HomeScreen> {
+  final _todoTabKey = GlobalKey<TodoTabViewState>();
+
+  @override
+  Widget build(BuildContext context) {
     final tab = ref.watch(homeTabProvider);
     final auth = ref.watch(authStateProvider).value;
     final selectedDate = ref.watch(selectedDateProvider);
@@ -47,126 +54,174 @@ class HomeScreen extends ConsumerWidget {
     return AchievementUnlockListener(
       child: _OnboardingHost(
         child: Scaffold(
-        extendBody: true,
-        appBar: PreferredSize(
-          preferredSize: const Size.fromHeight(kToolbarHeight),
-          child: LiquidGlassAppBar(
-            child: SafeArea(
-              bottom: false,
-              child: AppBar(
-                title: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(s.hello(auth?.firstName ?? '')),
-                    Text(
-                      _tabSubtitle(tab, selectedDate, ref, s),
-                      style: TextStyle(
-                        fontSize: 13,
-                        color: context.palette.textSecondary,
-                        fontWeight: FontWeight.w500,
+          extendBody: true,
+          appBar: PreferredSize(
+            preferredSize: const Size.fromHeight(kToolbarHeight),
+            child: LiquidGlassAppBar(
+              child: SafeArea(
+                bottom: false,
+                child: AppBar(
+                  title: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(s.hello(auth?.firstName ?? '')),
+                      Text(
+                        _tabSubtitle(tab, selectedDate, ref, s),
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: context.palette.textSecondary,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ],
+                  ),
+                  actions: [
+                    if (tab == HomeTab.today)
+                      Consumer(
+                        builder: (context, ref, _) {
+                          final overwhelm =
+                              ref
+                                  .watch(adhdPreferencesProvider)
+                                  .valueOrNull
+                                  ?.overwhelmMode ??
+                              false;
+                          return IconButton(
+                            icon: Icon(
+                              overwhelm
+                                  ? Icons.visibility_rounded
+                                  : Icons.visibility_outlined,
+                            ),
+                            tooltip: s.overwhelmMode,
+                            onPressed: () => ref
+                                .read(adhdPreferencesProvider.notifier)
+                                .patch(
+                                  (p) => p.copyWith(
+                                    overwhelmMode: !p.overwhelmMode,
+                                  ),
+                                ),
+                          );
+                        },
+                      ),
+                    IconButton(
+                      icon: const Icon(Icons.psychology_rounded),
+                      tooltip: s.brainDump,
+                      onPressed: () => context.push('/brain-dump'),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.auto_awesome_rounded),
+                      tooltip: s.aiPlanner,
+                      onPressed: () => context.push('/ai'),
+                    ),
+                    if (tab == HomeTab.today)
+                      Consumer(
+                        builder: (context, ref, _) {
+                          final viewMode = ref.watch(timelineViewModeProvider);
+                          return IconButton(
+                            icon: Icon(
+                              viewMode == TimelineViewMode.list
+                                  ? Icons.view_timeline_rounded
+                                  : Icons.view_list_rounded,
+                            ),
+                            tooltip: viewMode == TimelineViewMode.list
+                                ? s.hourView
+                                : s.listView,
+                            onPressed: () {
+                              ref
+                                  .read(timelineViewModeProvider.notifier)
+                                  .state = viewMode == TimelineViewMode.list
+                                  ? TimelineViewMode.grid
+                                  : TimelineViewMode.list;
+                            },
+                          );
+                        },
+                      ),
+                    Padding(
+                      padding: const EdgeInsets.only(right: 8),
+                      child: GestureDetector(
+                        onTap: () => context.push('/profile'),
+                        child: CircleAvatar(
+                          radius: 18,
+                          backgroundColor: auth != null
+                              ? MimioColors.fromHex(auth.avatarColor)
+                              : MimioColors.primary,
+                          child: Text(
+                            (auth?.displayName.isNotEmpty ?? false)
+                                ? auth!.displayName[0].toUpperCase()
+                                : '?',
+                            style: const TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w800,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ),
                       ),
                     ),
                   ],
                 ),
-                actions: [
-                  if (tab == HomeTab.today)
-                    Consumer(
-                      builder: (context, ref, _) {
-                        final overwhelm = ref.watch(adhdPreferencesProvider).valueOrNull?.overwhelmMode ?? false;
-                        return IconButton(
-                          icon: Icon(overwhelm ? Icons.visibility_rounded : Icons.visibility_outlined),
-                          tooltip: s.overwhelmMode,
-                          onPressed: () => ref.read(adhdPreferencesProvider.notifier).patch(
-                                (p) => p.copyWith(overwhelmMode: !p.overwhelmMode),
-                              ),
-                        );
-                      },
-                    ),
-                  IconButton(
-                    icon: const Icon(Icons.psychology_rounded),
-                    tooltip: s.brainDump,
-                    onPressed: () => context.push('/brain-dump'),
-                  ),
-                  IconButton(
-                    icon: const Icon(Icons.auto_awesome_rounded),
-                    tooltip: s.aiPlanner,
-                    onPressed: () => context.push('/ai'),
-                  ),
-                  if (tab == HomeTab.today)
-                    Consumer(
-                      builder: (context, ref, _) {
-                        final viewMode = ref.watch(timelineViewModeProvider);
-                        return IconButton(
-                          icon: Icon(viewMode == TimelineViewMode.list
-                              ? Icons.view_timeline_rounded
-                              : Icons.view_list_rounded),
-                          tooltip: viewMode == TimelineViewMode.list ? s.hourView : s.listView,
-                          onPressed: () {
-                            ref.read(timelineViewModeProvider.notifier).state =
-                                viewMode == TimelineViewMode.list ? TimelineViewMode.grid : TimelineViewMode.list;
-                          },
-                        );
-                      },
-                    ),
-                  Padding(
-                    padding: const EdgeInsets.only(right: 8),
-                    child: GestureDetector(
-                      onTap: () => context.push('/profile'),
-                      child: CircleAvatar(
-                        radius: 18,
-                        backgroundColor: auth != null
-                            ? MimioColors.fromHex(auth.avatarColor)
-                            : MimioColors.primary,
-                        child: Text(
-                          (auth?.displayName.isNotEmpty ?? false) ? auth!.displayName[0].toUpperCase() : '?',
-                          style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w800, color: Colors.white),
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
               ),
             ),
           ),
-        ),
-        body: IndexedStack(
-          index: tab.index,
-          children: const [
-            _TodayTab(),
-            WeeklyView(),
-            FocusTabView(),
-            _AchievementsTab(),
-          ],
-        ),
-        floatingActionButton: tab == HomeTab.today
-            ? FloatingActionButton(
-                onPressed: () {
-                  final date = ref.read(selectedDateProvider);
-                  _showAddTask(context, ref, date);
-                },
-                elevation: 6,
-                child: const Icon(Icons.add_rounded, size: 28),
-              )
-            : null,
-        floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
-        bottomNavigationBar: ModernBottomBar(
-          selectedIndex: tab.index,
-          onSelected: (i) => ref.read(homeTabProvider.notifier).state = HomeTab.values[i],
-          items: [
-            ModernNavItem(icon: Icons.today_outlined, selectedIcon: Icons.today_rounded, label: s.today),
-            ModernNavItem(
-              icon: Icons.calendar_view_week_outlined,
-              selectedIcon: Icons.calendar_view_week_rounded,
-              label: s.week,
+          body: IndexedStack(
+            index: tab.index,
+            children: [
+              const _TodayTab(),
+              TodoTabView(key: _todoTabKey),
+              const WeeklyView(),
+              const FocusTabView(),
+              const _AchievementsTab(),
+            ],
+          ),
+          floatingActionButton: switch (tab) {
+            HomeTab.today => FloatingActionButton(
+              onPressed: () {
+                final date = ref.read(selectedDateProvider);
+                _showAddTask(context, ref, date);
+              },
+              elevation: 6,
+              child: const Icon(Icons.add_rounded, size: 28),
             ),
-            ModernNavItem(icon: Icons.timer_outlined, selectedIcon: Icons.timer_rounded, label: s.focus),
-            ModernNavItem(
-              icon: Icons.emoji_events_outlined,
-              selectedIcon: Icons.emoji_events_rounded,
-              label: s.achievementsNav,
+            HomeTab.todo => FloatingActionButton(
+              onPressed: () => _todoTabKey.currentState?.focusAddField(),
+              elevation: 6,
+              child: const Icon(Icons.add_rounded, size: 28),
             ),
-          ],
-        ),
+            _ => null,
+          },
+          floatingActionButtonLocation:
+              FloatingActionButtonLocation.centerDocked,
+          bottomNavigationBar: ModernBottomBar(
+            selectedIndex: tab.index,
+            onSelected: (i) =>
+                ref.read(homeTabProvider.notifier).state = HomeTab.values[i],
+            items: [
+              ModernNavItem(
+                icon: Icons.today_outlined,
+                selectedIcon: Icons.today_rounded,
+                label: s.today,
+              ),
+              ModernNavItem(
+                icon: Icons.checklist_outlined,
+                selectedIcon: Icons.checklist_rounded,
+                label: s.todoNav,
+              ),
+              ModernNavItem(
+                icon: Icons.calendar_view_week_outlined,
+                selectedIcon: Icons.calendar_view_week_rounded,
+                label: s.week,
+              ),
+              ModernNavItem(
+                icon: Icons.timer_outlined,
+                selectedIcon: Icons.timer_rounded,
+                label: s.focus,
+              ),
+              ModernNavItem(
+                icon: Icons.emoji_events_outlined,
+                selectedIcon: Icons.emoji_events_rounded,
+                label: s.achievementsNav,
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -176,7 +231,11 @@ class HomeScreen extends ConsumerWidget {
     final lang = ref.watch(appLanguageProvider).valueOrNull ?? 'tr';
     final locale = dateLocaleFor(lang);
     return switch (tab) {
-      HomeTab.today => DateFormat('d MMMM yyyy, EEEE', locale).format(selectedDate),
+      HomeTab.today => DateFormat(
+        'd MMMM yyyy, EEEE',
+        locale,
+      ).format(selectedDate),
+      HomeTab.todo => s.inboxHint,
       HomeTab.week => s.weeklyPlanSummary,
       HomeTab.focus => s.focusTimer,
       HomeTab.achievements => s.achievementsTitle,
@@ -214,9 +273,12 @@ class _OnboardingHostState extends ConsumerState<_OnboardingHost> {
     if (_checked || !mounted) return;
     _checked = true;
 
-    final prefs = ref.read(adhdPreferencesProvider).valueOrNull ??
+    final prefs =
+        ref.read(adhdPreferencesProvider).valueOrNull ??
         await ref.read(adhdSettingsStorageProvider).load();
-    final hasTheme = await ref.read(settingsStorageProvider).hasThemePreference();
+    final hasTheme = await ref
+        .read(settingsStorageProvider)
+        .hasThemePreference();
 
     if (!mounted) return;
 
@@ -250,7 +312,9 @@ class _AchievementsTab extends ConsumerWidget {
           padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
           child: Text(
             s.achievementsTitle,
-            style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800),
+            style: Theme.of(
+              context,
+            ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800),
           ),
         ),
         const Expanded(child: AchievementsScreen(embedded: true)),
@@ -275,7 +339,8 @@ class _TodayTabState extends ConsumerState<_TodayTab> {
     final selectedDate = ref.watch(selectedDateProvider);
     final s = ref.watch(stringsProvider);
 
-    final overwhelm = ref.watch(adhdPreferencesProvider).valueOrNull?.overwhelmMode ?? false;
+    final overwhelm =
+        ref.watch(adhdPreferencesProvider).valueOrNull?.overwhelmMode ?? false;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -284,95 +349,141 @@ class _TodayTabState extends ConsumerState<_TodayTab> {
         Expanded(
           child: timelineAsync.when(
             loading: () => const Center(child: CircularProgressIndicator()),
-            error: (e, _) => _ErrorView(error: '$e', onRetry: () => ref.invalidate(timelineProvider), s: s),
+            error: (e, _) => _ErrorView(
+              error: '$e',
+              onRetry: () => ref.invalidate(timelineProvider),
+              s: s,
+            ),
             data: (timeline) {
-              final dailyEnergy = ref.watch(adhdPreferencesProvider).valueOrNull?.dailyEnergyLevel;
+              final dailyEnergy = ref
+                  .watch(adhdPreferencesProvider)
+                  .valueOrNull
+                  ?.dailyEnergyLevel;
               final tasks = filterByEnergy(timeline.tasks, dailyEnergy);
 
               return RefreshIndicator(
-              onRefresh: () => ref.read(timelineProvider.notifier).refresh(),
-              child: CustomScrollView(
-                slivers: [
-                  if (session != null)
-                    SliverToBoxAdapter(child: ActiveTaskBanner(session: session)),
-                  const SliverToBoxAdapter(child: InboxSection()),
-                  SliverToBoxAdapter(child: ScheduleWarningBanner(tasks: timeline.tasks)),
-                  SliverToBoxAdapter(child: DayProgressCard(tasks: timeline.tasks)),
-                  SliverToBoxAdapter(
-                    child: Padding(
-                      padding: const EdgeInsets.fromLTRB(20, 0, 20, 8),
-                      child: Row(
-                        children: [
-                          Text(
-                            overwhelm ? s.overwhelmMode : s.todaysPlan,
-                            style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800),
-                          ),
-                          const Spacer(),
-                          IconButton(
-                            icon: const Icon(Icons.playlist_add_rounded, size: 20),
-                            tooltip: s.routineTemplates,
-                            onPressed: () => showRoutineTemplatesSheet(context, ref, selectedDate),
-                          ),
-                          Text(
-                            s.taskCount(tasks.length),
-                            style: TextStyle(color: context.palette.textSecondary),
-                          ),
-                        ],
+                onRefresh: () => ref.read(timelineProvider.notifier).refresh(),
+                child: CustomScrollView(
+                  slivers: [
+                    if (session != null)
+                      SliverToBoxAdapter(
+                        child: ActiveTaskBanner(session: session),
                       ),
+                    SliverToBoxAdapter(
+                      child: ScheduleWarningBanner(tasks: timeline.tasks),
                     ),
-                  ),
-                  if (tasks.isEmpty)
-                    SliverFillRemaining(
-                      hasScrollBody: false,
-                      child: _EmptyTimeline(
-                        onAdd: () => _showAddTask(context, ref, selectedDate),
-                        s: s,
-                      ),
-                    )
-                  else if (overwhelm)
                     SliverToBoxAdapter(
-                      child: NowModeView(
-                        tasks: tasks,
-                        onTaskTap: (task) => _showTaskActions(context, ref, task, selectedDate),
-                        onStart: (task) => _startTask(context, ref, task.id),
-                        onComplete: (task) => _completeTask(context, ref, task),
-                      ),
-                    )
-                  else if (viewMode == TimelineViewMode.grid)
+                      child: DayProgressCard(tasks: timeline.tasks),
+                    ),
                     SliverToBoxAdapter(
-                      child: TimelineHourGrid(
-                        tasks: tasks,
-                        onTaskTap: (task) => _handleTaskTap(context, ref, task),
-                      ),
-                    )
-                  else
-                    SliverPadding(
-                      padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
-                      sliver: SliverList(
-                        delegate: SliverChildBuilderDelegate(
-                          (context, index) {
-                            final task = tasks[index];
-                            return TaskCard(
-                              task: task,
-                              onTap: () => _showTaskActions(context, ref, task, selectedDate),
-                              onStart: () => _startTask(context, ref, task.id),
-                              onPause: () => _togglePause(ref, task.id),
-                              onComplete: () => _completeTask(context, ref, task),
-                              onDelete: () => _deleteTask(context, ref, task),
-                              onSubtaskTap: (sub) => _showTaskActions(context, ref, sub, selectedDate),
-                              onSubtaskStart: (sub) => _startTask(context, ref, sub.id),
-                              onSubtaskPause: (sub) => _togglePause(ref, sub.id),
-                              onSubtaskComplete: (sub) => _completeTask(context, ref, sub),
-                            );
-                          },
-                          childCount: tasks.length,
+                      child: Padding(
+                        padding: const EdgeInsets.fromLTRB(20, 0, 20, 8),
+                        child: Row(
+                          children: [
+                            Text(
+                              overwhelm ? s.overwhelmMode : s.todaysPlan,
+                              style: Theme.of(context).textTheme.titleLarge
+                                  ?.copyWith(fontWeight: FontWeight.w800),
+                            ),
+                            const Spacer(),
+                            IconButton(
+                              icon: const Icon(
+                                Icons.playlist_add_rounded,
+                                size: 20,
+                              ),
+                              tooltip: s.routineTemplates,
+                              onPressed: () => showRoutineTemplatesSheet(
+                                context,
+                                ref,
+                                selectedDate,
+                              ),
+                            ),
+                            Text(
+                              s.taskCount(tasks.length),
+                              style: TextStyle(
+                                color: context.palette.textSecondary,
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                     ),
-                  const SliverToBoxAdapter(child: SizedBox(height: 88)),
-                ],
-              ),
-            );
+                    if (tasks.isEmpty)
+                      SliverFillRemaining(
+                        hasScrollBody: false,
+                        child: _EmptyTimeline(
+                          onAdd: () => _showAddTask(context, ref, selectedDate),
+                          s: s,
+                        ),
+                      )
+                    else if (overwhelm)
+                      SliverToBoxAdapter(
+                        child: NowModeView(
+                          tasks: tasks,
+                          onTaskTap: (task) => _showTaskActions(
+                            context,
+                            ref,
+                            task,
+                            selectedDate,
+                          ),
+                          onStart: (task) => _startTask(context, ref, task.id),
+                          onComplete: (task) =>
+                              _completeTask(context, ref, task),
+                        ),
+                      )
+                    else if (viewMode == TimelineViewMode.grid)
+                      SliverToBoxAdapter(
+                        child: TimelineHourGrid(
+                          tasks: tasks,
+                          onTaskTap: (task) =>
+                              _handleTaskTap(context, ref, task),
+                        ),
+                      )
+                    else
+                      SliverPadding(
+                        padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
+                        sliver: SliverList(
+                          delegate: SliverChildBuilderDelegate((
+                            context,
+                            index,
+                          ) {
+                            final task = tasks[index];
+                            return TaskCard(
+                              task: task,
+                              onTap: () => _showTaskActions(
+                                context,
+                                ref,
+                                task,
+                                selectedDate,
+                              ),
+                              onStart: () => _startTask(context, ref, task.id),
+                              onPause: () => _togglePause(ref, task.id),
+                              onComplete: () =>
+                                  _completeTask(context, ref, task),
+                              onCancel: () => _cancelTask(context, ref, task),
+                              onDelete: () => _deleteTask(context, ref, task),
+                              onSubtaskTap: (sub) => _showTaskActions(
+                                context,
+                                ref,
+                                sub,
+                                selectedDate,
+                              ),
+                              onSubtaskStart: (sub) =>
+                                  _startTask(context, ref, sub.id),
+                              onSubtaskPause: (sub) =>
+                                  _togglePause(ref, sub.id),
+                              onSubtaskComplete: (sub) =>
+                                  _completeTask(context, ref, sub),
+                              onSubtaskCancel: (sub) =>
+                                  _cancelTask(context, ref, sub),
+                            );
+                          }, childCount: tasks.length),
+                        ),
+                      ),
+                    const SliverToBoxAdapter(child: SizedBox(height: 88)),
+                  ],
+                ),
+              );
             },
           ),
         ),
@@ -380,7 +491,11 @@ class _TodayTabState extends ConsumerState<_TodayTab> {
     );
   }
 
-  Future<void> _startTask(BuildContext context, WidgetRef ref, String id) async {
+  Future<void> _startTask(
+    BuildContext context,
+    WidgetRef ref,
+    String id,
+  ) async {
     await startTaskAndOpenFocus(context, ref, id);
   }
 
@@ -393,10 +508,16 @@ class _TodayTabState extends ConsumerState<_TodayTab> {
     }
   }
 
-  Future<void> _completeTask(BuildContext context, WidgetRef ref, TaskModel task) async {
+  Future<void> _completeTask(
+    BuildContext context,
+    WidgetRef ref,
+    TaskModel task,
+  ) async {
     final s = ref.read(stringsProvider);
     try {
-      final completed = await ref.read(timelineProvider.notifier).completeTask(task.id);
+      final completed = await ref
+          .read(timelineProvider.notifier)
+          .completeTask(task.id);
       if (!context.mounted) return;
       await handleTaskCompleted(context, ref, task, completed);
     } catch (e) {
@@ -411,7 +532,33 @@ class _TodayTabState extends ConsumerState<_TodayTab> {
     }
   }
 
-  Future<void> _uncompleteTask(BuildContext context, WidgetRef ref, TaskModel task) async {
+  Future<void> _cancelTask(
+    BuildContext context,
+    WidgetRef ref,
+    TaskModel task,
+  ) async {
+    final s = ref.read(stringsProvider);
+    try {
+      await ref
+          .read(timelineProvider.notifier)
+          .deleteTask(task.id, scope: DeleteRecurrenceScope.thisOccurrence);
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(s.friendlyTaskActionError(e)),
+            backgroundColor: Colors.red.shade400,
+          ),
+        );
+      }
+    }
+  }
+
+  Future<void> _uncompleteTask(
+    BuildContext context,
+    WidgetRef ref,
+    TaskModel task,
+  ) async {
     final s = ref.read(stringsProvider);
     try {
       await ref.read(timelineProvider.notifier).uncompleteTask(task.id);
@@ -427,13 +574,23 @@ class _TodayTabState extends ConsumerState<_TodayTab> {
     }
   }
 
-  Future<void> _deleteTask(BuildContext context, WidgetRef ref, TaskModel task) async {
+  Future<void> _deleteTask(
+    BuildContext context,
+    WidgetRef ref,
+    TaskModel task,
+  ) async {
     final s = ref.read(stringsProvider);
-    final scope = await showDeleteTaskDialog(context: context, s: s, task: task);
+    final scope = await showDeleteTaskDialog(
+      context: context,
+      s: s,
+      task: task,
+    );
     if (scope == null) return;
 
     try {
-      await ref.read(timelineProvider.notifier).deleteTask(task.id, scope: scope);
+      await ref
+          .read(timelineProvider.notifier)
+          .deleteTask(task.id, scope: scope);
     } catch (e) {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -451,7 +608,12 @@ class _TodayTabState extends ConsumerState<_TodayTab> {
     _showTaskActions(context, ref, task, date);
   }
 
-  void _showTaskActions(BuildContext context, WidgetRef ref, TaskModel task, DateTime date) {
+  void _showTaskActions(
+    BuildContext context,
+    WidgetRef ref,
+    TaskModel task,
+    DateTime date,
+  ) {
     final session = ref.read(focusSessionProvider).valueOrNull;
     showTaskActionSheet(
       context: context,
@@ -462,7 +624,8 @@ class _TodayTabState extends ConsumerState<_TodayTab> {
       onPause: () => _togglePause(ref, task.id),
       onComplete: () => _completeTask(context, ref, task),
       onUncomplete: () => _uncompleteTask(context, ref, task),
-      onDelete: (scope) => ref.read(timelineProvider.notifier).deleteTask(task.id, scope: scope),
+      onDelete: (scope) =>
+          ref.read(timelineProvider.notifier).deleteTask(task.id, scope: scope),
       onFocus: session?.taskId == task.id ? () => context.push('/focus') : null,
     );
   }
@@ -477,7 +640,11 @@ class _TodayTabState extends ConsumerState<_TodayTab> {
 }
 
 class _ErrorView extends StatelessWidget {
-  const _ErrorView({required this.error, required this.onRetry, required this.s});
+  const _ErrorView({
+    required this.error,
+    required this.onRetry,
+    required this.s,
+  });
 
   final String error;
   final VoidCallback onRetry;
@@ -489,11 +656,22 @@ class _ErrorView extends StatelessWidget {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.cloud_off_rounded, size: 48, color: context.palette.textSecondary),
+          Icon(
+            Icons.cloud_off_rounded,
+            size: 48,
+            color: context.palette.textSecondary,
+          ),
           const SizedBox(height: 16),
-          Text(s.connectionError, style: Theme.of(context).textTheme.titleMedium),
+          Text(
+            s.connectionError,
+            style: Theme.of(context).textTheme.titleMedium,
+          ),
           const SizedBox(height: 8),
-          Text(error, textAlign: TextAlign.center, style: TextStyle(color: context.palette.textSecondary)),
+          Text(
+            error,
+            textAlign: TextAlign.center,
+            style: TextStyle(color: context.palette.textSecondary),
+          ),
           const SizedBox(height: 16),
           ElevatedButton(onPressed: onRetry, child: Text(s.retry)),
         ],
@@ -523,19 +701,28 @@ class _EmptyTimeline extends StatelessWidget {
                 color: MimioColors.primary.withValues(alpha: 0.1),
                 shape: BoxShape.circle,
               ),
-              child: Icon(Icons.wb_sunny_rounded, size: 44, color: MimioColors.primary.withValues(alpha: 0.7)),
+              child: Icon(
+                Icons.wb_sunny_rounded,
+                size: 44,
+                color: MimioColors.primary.withValues(alpha: 0.7),
+              ),
             ),
             const SizedBox(height: 24),
             Text(
               s.noPlanToday,
               textAlign: TextAlign.center,
-              style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800),
+              style: Theme.of(
+                context,
+              ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800),
             ),
             const SizedBox(height: 8),
             Text(
               s.emptyPlanHint,
               textAlign: TextAlign.center,
-              style: TextStyle(color: context.palette.textSecondary, height: 1.5),
+              style: TextStyle(
+                color: context.palette.textSecondary,
+                height: 1.5,
+              ),
             ),
             const SizedBox(height: 28),
             Material(
@@ -544,10 +731,16 @@ class _EmptyTimeline extends StatelessWidget {
                 onTap: onAdd,
                 borderRadius: BorderRadius.circular(16),
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 24,
+                    vertical: 14,
+                  ),
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
-                      colors: [MimioColors.primary, MimioColors.primary.withValues(alpha: 0.85)],
+                      colors: [
+                        MimioColors.primary,
+                        MimioColors.primary.withValues(alpha: 0.85),
+                      ],
                     ),
                     borderRadius: BorderRadius.circular(16),
                     boxShadow: [
@@ -561,11 +754,19 @@ class _EmptyTimeline extends StatelessWidget {
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      const Icon(Icons.add_rounded, color: Colors.white, size: 20),
+                      const Icon(
+                        Icons.add_rounded,
+                        color: Colors.white,
+                        size: 20,
+                      ),
                       const SizedBox(width: 8),
                       Text(
                         s.addFirstTask,
-                        style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 15),
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w700,
+                          fontSize: 15,
+                        ),
                       ),
                     ],
                   ),
